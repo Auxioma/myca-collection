@@ -1,0 +1,4 @@
+payment_method_token,customer_id,update_type,bin,new_last_4,old_last_4,new_expiration,card_updated_at,source,new_card_type
+ffdxraep,000,"updated card",123456,9000,0009,12/30,12/34,1234,Discover
+8800ppny,000,"updated card",123456,4004,4444,12/30,12/34,1234,MasterCard
+ekamgjsm,000,"updated card",123456,1001,1111,12/30,12/34,1234,Visa

@@ -1,0 +1,18 @@
+<?php
+/**
+ * Copyright 2025 Adobe.
+ * All rights reserved.
+ */
+
+/** @var \Magento\Backend\Block\Template $block */
+/** @var $escaper Magento\Framework\Escaper */
+
+?>
+<div>
+    <p><?= $escaper->escapeHtml(__(
+        'You need to verify identity in order to proceed to configure new Two-Factor Authorization'
+    )); ?></p>
+    <p><?= $escaper->escapeHtml(__(
+        'An E-mail was sent to you with further instructions'
+    )); ?></p>
+</div>

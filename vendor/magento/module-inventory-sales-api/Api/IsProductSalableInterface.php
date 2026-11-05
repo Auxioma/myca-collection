@@ -1,0 +1,27 @@
+<?php
+/**
+ * Copyright 2018 Adobe
+ * All Rights Reserved.
+ */
+declare(strict_types=1);
+
+namespace Magento\InventorySalesApi\Api;
+
+/**
+ * Service which detects whether Product is salable for a given Stock (stock data + reservations)
+ *
+ * @api
+ * @deprecated in favor of bulk API
+ * @see \Magento\InventorySalesApi\Api\AreProductsSalableInterface
+ */
+interface IsProductSalableInterface
+{
+    /**
+     * Get is product in salable for given SKU in a given Stock
+     *
+     * @param string $sku
+     * @param int $stockId
+     * @return bool
+     */
+    public function execute(string $sku, int $stockId): bool;
+}

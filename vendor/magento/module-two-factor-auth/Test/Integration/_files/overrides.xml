@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+<!--
+/**
+ * Copyright 2020 Adobe
+ * All Rights Reserved.
+ */
+-->
+<overrides>
+    <test class="\Magento\Webapi\Controller\SoapTest" skip="true"/>
+    <test class="\Magento\Webapi\Controller\SoapEnterpriseTest" skip="true"/>
+</overrides>

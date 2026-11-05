@@ -1,0 +1,16 @@
+{
+    "extensions": [
+        "pdo-sqlite",
+        "sqlite3"
+    ],
+    "additional_checks": [
+        {
+            "name": "PhpStan",
+            "job": {
+                "php": "8.2",
+                "dependencies": "latest",
+                "command": "composer require --dev phpstan/phpstan && vendor/bin/phpstan analyse"
+            }
+        }
+    ]
+}

@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+<!--
+/**
+ * Copyright 2021 Adobe
+ * All Rights Reserved.
+ */
+-->
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="urn:magento:framework:Event/etc/events.xsd">
+    <event name="controller_action_predispatch_checkout_cart_couponPost">
+        <observer name="recaptcha_on_couponcode" instance="Magento\ReCaptchaCheckoutSalesRule\Observer\CouponCodeObserver"/>
+    </event>
+</config>

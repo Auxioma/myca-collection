@@ -1,0 +1,210 @@
+# Upgrading
+
+
+## From PHPMD 2 to PHPMD 3
+
+Here we try to provide the needed changes to upgrade from version 2 to version 3. These are the breaking changes.
+
+### Migrating your configuration
+
+Run `phpmd migrate` to upgrade your configuration file automatically:
+
+```
+phpmd migrate phpmd.xml
+```
+
+It renames the rule classes and threshold properties described below, converts the file to YAML (the recommended format) and lists every change it made. The original file is kept, so remove it once you have reviewed the result. Add `--preserve-behavior` to also lower the thresholds of rules that now accept one more unit (see [Standardized rule threshold properties](#standardized-rule-threshold-properties)), or `--dry-run` to only print the result. Without an argument, the auto-detected configuration file is migrated.
+
+Rule sets referenced from your configuration are not followed, run the command on each of them.
+
+If you don't have a configuration file yet, `phpmd init` generates one through an interactive wizard.
+
+### PHP version
+
+The minimum PHP version is changed from 5.3.9 to 8.1.
+
+### Command line interface
+
+The command signature has changed. In PHPMD 2, format and ruleset were positional arguments:
+
+```
+phpmd <source> <report-format> <ruleset>
+```
+
+In PHPMD 3, only the source paths are positional. Format and ruleset are now options:
+
+```
+phpmd analyze [options] [--] [<paths>...]
+```
+
+For example, what was previously:
+
+```
+phpmd src/ text codesize,unusedcode
+```
+
+Is now:
+
+```
+phpmd analyze --ruleset codesize --ruleset unusedcode src/
+```
+
+Both `--format` and `--ruleset` are optional. The default format is `text`, and the default ruleset includes all built-in rules. PHPMD will also auto-detect a configuration file in the current directory (see below).
+
+The following CLI options have been removed or renamed:
+
+| PHPMD 2               | PHPMD 3             |
+|-----------------------|---------------------|
+| `--ignore`            | `--exclude`         |
+| `--extensions`        | `--suffixes`        |
+| `--reportfile`        | `--reportfile-text`, `--reportfile-xml`, etc. |
+| `--minimumpriority`   | `--minimum-priority` |
+| `--maximumpriority`   | `--maximum-priority` |
+
+Run `phpmd analyze --help` to see all available options.
+
+### New configuration formats
+
+In addition to XML, PHPMD 3 supports rule set configuration in YAML, JSON, and PHP. YAML is the recommended format for new projects. See the [creating a custom rule set](https://phpmd.org/documentation/creating-a-ruleset.html) documentation for details.
+
+Common options can now be configured directly in the rule set file using the `exclude-pattern`, `format`, `cache-file`, `cache-strateg`, `baseline-file`, `bootstrap`, `cache`, `minimum-priority`, `maximum-priority`, `threads`, `paths`, and `suffixes` keys, instead of relying on the CLI option.
+
+### Configuration file auto-detection
+
+PHPMD 3 will automatically look for a configuration file in the current working directory. The following file names are detected, in order of priority:
+
+- `phpmd.yml`, `phpmd.yaml`, `phpmd.json`, `phpmd.xml`, `phpmd.php`
+- `.phpmd.yml`, `.phpmd.yaml`, `.phpmd.json`, `.phpmd.xml`, `.phpmd.php`
+- `phpmd.yml.dist`, `phpmd.yaml.dist`, `phpmd.json.dist`, `phpmd.xml.dist`, `phpmd.php.dist`
+
+This means you can place a `phpmd.yml` in your project root and simply run `phpmd analyze src/` without specifying a ruleset.
+
+### Suppressing warnings
+
+PHPMD 3 introduces PHP attributes as the preferred way to suppress warnings:
+
+```php
+use PHPMD\Attribute\SuppressWarnings;
+use PHPMD\Rule\UnusedLocalVariable;
+
+#[SuppressWarnings(UnusedLocalVariable::class)]
+public function example() {
+    $unused = 42;
+}
+```
+
+The older `@SuppressWarnings` doc comment annotations from PHPMD 2 are deprecated, but still supported for backward compatibility:
+
+```php
+/** @SuppressWarnings(PHPMD.UnusedLocalVariable) */
+public function example() {
+    $unused = 42;
+}
+```
+
+However, PHP attributes are recommended going forward, as they are type-safe and supported by IDE autocompletion.
+
+The new `UnusedSuppression` rule, part of the unused code rule set, reports `#[SuppressWarnings]` attributes that
+no longer suppress any warning. Doc comment annotations are not reported, which is one more reason to switch to
+attributes. To adopt the rule gradually, add the existing reports to a baseline with `--generate-baseline`.
+
+### Exit codes
+
+A new exit code `3` has been added, which indicates that one or more files could not be processed because of an error. Previously this would have been exit code `1`.
+
+### Baseline update
+
+`--update-baseline` now reports violations that are not in the baseline. They are rendered with the configured format and make the command exit with code `2`, as a run without the option would. They are still not added to the baseline file. In PHPMD 2 these violations were silently dropped. Run `--generate-baseline` to add them to the baseline instead.
+
+`PHPMD\Baseline\BaselineValidator` no longer takes a `BaselineMode`, the constructor only accepts the `BaselineSet`.
+
+### Standardized rule threshold properties
+
+Rules that check an upper bound now consistently use a property named `maximum`, and only report a violation when the measured value *exceeds* the configured value (`value > maximum`). Previously, several rules used `minimum`, `maxfields`, `maxmethods`, or `reportLevel` for what was semantically a maximum, and some reported already when the value *equaled* the threshold.
+
+If your custom rule set configures one of the following rules, rename the property. The old names remain accepted as aliases, so an existing rule set keeps its configured thresholds, but the names in the right column are the documented ones going forward:
+
+| Rule                     | PHPMD 2       | PHPMD 3   |
+|--------------------------|---------------|-----------|
+| CyclomaticComplexity     | `reportLevel` | `maximum` |
+| NPathComplexity          | `minimum`     | `maximum` |
+| ExcessiveMethodLength    | `minimum`     | `maximum` |
+| ExcessiveClassLength     | `minimum`     | `maximum` |
+| ExcessiveParameterList   | `minimum`     | `maximum` |
+| ExcessivePublicCount     | `minimum`     | `maximum` |
+| TooManyFields            | `maxfields`   | `maximum` |
+| TooManyMethods           | `maxmethods`  | `maximum` |
+| TooManyPublicMethods     | `maxmethods`  | `maximum` |
+| NumberOfChildren         | `minimum`     | `maximum` |
+| DepthOfInheritance       | `minimum`     | `maximum` |
+
+The comparison is now inclusive for all of these rules: the configured `maximum` is the highest still-accepted value, and only values above it are reported. Rules that previously reported when the value equaled the threshold (all of the above plus ExcessiveClassComplexity and CouplingBetweenObjects) accept one more unit than before. If you want to keep the exact same behavior as PHPMD 2 for a rule that used `value >= threshold`, configure `maximum` to the old value minus one.
+
+This also shifts the shipped defaults: on the default rule sets, values that sat exactly on a threshold (for example a class with a WMC of exactly 50 for ExcessiveClassComplexity, or a CBO of exactly 13 for CouplingBetweenObjects) are no longer reported. Baseline entries recorded for such violations will no longer match and can be removed from your baseline file.
+
+Rules that check a lower bound — ShortVariable, ShortMethodName, and ShortClassName — keep the `minimum` property (a name length *below* the configured minimum is reported).
+
+`phpmd migrate --preserve-behavior` lowers the configured values for you. It only adjusts values set in your configuration: rules left at their shipped defaults still use the new defaults.
+
+### Renamed rule classes
+
+The rule names are unchanged, but the classes of the following rules were renamed. This only matters if your rule set refers to a rule by its `class`:
+
+| PHPMD 2                                 | PHPMD 3                                      |
+|-----------------------------------------|----------------------------------------------|
+| `PHPMD\Rule\Design\LongClass`           | `PHPMD\Rule\Design\ExcessiveClassLength`     |
+| `PHPMD\Rule\Design\LongMethod`          | `PHPMD\Rule\Design\ExcessiveMethodLength`    |
+| `PHPMD\Rule\Design\LongParameterList`   | `PHPMD\Rule\Design\ExcessiveParameterList`   |
+| `PHPMD\Rule\Design\NpathComplexity`     | `PHPMD\Rule\Design\NPathComplexity`          |
+| `PHPMD\Rule\Design\WeightedMethodCount` | `PHPMD\Rule\Design\ExcessiveClassComplexity` |
+
+`phpmd migrate` replaces these class names in your rule set. Custom rules that extend one of these classes have to be updated by hand.
+
+### Changed rule behaviour
+
+Besides the threshold changes described above, the detection logic of the following rules
+has changed, so a rule set that reported cleanly under PHPMD 2 may report new violations.
+
+#### `ShortVariable` now reports inside closures passed as arguments
+
+`ShortVariable` ignores names that are part of a member access chain, so that the `x` in
+`$foo->x` or `Foo::$x` is not judged by the same length rule as a local variable. In
+PHPMD 2 that check walked the whole ancestor chain, which meant a closure or arrow
+function passed as an argument *within* such a chain inherited the exemption, and its
+parameters and local variables were silently skipped:
+
+```php
+$this->acceptsCallback(function ($fo) {  // not reported by PHPMD 2, reported by PHPMD 3
+    return $fo;
+});
+```
+
+PHPMD 3 stops the walk at the closure boundary, so the closure body is checked like any
+other scope. These are new true positives, and the change is deliberate. Names in a real
+member access chain, including one inside the closure, are still exempt.
+
+### Internal API changes
+
+These changes only affect you if you have written custom rules or extended PHPMD classes.
+
+- The `PHP_PMD_*` class aliases from PHPMD 1.x were already removed in 2.9. If you still use them, update to the `PHPMD\*` namespace.
+- `PHPMD\PHPMD::getIgnorePatterns()` and `setIgnorePatterns()` have been removed. Use `getExcludePatterns()` and `addExcludePatterns()` instead.
+- `PHPMD\RuleSetFactory::getIgnorePattern()` has been removed. Use `getExcludePatterns()` instead.
+- `PHPMD\Rule::getBooleanProperty()` has been renamed to `isTruthyProperty()`.
+- `PHPMD\RuleSetFactory::getCache()` has been renamed to `isCacheEnabled()`.
+- The rule classes `LongClass`, `LongMethod`, `LongParameterList`, `NpathComplexity` and `WeightedMethodCount` in `PHPMD\Rule\Design` have been renamed, see [Renamed rule classes](#renamed-rule-classes).
+- All PHPMD exceptions now use a dedicated exception hierarchy under `PHPMD\Exception\`.
+- Rule marker interfaces now include `EnumAware` and `TraitAware` in addition to the existing `ClassAware`, `FunctionAware`, `InterfaceAware`, and `MethodAware`.
+- PDepend 3.x is now required.
+- Suppressions are applied by filtering the violations after the rules have run, instead of skipping suppressed code, so `RuleSet::apply()` no longer skips suppressed nodes and `AbstractRule::setStrict()` has been removed. Custom rules no longer need to check `hasSuppressWarningsFor()` themselves, and should stop doing so: a rule that skips suppressed code never reports the violations its suppressions are there for, so the `UnusedSuppression` rule reports those suppressions as unused.
+
+### Backward compatibility within 3.x
+
+Everything public is covered by the compatibility promise for the lifetime of 3.x, except code marked `@internal`, which can change in any minor release. PHPStan and Psalm report its use from outside PHPMD.
+
+- The parallel rule runner: `ForkedRuleRunner`, `ViolationTransfer`, `TextUI\PdependWorkerCommand` and the thread, main script and worker command methods of `PHPMD`.
+- The PDepend integration: `Parser`, `ParserFactory`, `ProgressListener` and `AbstractNode::setMetrics()`.
+- The suppression handling: `Suppressions`, `Node\Annotation`, `Node\Annotations`, `Node\Attributes` and `Node\NodeInfo`.
+- The `Baseline`, `Cache`, `Config`, `RuleProperty`, `TextUI` and `Utility` namespaces, `RendererFactory`, `InternalRuleSet` and the `RuleSetFactory` methods that read a single option from a rule set file.
+
+The command line and the configuration and baseline file formats are covered.

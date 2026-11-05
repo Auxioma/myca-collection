@@ -1,0 +1,97 @@
+{
+    "name": "web-token/jwt-framework",
+    "description": "JSON Object Signing and Encryption library for PHP and Symfony Bundle.",
+    "type": "symfony-bundle",
+    "license": "MIT",
+    "keywords": [
+        "JWS",
+        "JWT",
+        "JWE",
+        "JWA",
+        "JWK",
+        "JWKSet",
+        "Jot",
+        "Jose",
+        "RFC7515",
+        "RFC7516",
+        "RFC7517",
+        "RFC7518",
+        "RFC7519",
+        "RFC7520",
+        "Bundle",
+        "Symfony"
+    ],
+    "homepage": "https://github.com/web-token/jwt-framework",
+    "authors": [
+        {
+            "name": "Florent Morselli",
+            "homepage": "https://github.com/Spomky"
+        },
+        {
+            "name": "All contributors",
+            "homepage": "https://github.com/web-token/jwt-bundle/contributors"
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+            "Jose\\Bundle\\JoseFramework\\": "src/Bundle/",
+            "Jose\\Experimental\\": "src/Experimental/",
+            "Jose\\Component\\": "src/Library/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Jose\\Performance\\": "performance/",
+            "Jose\\Tests\\": "tests/"
+        }
+    },
+    "require": {
+        "php": ">=8.2",
+        "ext-openssl": "*",
+        "brick/math": "^0.12|^0.13|^0.14|^0.15|^0.16|^0.17|^0.18|^0.19|^0.20|^1.0",
+        "psr/clock": "^1.0",
+        "psr/event-dispatcher": "^1.0",
+        "spomky-labs/pki-framework": "^1.2.1",
+        "symfony/config": "^7.0|^8.0",
+        "symfony/console": "^7.0|^8.0",
+        "symfony/dependency-injection": "^7.0|^8.0",
+        "symfony/deprecation-contracts": "^2.5|^3.0",
+        "symfony/event-dispatcher": "^7.0|^8.0",
+        "symfony/http-client-contracts": "^3.4",
+        "symfony/http-kernel": "^7.0|^8.0"
+    },
+    "require-dev": {
+        "ext-curl": "*",
+        "ext-gmp": "*",
+        "ext-sodium": "*",
+        "matthiasnoback/symfony-config-test": "^6.0",
+        "paragonie/sodium_compat": "^1.20|^2.0",
+        "phpbench/phpbench": "^1.2",
+        "roave/security-advisories": "dev-latest",
+        "spomky-labs/aes-key-wrap": "^7.0|^8.0",
+        "symfony/browser-kit": "^7.0|^8.0",
+        "symfony/clock": "^7.0|^8.0",
+        "symfony/finder": "^7.0|^8.0",
+        "symfony/framework-bundle": "^7.0|^8.0",
+        "symfony/http-client": "^7.0|^8.0",
+        "symfony/serializer": "^7.0|^8.0",
+        "symfony/var-dumper": "^7.0|^8.0",
+        "symfony/yaml": "^7.0|^8.0"
+    },
+    "replace": {
+        "web-token/jwt-bundle": "self.version",
+        "web-token/jwt-library": "self.version",
+        "web-token/jwt-experimental": "self.version"
+    },
+    "suggest": {
+        "symfony/serializer": "Use the Symfony serializer to serialize/unserialize JWS and JWE tokens.",
+        "symfony/var-dumper": "Used to show data on the debug toolbar.",
+        "spomky-labs/aes-key-wrap": "To enable AES Key Wrap algorithm."
+    },
+    "conflict": {
+        "spomky-labs/jose": "*"
+    },
+    "config": {
+        "sort-packages": true
+    }
+}

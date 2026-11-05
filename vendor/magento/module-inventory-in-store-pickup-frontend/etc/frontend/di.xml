@@ -1,0 +1,25 @@
+<?xml version="1.0"?>
+<!--
+/**
+ * Copyright 2019 Adobe
+ * All Rights Reserved.
+ */
+-->
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:ObjectManager/etc/config.xsd">
+    <type name="Magento\Checkout\Model\CompositeConfigProvider">
+        <arguments>
+            <argument name="configProviders" xsi:type="array">
+                <item name="website_code_config_provider" xsi:type="object">Magento\InventoryInStorePickupFrontend\Model\Ui\WebsiteCodeConfigProvider</item>
+                <item name="in_store_pickup_checkout_config_provider" xsi:type="object">Magento\InventoryInStorePickupFrontend\Model\Ui\DelimiterConfigProvider</item>
+                <item name="inventory_in_store_pickup_frontend_selected_pickup_location_code_checkout_config_provider" xsi:type="object">Magento\InventoryInStorePickupFrontend\Model\Ui\SelectedPickupLocationCodeProvider</item>
+            </argument>
+        </arguments>
+    </type>
+    <type name="Magento\Checkout\Block\Onepage">
+        <arguments>
+            <argument name="layoutProcessors" xsi:type="array">
+                <item name="storePickup" xsi:type="object">Magento\InventoryInStorePickupFrontend\Block\Checkout\LayoutProcessor</item>
+            </argument>
+        </arguments>
+    </type>
+</config>

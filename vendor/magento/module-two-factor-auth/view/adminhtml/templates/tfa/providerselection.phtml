@@ -1,0 +1,38 @@
+<?php
+/**
+ * Copyright 2025 Adobe.
+ * All rights reserved.
+ */
+
+/** @var ProviderSelection $viewModel */
+/** @var $escaper Magento\Framework\Escaper */
+/** @var Template $block */
+
+use Magento\Backend\Block\Template;
+use Magento\TwoFactorAuth\ViewModel\ProviderSelection;
+
+$viewModel = $block->getViewModel();
+?>
+<div id="2fa-providers-list">
+    <h2><?= $escaper->escapeHtml(__("How do you want to verify identity?")); ?></h2>
+    <?php if ($list = $viewModel->getProvidersList()): ?>
+    <h3><?= $escaper->escapeHtml(__("Use already configured 2FA provider?")); ?></h3>
+            <ul class="tfa-provider_list">
+                <?php foreach ($list as $providerData): ?>
+                    <li class="tfa-provider">
+                            <img src="<?= $escaper->escapeUrl($providerData['icon']) ?>"/>
+                            <a class="tfa-provider-link" href="<?= $escaper->escapeUrl($providerData['url']) ?>">
+                                <span><?= $escaper->escapeHtml($providerData['name']) ?></span>
+                            </a>
+                    </li>
+                <?php endforeach; ?>
+            </ul>
+            <br/>
+    <h3>OR</h3>
+    <?php endif; ?>
+    <a href=<?= $escaper->escapeUrl($viewModel->getActionUrl())?>>
+        <button type="button" class="action-primary">
+            <span><?= $escaper->escapeHtml(__("Send me a link via email")); ?></span>
+        </button>
+    </a>
+</div>

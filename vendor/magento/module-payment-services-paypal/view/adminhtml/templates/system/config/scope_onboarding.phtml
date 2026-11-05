@@ -1,0 +1,89 @@
+<?php
+/**
+ * ADOBE CONFIDENTIAL
+ *
+ * Copyright 2026 Adobe
+ * All Rights Reserved.
+ *
+ * NOTICE: All information contained herein is, and remains
+ * the property of Adobe and its suppliers, if any. The intellectual
+ * and technical concepts contained herein are proprietary to Adobe
+ * and its suppliers and are protected by all applicable intellectual
+ * property laws, including trade secret and copyright laws.
+ * Dissemination of this information or reproduction of this material
+ * is strictly forbidden unless prior written permission is obtained
+ * from Adobe.
+ */
+declare(strict_types=1);
+
+use Magento\Framework\Escaper;
+use Magento\PaymentServicesPaypal\Block\Adminhtml\System\Config\ScopeOnboarding;
+
+?>
+
+<?php
+/** @var ScopeOnboarding $block */
+/** @var Escaper $escaper */
+?>
+
+<button type="button" class="button" id="paypal-onboarding-open-modal">
+    <?= $escaper->escapeHtml(__('Connect to different account')) ?>
+</button>
+<div id="paypal-onboarding-modal" style="display:none;" data-bind="scope: 'paypalOnboardingModalHost'">
+    <div class="paypal-onboarding-modal-header">
+        <h3><?= $escaper->escapeHtml(__('Adobe Payment Services Setup')) ?></h3>
+    </div>
+    <div class="paypal-onboarding-modal-container">
+        <div class="paypal-onboarding-modal-content">
+            <div class="messages" data-bind="visible: messageContainer.hasMessages()">
+                <!-- ko foreach: messageContainer.getErrorMessages() -->
+                <div aria-atomic="true" role="alert" class="message message-error error">
+                    <div data-bind="text: $data"></div>
+                    <button type="button" class="action-close" data-bind="
+                            click: function () { $parent.messageContainer.remove('error', $data); }">
+                        <span data-bind="i18n: 'Close'"></span>
+                    </button>
+                </div>
+                <!-- /ko -->
+                <!-- ko foreach: messageContainer.getSuccessMessages() -->
+                <div aria-atomic="true" role="alert" class="message message-success success">
+                    <div data-bind="text: $data"></div>
+                    <button type="button" class="action-close" data-bind="
+                            click: function () { $parent.messageContainer.remove('success', $data); }">
+                        <span data-bind="i18n: 'Close'"></span>
+                    </button>
+                </div>
+                <!-- /ko -->
+            </div>
+            <!-- ko if: modalComponent -->
+            <!-- ko component: modalComponent --><!-- /ko -->
+            <!-- /ko -->
+        </div>
+    </div>
+</div>
+<script type="text/x-magento-init">
+    {
+        "*": {
+            "Magento_Ui/js/core/app": {
+                "components": {
+                    "paypalOnboardingModalHost": {
+                        "component": "Magento_PaymentServicesPaypal/js/view/paypal-onboarding-modal-host",
+                        "title": "<?= $escaper->escapeJs(__('Connect Different PayPal Account')) ?>",
+                        "modalSelector": "#paypal-onboarding-modal",
+                        "triggerSelector": "#paypal-onboarding-open-modal",
+                        "defaultModal": {
+                            "name": "paypal-onboarding-disconnect-global-account",
+                            "component": "Magento_PaymentServicesPaypal/js/view/modals/paypal-onboarding/disconnect-global-account",
+                            "template": "Magento_PaymentServicesPaypal/template/modals/paypal-onboarding/disconnect-global-account.html",
+                            "data": {
+                                "loadCountriesUrl": "<?= $escaper->escapeJs($block->getData('onboarding_country_options_url')) ?>",
+                                "scopeOnboardingUrl": "<?= $escaper->escapeJs($block->getData('scope_onboarding_url')) ?>",
+                                "onboardingStatusUrl": "<?= $escaper->escapeJs($block->getData('get_onboarding_status_url')) ?>"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+</script>

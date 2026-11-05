@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+ /**
+ * Copyright 2020 Adobe
+ * All Rights Reserved.
+ */
+-->
+<actionGroups xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:noNamespaceSchemaLocation="urn:magento:mftf:Test/etc/actionGroupSchema.xsd">
+    <actionGroup name="clickProductCarouselNextNavigationArrow" extends="clickProductCarouselPreviousNavigationArrow">
+        <waitForElementVisible selector="{{page.carouselNextProductNavigationArrow(productGroupIndex)}}" stepKey="waitForPreviousNavigationArrow"/>
+        <click selector="{{page.carouselNextProductNavigationArrow(productGroupIndex)}}" stepKey="clickPreviousNavigationArrow"/>
+    </actionGroup>
+</actionGroups>

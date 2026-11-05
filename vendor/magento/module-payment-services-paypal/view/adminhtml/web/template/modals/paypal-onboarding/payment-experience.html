@@ -1,0 +1,139 @@
+<!--
+/**
+ * ADOBE CONFIDENTIAL
+ *
+ * Copyright 2026 Adobe
+ * All Rights Reserved.
+ *
+ * NOTICE: All information contained herein is, and remains
+ * the property of Adobe and its suppliers, if any. The intellectual
+ * and technical concepts contained herein are proprietary to Adobe
+ * and its suppliers and are protected by all applicable intellectual
+ * property laws, including trade secret and copyright laws.
+ * Dissemination of this information or reproduction of this material
+ * is strictly forbidden unless prior written permission is obtained
+ * from Adobe.
+ */
+-->
+<div class="paypal-onboarding-modal-payment-experience admin__page-section">
+    <div>
+        <h4 data-bind="i18n: 'Which country are you operating from?'"></h4>
+
+        <fieldset class="fieldset admin__fieldset">
+            <div class="admin__field field field-group_id  required _required">
+                <label class="label admin__field-label" for="paypal-onboarding-country-select">
+                    <span data-bind="i18n: 'Country'"></span>
+                </label>
+                <div class="admin__field-control control">
+                    <select id="paypal-onboarding-country-select" class="admin__control-select" data-bind="
+                            options: countries,
+                            optionsText: function (item) { return item.name + ' (' + item.code + ')'; },
+                            optionsCaption: selectCountryOptionsCaption,
+                            value: selectedCountry
+                        ">
+                    </select>
+                </div>
+            </div>
+        </fieldset>
+    </div>
+
+    <div data-bind="if: selectedCountry">
+        <h4 data-bind="i18n: 'Select your preferred payments experience'"></h4>
+        <div class="paypal-onboarding-modal-payment-experience-options">
+            <div class="paypal-onboarding-modal-payment-experience-option" data-bind="
+                    css: { selected: isPaymentExperienceSelected('standard'), disabled: !isPaymentExperienceSelected('standard') },
+                    click: function () { selectPaymentExperience('standard'); }
+                ">
+                <div class="paypal-onboarding-modal-payment-experience-option-icon"></div>
+                <h4 data-bind="i18n: 'Standard'"></h4>
+                <hr />
+                <ul>
+                    <li data-bind="i18n: 'Set up quickly to accept debit/credit cards and PayPal at your checkout.'"></li>
+                    <li data-bind="i18n: 'Seller Protection on eligible transactions.'"></li>
+                    <li>
+                        <span data-bind="i18n: 'Access'"></span>
+                        <a href="https://experienceleague.adobe.com/en/docs/commerce/payment-services/get-started/production#advanced-onboarding"
+                           target="_blank"
+                           rel="noopener noreferrer"
+                           data-bind="
+                               i18n: 'Experience League documentation',
+                               click: function () { return true; },
+                               clickBubble: false
+                           "></a>
+                        <span data-bind="i18n: 'for support resources.'"></span>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="paypal-onboarding-modal-payment-experience-option" data-bind="
+                    visible: isSelectedCountryPpcp(),
+                    css: { selected: isPaymentExperienceSelected('advanced'), disabled: !isPaymentExperienceSelected('advanced') },
+                    click: function () { selectPaymentExperience('advanced'); }
+                ">
+                <div class="paypal-onboarding-modal-payment-experience-option-icon"></div>
+                <h4 data-bind="i18n: 'Advanced'"></h4>
+                <hr />
+                <ul>
+                    <li data-bind="i18n: 'Personalize payment options to accept debit/credit cards, PayPal, and digital wallets at multiple touchpoints across your storefront.'"></li>
+                    <li data-bind="i18n: 'Seller Protection on eligible transactions and optional Chargeback Protection and Fraud Protection available.'"></li>
+                    <li data-bind="i18n: 'Customized pricing and L2/L3 processing support available*'"></li>
+                    <li>
+                        <span data-bind="i18n: 'Access'"></span>
+                        <a href="https://experienceleague.adobe.com/en/docs/commerce/payment-services/get-started/production#advanced-onboarding"
+                           target="_blank"
+                           rel="noopener noreferrer"
+                           data-bind="
+                               i18n: 'Experience League documentation',
+                               click: function () { return true; },
+                               clickBubble: false
+                           "></a>
+                        <span data-bind="i18n: 'and Adobe technical support**'"></span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div data-bind="if: selectedCountry">
+        <div data-bind="ifnot: isSelectedCountryPpcp()">
+            <h4 data-bind="i18n: 'Merchant use of Payment Services for Adobe Commerce and Magento Open Source is governed by the following agreement. View and accept the agreement to proceed.'"></h4>
+            <p class="paypal-onboarding-modal-payment-experience-agreement">
+                <a href="https://www.adobe.com/content/dam/cc/en/legal/terms/enterprise/pdfs/AdobeCommerce-Payment_services_agreement.pdf"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    data-bind="
+                        i18n: 'Payment services agreement',
+                        click: handlePaymentServicesAgreementClick
+                    "></a>
+            </p>
+            <p data-bind="i18n: 'By clicking “I accept”, I agree that:'"></p>
+            <ul>
+                <li data-bind="i18n: 'I read and agree to the Payment Services agreement.'"></li>
+                <li data-bind="i18n: 'I am authorized to accept these terms on behalf of my organization.'"></li>
+            </ul>
+        </div>
+
+        <div data-bind="if: isSelectedCountryPpcp()">
+            <p>
+                <span data-bind="i18n: 'Feature availability and pricing may differ by country. Select your country from the list'"></span>
+                <a href="https://www.paypal.com/us/webapps/mpp/country-worldwide"
+                   target="_blank"
+                   rel="noopener noreferrer"
+                   data-bind="i18n: 'here'"></a><span data-bind="i18n: ', and then scroll down to the fees link to see the specific rates for your country.'"></span>
+            </p>
+            <p data-bind="
+                    i18n: '*Learn more about L2/L3 processing eligibility in Experience League or reach out to your Adobe Commerce or Payment Services representative to learn more.'
+                "></p>
+            <p data-bind="
+                    i18n: '**Adobe technical support is available for eligible Adobe Commerce and Magento Open Source customers. Please reach out to your Adobe Commerce or Payment Services representative to learn more.'
+                "></p>
+        </div>
+    </div>
+
+    <div class="paypal-onboarding-modal-payment-experience-continue" data-bind="if: selectedCountry">
+        <button class="button action primary" data-bind="
+                    click: startPayPalOnboarding,
+                    enable: isContinueEnabled(),
+                    text: getContinueButtonLabel()"></button>
+    </div>
+</div>

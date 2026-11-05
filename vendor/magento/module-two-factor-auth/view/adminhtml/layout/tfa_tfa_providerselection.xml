@@ -1,0 +1,28 @@
+<?xml version="1.0"?>
+<!--
+/**
+ * Copyright 2025 Adobe.
+ * All rights reserved.
+ */
+-->
+<page xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:noNamespaceSchemaLocation="urn:magento:framework:View/Layout/etc/page_configuration.xsd">
+    <update handle="admin_login" />
+    <update handle="formkey"/>
+    <update handle="tfa_screen" />
+
+    <head>
+        <css src="Magento_TwoFactorAuth::css/auth.css"/>
+    </head>
+
+    <body>
+        <referenceContainer name="login.content">
+            <block name="content" template="Magento_TwoFactorAuth::tfa/providerselection.phtml">
+                <arguments>
+                    <argument name="view_model" xsi:type="object">Magento\TwoFactorAuth\ViewModel\ProviderSelection</argument>
+                </arguments>
+            </block>
+
+        </referenceContainer>
+    </body>
+</page>

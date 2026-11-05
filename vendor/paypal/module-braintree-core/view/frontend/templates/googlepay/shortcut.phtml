@@ -1,0 +1,60 @@
+<?php
+/**
+ * ADOBE CONFIDENTIAL
+ *
+ * Copyright 2020 Adobe
+ * All Rights Reserved.
+ *
+ * NOTICE: All information contained herein is, and remains
+ * the property of Adobe and its suppliers, if any. The intellectual
+ * and technical concepts contained herein are proprietary to Adobe
+ * and its suppliers and are protected by all applicable intellectual
+ * property laws, including trade secret and copyright laws.
+ * Dissemination of this information or reproduction of this material
+ * is strictly forbidden unless prior written permission is obtained
+ * from Adobe.
+ */
+
+/**
+ * @var Button $block
+ * @var Escaper $escaper
+ */
+
+use Magento\Framework\Escaper;
+use PayPal\Braintree\Block\GooglePay\Shortcut\Button;
+
+try {
+    $id = sprintf('%s%s', $block->getContainerId(), random_int(PHP_INT_MIN, PHP_INT_MAX));
+} catch (Exception $e) {
+    /**
+     * Exception only thrown if an appropriate source of randomness cannot be found.
+     * https://www.php.net/manual/en/function.random-int.php
+     */
+    $id = 0;
+}
+
+$config = [
+    'PayPal_Braintree/js/googlepay/implementations/shortcut' => [
+        'id' => $id,
+        'environment' => $block->getEnvironment(),
+        'clientToken' => $block->getClientToken(),
+        'merchantId' => $block->getMerchantId(),
+        'actionSuccess' => $block->getActionSuccess(),
+        'currencyCode' => $block->getCurrencyCode(),
+        'amount' => $block->getAmount(),
+        'cardTypes' => $block->getAvailableCardTypes(),
+        'btnColor' => $block->getBtnColor(),
+        'threeDSecure' => $block->get3DSecureConfigData(),
+        'storeCode' => $block->getStoreCode(),
+        'quoteId' => $block->getQuoteId(),
+        'skipOrderReviewStep' => $block->skipOrderReviewStep(),
+        'priceIncludesTax' => $block->priceIncludesTax(),
+        'priceFormat' => $block->getPriceFormat(),
+        'multiCouponLimit' => $block->getMultiCouponLimit()
+    ]
+];
+?>
+<div id="<?= $escaper->escapeHtmlAttr($id) ?>"
+     data-mage-init="<?= $escaper->escapeHtmlAttr(json_encode($config)) ?>"
+     class="googlepay-minicart-logo <?= $escaper->escapeHtmlAttr($block->getExtraClassname()) ?>">
+</div>

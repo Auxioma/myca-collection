@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+/**
+ * Copyright 2019 Adobe
+ * All Rights Reserved.
+ */
+-->
+<entities xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:noNamespaceSchemaLocation="urn:magento:mftf:DataGenerator/etc/dataProfileSchema.xsd">
+    <entity name="SecurityTxtPageData">
+        <data key="request_path">.well-known/security.txt</data>
+    </entity>
+    <entity name="SecurityTxtSignaturePageData">
+        <data key="request_path">.well-known/security.txt.sig</data>
+    </entity>
+</entities>

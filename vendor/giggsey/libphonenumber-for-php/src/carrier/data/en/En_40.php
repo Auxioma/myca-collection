@@ -1,0 +1,50 @@
+<?php
+
+/**
+ * libphonenumber-for-php data file
+ * This file has been @generated from libphonenumber data
+ * Do not modify!
+ * @internal
+ */
+
+declare(strict_types=1);
+
+namespace libphonenumber\carrier\data\en;
+
+/**
+ * @internal
+ */
+class En_40
+{
+    public const DATA = [
+        4060 => 'Vodafone',
+        4062 => 'Vodafone',
+        4063 => 'Digi Mobil',
+        4072 => 'Vodafone',
+        4073 => 'Vodafone',
+        4074 => 'Orange',
+        4075 => 'Orange',
+        4076 => 'Vodafone',
+        4077 => 'Digi Mobil',
+        4078 => 'Vodafone',
+        4079 => 'Vodafone',
+        40702 => 'Lycamobile',
+        40705 => 'Iristel',
+        40711 => 'Orange',
+        40712 => 'Orange',
+        40713 => 'Orange',
+        40787 => 'Orange',
+        407000 => 'Enigma-System',
+        407013 => 'Lycamobile',
+        407014 => 'Lycamobile',
+        407015 => 'Lycamobile',
+        407016 => 'Lycamobile',
+        407017 => 'Lycamobile',
+        407018 => 'Lycamobile',
+        407019 => 'Lycamobile',
+        407830 => 'Orange',
+        407831 => 'Orange',
+        407832 => 'Orange',
+        407833 => 'Orange',
+    ];
+}

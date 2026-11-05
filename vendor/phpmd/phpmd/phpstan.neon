@@ -1,0 +1,27 @@
+parameters:
+    paths:
+        - src/
+        - tests/php/
+    rememberPossiblyImpureFunctionValues: false
+    level: max
+    exceptions:
+        reportUncheckedExceptionDeadCatch: true
+        implicitThrows: false
+        check:
+            missingCheckedExceptionInThrows: true
+            tooWideThrowType: true
+    ignoreErrors:
+        -
+            identifier: missingType.checkedException
+            path: tests/*
+        -
+            identifier: method.impossibleType
+            path: src/Rule/UnusedPrivateMethod.php
+            count: 2
+        # Yaml::DUMP_COMPACT_NESTED_MAPPING only exists since symfony/yaml 7.3
+        -
+            identifiers:
+                - assignOp.invalid
+                - argument.type
+            path: src/Config/ConfigDumper.php
+            reportUnmatched: false

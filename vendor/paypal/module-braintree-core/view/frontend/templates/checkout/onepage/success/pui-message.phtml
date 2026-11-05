@@ -1,0 +1,33 @@
+<?php
+/**
+ * ADOBE CONFIDENTIAL
+ *
+ * Copyright 2026 Adobe
+ * All Rights Reserved.
+ *
+ * NOTICE: All information contained herein is, and remains
+ * the property of Adobe and its suppliers, if any. The intellectual
+ * and technical concepts contained herein are proprietary to Adobe
+ * and its suppliers and are protected by all applicable intellectual
+ * property laws, including trade secret and copyright laws.
+ * Dissemination of this information or reproduction of this material
+ * is strictly forbidden unless prior written permission is obtained
+ * from Adobe.
+ */
+
+/** @var Escaper $escaper */
+/** @var PuiSuccess $block */
+
+use Magento\Framework\Escaper;
+use PayPal\Braintree\Block\Onepage\PuiSuccess;
+
+// phpcs:disable Generic.Files.LineLength.TooLong
+?>
+
+<?php if ($block->isPayUponInvoiceLpmAvailable()): ?>
+    <div class="paypal-braintree-pui-message">
+        <p>
+            <?= $escaper->escapeHtml(__("After your order has been processed, you will receive an email from Ratepay (Rechnungskauf mit Ratepay) containing bank details and instructions for payment within 30 days. Please also check your spam folder.")); ?>
+        </p>
+    </div>
+<?php endif; ?>

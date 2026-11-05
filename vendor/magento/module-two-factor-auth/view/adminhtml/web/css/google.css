@@ -1,0 +1,17 @@
+/**
+ * Copyright 2020 Adobe
+ * All Rights Reserved.
+ */
+
+.tfa-google-qr {
+    display: block;
+    margin: 0  auto 3em auto;
+    width: 300px;
+    height: 300px;
+}
+
+.tfa-google-secure-code {
+    word-wrap: break-word;
+    border: 1px solid #cccccc;
+    padding: 7px;
+}

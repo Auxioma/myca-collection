@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+/**
+ * Copyright 2019 Adobe
+ * All Rights Reserved.
+ */
+-->
+
+<actionGroups xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:mftf:Test/etc/actionGroupSchema.xsd">
+    <actionGroup name="StorefrontAssertPickInStoreButtonIsAbsentActionGroup">
+        <annotations>
+            <description>Verifies, pick in store button is not visible on checkout page. Starts on checkout page.</description>
+        </annotations>
+        <dontSeeElement selector="{{StorefrontSelectStoreSection.pickInStoreBtn}}" stepKey="verifyBtn"/>
+    </actionGroup>
+</actionGroups>

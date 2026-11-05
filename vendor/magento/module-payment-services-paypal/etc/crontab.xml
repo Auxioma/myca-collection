@@ -1,0 +1,33 @@
+<?xml version="1.0"?>
+<!--
+/**
+ * ADOBE CONFIDENTIAL
+ *
+ * Copyright 2024 Adobe
+ * All Rights Reserved.
+ *
+ * NOTICE: All information contained herein is, and remains
+ * the property of Adobe and its suppliers, if any. The intellectual
+ * and technical concepts contained herein are proprietary to Adobe
+ * and its suppliers and are protected by all applicable intellectual
+ * property laws, including trade secret and copyright laws.
+ * Dissemination of this information or reproduction of this material
+ * is strictly forbidden unless prior written permission is obtained
+ * from Adobe.
+ */
+-->
+
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Cron:etc/crontab.xsd">
+    <group id="payment_services_order_sync">
+        <job name="sync_order_payment_status" instance="Magento\PaymentServicesPaypal\Cron\SyncOrderPaymentStatus" method="execute">
+            <schedule>*/10 * * * *</schedule>
+        </job>
+    </group>
+    <group id="payment_services_metadata_sync">
+        <job name="sync_payment_services_metadata"
+             instance="Magento\PaymentServicesPaypal\Cron\SyncAPSMetadata"
+             method="execute">
+            <schedule>0 2 * * 0</schedule>
+        </job>
+    </group>
+</config>

@@ -1,0 +1,11 @@
+"Configuration for TwoFactorAuth retry attempts","Configuration for TwoFactorAuth retry attempts"
+"Configuration for TwoFactorAuth lock expire time","Configuration for TwoFactorAuth lock expire time"
+"TwoFactorAuth Configuration","TwoFactorAuth Configuration"
+"Security configurations for TwoFactorAuth page","Security configurations for TwoFactorAuth page"
+"Your account is temporarily disabled.","Your account is temporarily disabled."
+"You need to verify identity in order to proceed to configure new Two-Factor Authorization","You need to verify identity in order to proceed to configure new Two-Factor Authorization"
+"Identity verification failed. Please try again later.","Identity verification failed. Please try again later."
+"Send me a link via email","Send me a link via email"
+"How do you want to verify identity?","How do you want to verify identity?"
+"Use already configured 2FA provider?","Use already configured 2FA provider?"
+

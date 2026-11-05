@@ -1,0 +1,40 @@
+<?php
+/**
+ * Copyright 2015 Adobe
+ * All Rights Reserved.
+ */
+declare(strict_types=1);
+
+namespace Magento\Catalog\Test\Unit\Model\Layer\Filter;
+
+use Magento\Catalog\Model\Layer\Filter\DataProvider\DecimalFactory;
+use Magento\Catalog\Model\Layer\Filter\Decimal;
+use Magento\Catalog\Model\ResourceModel\Eav\Attribute;
+use Magento\Framework\TestFramework\Unit\Helper\ObjectManager;
+use PHPUnit\Framework\TestCase;
+
+class DecimalTest extends TestCase
+{
+    public function testConstructorRequestVarIsOverwrittenCorrectlyInParent()
+    {
+        $attributeModel = $this->createPartialMock(
+            Attribute::class,
+            ['getAttributeCode']
+        );
+        $attributeModel->expects($this->once())->method('getAttributeCode')->willReturn('price1');
+
+        $objectManager = new ObjectManager($this);
+
+        $dataProviderFactory = $this->createPartialMock(DecimalFactory::class, ['create']);
+        $instance = $objectManager->getObject(
+            Decimal::class,
+            [
+                'data' => [
+                    'attribute_model' => $attributeModel,
+                ],
+                'dataProviderFactory' => $dataProviderFactory
+            ]
+        );
+        $this->assertSame('price1', $instance->getRequestVar());
+    }
+}

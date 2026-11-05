@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+/**
+ * ADOBE CONFIDENTIAL
+ *
+ * Copyright 2025 Adobe
+ * All Rights Reserved.
+ *
+ * NOTICE: All information contained herein is, and remains
+ * the property of Adobe and its suppliers, if any. The intellectual
+ * and technical concepts contained herein are proprietary to Adobe
+ * and its suppliers and are protected by all applicable intellectual
+ * property laws, including trade secret and copyright laws.
+ * Dissemination of this information or reproduction of this material
+ * is strictly forbidden unless prior written permission is obtained
+ * from Adobe.
+ */
+-->
+
+<tests xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:noNamespaceSchemaLocation="urn:magento:mftf:Test/etc/testSchema.xsd">
+  <test name="AdminVerifyBraintreeNotAvailableInStagingPreviewCheckoutTest">
+    <annotations>
+      <features value="Magento_Staging"/>
+      <stories value="Staging Preview"/>
+      <title value="Braintree payment method is not available during staging preview checkout"/>
+      <description value="Braintree payment method is not available in checkout during staging preview"/>
+      <severity value="MAJOR"/>
+      <testCaseId value="AC-4637"/>
+      <group value="braintree"/>
+      <group value="3rd_party_integration"/>
+    </annotations>
+    <before>
+    </before>
+    <after>
+      <!-- Logout from Admin -->
+      <actionGroup ref="AdminLogoutActionGroup" stepKey="logout"/>
+    </after>
+  </test>
+</tests>

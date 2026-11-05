@@ -1,0 +1,31 @@
+<!--
+/**
+ * ADOBE CONFIDENTIAL
+ *
+ * Copyright 2026 Adobe
+ * All Rights Reserved.
+ *
+ * NOTICE: All information contained herein is, and remains
+ * the property of Adobe and its suppliers, if any. The intellectual
+ * and technical concepts contained herein are proprietary to Adobe
+ * and its suppliers and are protected by all applicable intellectual
+ * property laws, including trade secret and copyright laws.
+ * Dissemination of this information or reproduction of this material
+ * is strictly forbidden unless prior written permission is obtained
+ * from Adobe.
+ */
+-->
+<div class="paypal-onboarding-modal-success admin__page-section">
+    <div class="messages">
+        <div aria-atomic="true" role="alert" class="message message-success success">
+            <strong data-bind="i18n: 'Success!'"></strong>
+        </div>
+    </div>
+
+    <h4 data-bind="i18n: 'Adobe Commerce and Adobe Payment Services is now integrated.'"></h4>
+    <p data-bind="i18n: 'To complete setup, please enable payment methods on the payment configuration page.'"></p>
+
+    <button class="button action primary" data-bind="
+        click: function () { window.location.reload(); },
+        i18n: 'Finish and Enable Payment Methods'"></button>
+</div>

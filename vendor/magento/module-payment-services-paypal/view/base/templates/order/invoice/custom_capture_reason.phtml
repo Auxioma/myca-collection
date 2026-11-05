@@ -1,0 +1,38 @@
+<?php
+/**
+ * ADOBE CONFIDENTIAL
+ *
+ * Copyright 2026 Adobe
+ * All Rights Reserved.
+ *
+ * NOTICE: All information contained herein is, and remains
+ * the property of Adobe and its suppliers, if any. The intellectual
+ * and technical concepts contained herein are proprietary to Adobe
+ * and its suppliers and are protected by all applicable intellectual
+ * property laws, including trade secret and copyright laws.
+ * Dissemination of this information or reproduction of this material
+ * is strictly forbidden unless prior written permission is obtained
+ * from Adobe.
+ */
+
+/** @var CustomCaptureReason $block */
+/** @var Escaper $escaper */
+
+use Magento\Framework\Escaper;
+use Magento\PaymentServicesPaypal\Block\Order\Invoice\CustomCaptureReason;
+
+?>
+<?php if ($block->hasReason()): ?>
+    <table class="payment-services-custom-capture" role="presentation">
+        <tr>
+            <td class="payment-services-custom-capture-reason">
+                <span class="payment-services-custom-capture-reason-label">
+                    <?= $escaper->escapeHtml(__('* Reason for Additional Amount')) ?>:
+                </span>
+                <span class="payment-services-custom-capture-reason-text">
+                    <?= $escaper->escapeHtml($block->getReason()) ?>
+                </span>
+            </td>
+        </tr>
+    </table>
+<?php endif; ?>

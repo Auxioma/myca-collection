@@ -1,0 +1,61 @@
+<!--
+/**
+ * ADOBE CONFIDENTIAL
+ *
+ * Copyright 2026 Adobe
+ * All Rights Reserved.
+ *
+ * NOTICE: All information contained herein is, and remains
+ * the property of Adobe and its suppliers, if any. The intellectual
+ * and technical concepts contained herein are proprietary to Adobe
+ * and its suppliers and are protected by all applicable intellectual
+ * property laws, including trade secret and copyright laws.
+ * Dissemination of this information or reproduction of this material
+ * is strictly forbidden unless prior written permission is obtained
+ * from Adobe.
+ */
+-->
+<div data-bind="visible: captureCaseType() === 'online'">
+    <div class="admin__field">
+        <label for="custom_capture_amount" class="admin__field-label">
+            <strong data-bind="i18n: 'Additional Amount'"></strong>
+        </label>
+        <div class="admin__field-control">
+            <div class="admin__field-note">
+                <span data-bind="i18n: 'Enter additional amount to be added to the order total. Validated against your PayPal agreement on submission.'"></span>
+            </div>
+            <input id="custom_capture_amount"
+                   name="invoice[custom_capture_amount]"
+                   class="admin__control-text"
+                   type="text"
+                   data-bind="value: customCaptureAmount, valueUpdate: 'input'">
+            <div class="mage-error" role="alert" data-bind="visible: amountError, text: amountError"></div>
+        </div>
+    </div>
+    <div class="admin__field">
+        <label for="custom_capture_amount_reason" class="admin__field-label">
+            <strong data-bind="i18n: 'Reason for Additional Amount'"></strong>
+        </label>
+        <div class="admin__field-control">
+            <div class="admin__field-note">
+                <span data-bind="i18n: 'Shown to the customer in order communications (emails).'"></span>
+            </div>
+            <input id="custom_capture_amount_reason"
+                   name="invoice[custom_capture_amount_reason]"
+                   class="admin__control-text"
+                   maxlength="255"
+                   type="text"
+                   data-bind="value: customCaptureReason">
+        </div>
+    </div>
+    <div class="admin__field" data-bind="visible: hasAmount()">
+        <div class="admin__field-control">
+            <button id="custom_capture_update_totals"
+                    type="button"
+                    class="action-default scalable update-totals-button"
+                    data-bind="click: reloadTotals, enable: !amountError(), attr: {title: $t('Update Totals')}">
+                <span data-bind="i18n: 'Update Totals'"></span>
+            </button>
+        </div>
+    </div>
+</div>

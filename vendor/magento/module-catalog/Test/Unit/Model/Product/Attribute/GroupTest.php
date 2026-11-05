@@ -1,0 +1,70 @@
+<?php
+/**
+ * Copyright 2015 Adobe
+ * All Rights Reserved.
+ */
+declare(strict_types=1);
+
+namespace Magento\Catalog\Test\Unit\Model\Product\Attribute;
+
+use Magento\Catalog\Model\Product\Attribute\Group;
+use Magento\Catalog\Model\ResourceModel\Product\Attribute\Collection;
+use Magento\Catalog\Model\ResourceModel\Product\Attribute\CollectionFactory;
+use Magento\Framework\DataObject;
+use Magento\Framework\TestFramework\Unit\Helper\ObjectManager;
+use PHPUnit\Framework\TestCase;
+
+class GroupTest extends TestCase
+{
+    /**
+     * @var Group
+     */
+    private $model;
+
+    public function testHasSystemAttributes()
+    {
+        $this->model->setId(1);
+        $this->assertTrue($this->model->hasSystemAttributes());
+    }
+
+    protected function setUp(): void
+    {
+        $helper = new ObjectManager($this);
+        $this->model = $helper->getObject(
+            Group::class,
+            [
+                'attributeCollectionFactory' => $this->getMockedCollectionFactory()
+            ]
+        );
+    }
+
+    /**
+     * @return CollectionFactory
+     */
+    private function getMockedCollectionFactory()
+    {
+        $mockedCollection = $this->getMockedCollection();
+
+        $mock = $this->createPartialMock(CollectionFactory::class, ['create']);
+
+        $mock->method('create')->willReturn($mockedCollection);
+
+        return $mock;
+    }
+
+    /**
+     * @return Collection
+     */
+    private function getMockedCollection()
+    {
+        $mock = $this->createMock(Collection::class);
+
+        $item = new DataObject();
+        $item->setIsUserDefine(false);
+
+        $mock->method('setAttributeGroupFilter')->willReturn($mock);
+        $mock->method('getIterator')->willReturn(new \ArrayIterator([$item]));
+
+        return $mock;
+    }
+}

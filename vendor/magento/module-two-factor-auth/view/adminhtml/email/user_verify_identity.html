@@ -1,0 +1,22 @@
+<!--
+/**
+ * Copyright 2025 Adobe.
+ * All rights reserved.
+ */
+-->
+<!--@subject {{trans "2FA user identity verification required for %name" name=$username}} @-->
+<!--@vars {
+"var username":"Admin User Name",
+"var store_name":"Current Store (Website) Name",
+"var token":"Token query parameter",
+"var url":"URL to User 2FA Configuration Page"
+} @-->
+
+<p>{{var username}},</p>
+<p>
+    {{trans "You need to verify identity in order to proceed to configure new Two-Factor Authorization for %store" store=$store_name}}
+</p>
+<p>
+    {{trans "To do that please <a href="%url">Click here</a>" url=$url |noescape}}
+</p>
+<p>{{trans "Thank you, %store" store=$store_name}}</p>
