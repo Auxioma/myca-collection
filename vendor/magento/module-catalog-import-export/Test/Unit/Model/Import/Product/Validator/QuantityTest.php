@@ -1,0 +1,64 @@
+<?php
+/**
+ * Copyright 2016 Adobe
+ * All Rights Reserved.
+ */
+declare(strict_types=1);
+
+namespace Magento\CatalogImportExport\Test\Unit\Model\Import\Product\Validator;
+
+use PHPUnit\Framework\Attributes\DataProvider;
+use Magento\CatalogImportExport\Model\Import\Product;
+use Magento\CatalogImportExport\Model\Import\Product\Validator\Quantity;
+use Magento\ImportExport\Model\Import;
+use PHPUnit\Framework\TestCase;
+
+class QuantityTest extends TestCase
+{
+    /**
+     * @var Quantity
+     */
+    private $quantity;
+
+    protected function setUp(): void
+    {
+        $this->quantity = new Quantity();
+
+        $contextStub = $this->createMock(Product::class);
+        $contextStub->method('getEmptyAttributeValueConstant')->willReturn(Import::DEFAULT_EMPTY_ATTRIBUTE_VALUE_CONSTANT);
+
+        $contextStub->method('retrieveMessageTemplate')->willReturn('some template');
+        $this->quantity->init($contextStub);
+    }
+
+    /**
+     * @param bool $expectedResult
+     * @param array $value
+     */
+    #[DataProvider('isValidDataProvider')]
+    public function testIsValid($expectedResult, $value)
+    {
+        $result = $this->quantity->isValid($value);
+        $this->assertEquals($expectedResult, $result);
+    }
+
+    /**
+     * @return array
+     */
+    public static function isValidDataProvider()
+    {
+        return [
+            [true, ['qty' => 0]],
+            [true, ['qty' => 1]],
+            [true, ['qty' => 5]],
+            [true, ['qty' => -1]],
+            [true, ['qty' => -10]],
+            [true, ['qty' => '']],
+            [false, ['qty' => 'abc']],
+            [false, ['qty' => true]],
+            [false, ['qty' => true]],
+            [true, ['qty' => Import::DEFAULT_EMPTY_ATTRIBUTE_VALUE_CONSTANT]],
+            [false, ['qty' => '__EMPTY__VALUE__TEST__']],
+        ];
+    }
+}

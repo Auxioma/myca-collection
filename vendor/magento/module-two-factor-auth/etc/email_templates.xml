@@ -1,0 +1,12 @@
+<?xml version="1.0"?>
+<!--
+/**
+ * Copyright 2020 Adobe
+ * All Rights Reserved.
+ */
+-->
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Email:etc/email_templates.xsd">
+    <template id="tfa_admin_user_config_required" label="2FA Configuration Required by User" file="user_config_required.html" type="html" module="Magento_TwoFactorAuth" area="adminhtml"/>
+    <template id="tfa_admin_app_config_required" label="2FA Configuration Required for the Application" file="app_config_required.html" type="html" module="Magento_TwoFactorAuth" area="adminhtml"/>
+    <template id="user_identity_verify" label="2FA user identity verification required for the Application" file="user_verify_identity.html" type="html" module="Magento_TwoFactorAuth" area="adminhtml"/>
+</config>

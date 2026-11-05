@@ -1,0 +1,169 @@
+<?php
+/**
+ * Copyright 2016 Adobe
+ * All Rights Reserved.
+ */
+declare(strict_types=1);
+
+namespace Magento\Theme\Test\Unit\Model\Design\Config\DataProvider;
+
+use Magento\Framework\App\Request\Http;
+use Magento\Framework\App\ScopeFallbackResolverInterface;
+use Magento\Framework\TestFramework\Unit\Helper\MockCreationTrait;
+use Magento\Store\Model\StoreManagerInterface;
+use Magento\Theme\Api\Data\DesignConfigDataInterface;
+use Magento\Theme\Api\Data\DesignConfigExtensionInterface;
+use Magento\Theme\Api\Data\DesignConfigInterface;
+use Magento\Theme\Api\DesignConfigRepositoryInterface;
+use Magento\Theme\Model\Design\Config\DataProvider\MetadataLoader;
+use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\TestCase;
+use PHPUnit\Framework\Attributes\DataProvider;
+
+class MetadataLoaderTest extends TestCase
+{
+    use MockCreationTrait;
+
+    /**
+     * @var MetadataLoader
+     */
+    protected $model;
+
+    /**
+     * @var Http|MockObject
+     */
+    protected $request;
+
+    /**
+     * @var ScopeFallbackResolverInterface|MockObject
+     */
+    protected $scopeFallbackResolver;
+
+    /**
+     * @var DesignConfigRepositoryInterface|MockObject
+     */
+    protected $designConfigRepository;
+
+    /**
+     * @var DesignConfigInterface|MockObject
+     */
+    protected $designConfig;
+
+    /**
+     * @var DesignConfigDataInterface|MockObject
+     */
+    protected $designConfigData;
+
+    /**
+     * @var DesignConfigExtensionInterface|MockObject
+     */
+    protected $designConfigExtension;
+
+    /**
+     * @var StoreManagerInterface|MockObject
+     */
+    protected $storeManager;
+
+    protected function setUp(): void
+    {
+        $this->request = $this->getMockBuilder(Http::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+
+        $this->scopeFallbackResolver = $this->createMock(ScopeFallbackResolverInterface::class);
+
+        $this->designConfigRepository = $this->createMock(DesignConfigRepositoryInterface::class);
+        $this->designConfig = $this->createMock(DesignConfigInterface::class);
+        $this->designConfigData = $this->createMock(DesignConfigDataInterface::class);
+        $this->designConfigExtension = $this->createPartialMockWithReflection(
+            DesignConfigExtensionInterface::class,
+            ['getDesignConfigData']
+        );
+        $this->storeManager = $this->createMock(StoreManagerInterface::class);
+
+        $this->model = new MetadataLoader(
+            $this->request,
+            $this->scopeFallbackResolver,
+            $this->designConfigRepository,
+            $this->storeManager
+        );
+    }
+
+    /**
+     * @param string $scope
+     * @param string $scopeId
+     * @param string $showFallbackReset
+     */
+    #[DataProvider('dataProviderGetData')]
+    public function testGetData(
+        $scope,
+        $scopeId,
+        $showFallbackReset
+    ) {
+        $this->request->expects($this->exactly(2))
+            ->method('getParam')
+            ->willReturnMap([
+                ['scope', null, $scope],
+                ['scope_id', null, $scopeId],
+            ]);
+
+        $this->scopeFallbackResolver->expects($this->atLeastOnce())
+            ->method('getFallbackScope')
+            ->with($scope, $scopeId)
+            ->willReturn([$scope, $scopeId]);
+        $this->storeManager->expects($this->once())
+            ->method('isSingleStoreMode')
+            ->willReturn(false);
+
+        $this->designConfigRepository->expects($this->once())
+            ->method('getByScope')
+            ->with($scope, $scopeId)
+            ->willReturn($this->designConfig);
+        $this->designConfig->expects($this->once())
+            ->method('getExtensionAttributes')
+            ->willReturn($this->designConfigExtension);
+        $this->designConfigExtension->expects($this->once())
+            ->method('getDesignConfigData')
+            ->willReturn([$this->designConfigData]);
+        $this->designConfigData->expects($this->atLeastOnce())
+            ->method('getFieldConfig')
+            ->willReturn([
+                'field' => 'field',
+                'fieldset' => 'fieldset1'
+            ]);
+        $this->designConfigData->expects($this->once())
+            ->method('getValue')
+            ->willReturn('value');
+
+        $result = $this->model->getData();
+        $expected = [
+            'fieldset1' => [
+                'children' => [
+                    'field' => [
+                        'arguments' => [
+                            'data' => [
+                                'config' => [
+                                    'default' => 'value',
+                                    'showFallbackReset' => $showFallbackReset,
+                                ],
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+        ];
+
+        $this->assertEquals($expected, $result);
+    }
+
+    /**
+     * @return array
+     */
+    public static function dataProviderGetData()
+    {
+        return [
+            ['default', 0, 1],
+            ['websites', 1, 1],
+        ];
+    }
+}

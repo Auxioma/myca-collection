@@ -1,0 +1,127 @@
+<?php
+/**
+ * Copyright 2019 Adobe
+ * All Rights Reserved.
+ */
+declare(strict_types=1);
+
+namespace Magento\ImportExport\Model\Export;
+
+use Magento\Framework\App\Filesystem\DirectoryList;
+use Magento\Framework\Exception\FileSystemException;
+use Magento\Framework\Exception\LocalizedException;
+use Magento\Framework\Filesystem;
+use Magento\Framework\Filesystem\Directory\WriteInterface;
+use Magento\Framework\App\ObjectManager;
+use Magento\ImportExport\Api\Data\LocalizedExportInfoInterface;
+use Magento\ImportExport\Api\ExportManagementInterface;
+use Magento\Framework\Notification\NotifierInterface;
+
+/**
+ * Consumer for export message.
+ */
+class Consumer
+{
+    /**
+     * Internal marker returned by export model for queue flow direct-to-file writes.
+     */
+    private const RESULT_WRITTEN_TO_FILE = '__RESULT_WRITTEN_TO_FILE__';
+
+    /**
+     * @var NotifierInterface
+     */
+    private $notifier;
+
+    /**
+     * @var \Psr\Log\LoggerInterface
+     */
+    private $logger;
+
+    /**
+     * @var ExportManagementInterface
+     */
+    private $exportManager;
+
+    /**
+     * @var Filesystem
+     */
+    private $filesystem;
+
+    /**
+     * @var FileInfo
+     */
+    private $fileInfo;
+
+    /**
+     * Consumer constructor.
+     * @param \Psr\Log\LoggerInterface $logger
+     * @param ExportManagementInterface $exportManager
+     * @param Filesystem $filesystem
+     * @param NotifierInterface $notifier
+     * @param FileInfo|null $fileInfo
+     */
+    public function __construct(
+        \Psr\Log\LoggerInterface $logger,
+        ExportManagementInterface $exportManager,
+        Filesystem $filesystem,
+        NotifierInterface $notifier,
+        ?FileInfo $fileInfo = null
+    ) {
+        $this->logger = $logger;
+        $this->exportManager = $exportManager;
+        $this->filesystem = $filesystem;
+        $this->notifier = $notifier;
+        $this->fileInfo = $fileInfo ?? ObjectManager::getInstance()->get(FileInfo::class);
+    }
+
+    /**
+     * Consumer logic.
+     *
+     * @param LocalizedExportInfoInterface $exportInfo
+     * @return void
+     */
+    public function process(LocalizedExportInfoInterface $exportInfo)
+    {
+        try {
+            $fileName = $exportInfo->getFileName();
+            $data = $this->exportManager->export($exportInfo);
+            $directory = $this->filesystem->getDirectoryWrite(DirectoryList::VAR_IMPORT_EXPORT);
+            if ($data !== self::RESULT_WRITTEN_TO_FILE) {
+                $directory->writeFile('export/' . $fileName, $data);
+            } else {
+                $this->publishFile($directory, $fileName);
+            }
+
+            $this->notifier->addMajor(
+                __('Your export file is ready'),
+                __('You can pick up your file at export main page')
+            );
+        } catch (LocalizedException | FileSystemException $exception) {
+            $this->notifier->addCritical(
+                __('Error during export process occurred'),
+                __('Error during export process occurred. Please check logs for detail')
+            );
+            $this->logger->critical('Something went wrong while export process. ' . $exception->getMessage());
+        }
+    }
+
+    /**
+     * Publish temporary export file to its final location.
+     *
+     * @param WriteInterface $directory
+     * @param string $fileName
+     * @return void
+     * @throws FileSystemException
+     * @throws LocalizedException
+     */
+    private function publishFile(WriteInterface $directory, string $fileName): void
+    {
+        $inProgressFilePath = $this->fileInfo->getInProgressFilePath($fileName);
+        $targetFilePath = 'export/' . $fileName;
+        if (!$directory->isFile($inProgressFilePath)) {
+            throw new LocalizedException(__('Export file was not created.'));
+        }
+
+        $directory->renameFile($inProgressFilePath, $targetFilePath);
+    }
+}

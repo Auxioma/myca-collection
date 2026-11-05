@@ -1,0 +1,25 @@
+<?php
+/**
+ * Copyright 2018 Adobe
+ * All Rights Reserved.
+ */
+
+/**
+ * @var Magento\PageBuilder\Block\WysiwygSetup $block
+ * @var Magento\Framework\View\Helper\SecureHtmlRenderer $secureRenderer
+ */
+
+?>
+<?php
+$config = $block->getConfigJson();
+$script = <<<SCRIPT
+    require.config({
+        config: {
+            'mage/adminhtml/wysiwyg/tiny_mce/setup': {
+                config: {$config}
+            }
+        }
+    });
+SCRIPT;
+?>
+<?= /* @noEscape */ $secureRenderer->renderTag('script', [], $script, false) ?>

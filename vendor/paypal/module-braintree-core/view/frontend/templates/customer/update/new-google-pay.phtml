@@ -1,0 +1,73 @@
+<?php
+/**
+ * ADOBE CONFIDENTIAL
+ *
+ * Copyright 2025 Adobe
+ * All Rights Reserved.
+ *
+ * NOTICE: All information contained herein is, and remains
+ * the property of Adobe and its suppliers, if any. The intellectual
+ * and technical concepts contained herein are proprietary to Adobe
+ * and its suppliers and are protected by all applicable intellectual
+ * property laws, including trade secret and copyright laws.
+ * Dissemination of this information or reproduction of this material
+ * is strictly forbidden unless prior written permission is obtained
+ * from Adobe.
+ */
+
+// @codingStandardsIgnoreFile
+/**
+ * Store(Vault) New Google Pay Account
+ *
+ * @var Button $block
+ * @var Escaper $escaper
+ * @var BraintreeGooglePayConfig $braintreeGooglePayConfigViewModel
+ */
+
+use Magento\Framework\Escaper;
+use PayPal\Braintree\Block\GooglePay\Shortcut\Button;
+use PayPal\Braintree\ViewModel\BraintreeGooglePayConfig;
+
+$braintreeGooglePayConfigViewModel = $block->getData('braintreeGooglePayConfigViewModel');
+$isGooglePayActive = $braintreeGooglePayConfigViewModel->isActive();
+$isGooglePayVaultEnabled = $braintreeGooglePayConfigViewModel->isGooglePayVaultEnabled();
+?>
+<?php if ($isGooglePayActive && $isGooglePayVaultEnabled): ?>
+    <div data-bind="scope: 'new-form-braintree-google-pay'">
+        <h2><?= $escaper->escapeHtml(__('Add a new Google Pay account')); ?></h2>
+        <p><?= $escaper->escapeHtml(__(
+            'Please note you will be taken away from the site to update your Google Pay details.'
+            )) ?>
+        </p>
+        <!-- ko template: getTemplate() --><!-- /ko -->
+    </div>
+
+    <script type="text/x-magento-init">
+        {
+            "*": {
+                "Magento_Ui/js/core/app": {
+                    "components": {
+                        "new-form-braintree-google-pay": {
+                            "component": "PayPal_Braintree/js/customer/payment/braintree-google-pay",
+                            "template" : "PayPal_Braintree/customer/payment/braintree-google-pay",
+                            "id": "google-pay_container_account",
+                            "environment": "<?= /* @noEscape */ $block->getEnvironment(); ?>",
+                            "clientToken": "<?= /* @noEscape */ $block->getClientToken(); ?>",
+                            "merchantId": "<?= /* @noEscape */ $block->getMerchantId(); ?>",
+                            "actionSuccess": "<?= /* @noEscape */ $block->getActionSuccess(); ?>",
+                            "currencyCode": "<?= /* @noEscape */ $block->getCurrencyCode(); ?>",
+                            "amount": "0",
+                            "cardTypes": <?= /* @noEscape */ json_encode($block->getAvailableCardTypes()); ?>,
+                            "btnColor": "<?= /* @noEscape */ $block->getBtnColor(); ?>",
+                            "threeDSecure": <?= /* @noEscape */ json_encode($block->get3DSecureConfigData()); ?>,
+                            "storeCode": "<?= /* @noEscape */ $block->getStoreCode(); ?>",
+                            "quoteId": "<?= /* @noEscape */ $block->getQuoteId(); ?>",
+                            "skipOrderReviewStep": "<?= /* @noEscape */ $block->skipOrderReviewStep(); ?>",
+                            "priceIncludesTax": "<?= /* @noEscape */ $block->priceIncludesTax(); ?>"
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+<?php endif; ?>

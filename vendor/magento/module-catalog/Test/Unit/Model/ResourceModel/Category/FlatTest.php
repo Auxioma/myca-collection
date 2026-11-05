@@ -1,0 +1,183 @@
+<?php
+/**
+ * Copyright 2016 Adobe
+ * All Rights Reserved.
+ */
+declare(strict_types=1);
+
+namespace Magento\Catalog\Test\Unit\Model\ResourceModel\Category;
+
+use Magento\Catalog\Model\ResourceModel\Category\Flat;
+use Magento\Catalog\Model\ResourceModel\Category\Flat\Collection;
+use Magento\Catalog\Model\ResourceModel\Category\Flat\CollectionFactory;
+use Magento\Framework\App\ResourceConnection;
+use Magento\Framework\DB\Adapter\AdapterInterface as Adapter;
+use Magento\Framework\DB\Select;
+use Magento\Framework\Model\ResourceModel\Db\Context;
+use Magento\Framework\TestFramework\Unit\Helper\ObjectManager;
+use Magento\Store\Model\Store;
+use Magento\Store\Model\StoreManagerInterface;
+use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\TestCase;
+
+/**
+ * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
+ */
+class FlatTest extends TestCase
+{
+    private const STORE_ID = 1;
+    private const TABLE_NAME = 'test_table';
+    private const PARENT_PATH = '1';
+    private const SORTED = false;
+    private const PARENT = 1;
+    private const RECURSION_LEVEL = 0;
+
+    /**
+     * @var CollectionFactory|MockObject
+     */
+    private $categoryCollectionFactoryMock;
+
+    /**
+     * @var Collection|MockObject
+     */
+    private $categoryCollectionMock;
+
+    /**
+     * @var Flat
+     */
+    private $model;
+
+    /**
+     * @var ObjectManager
+     */
+    private $objectManager;
+
+    /**
+     * @var Select|MockObject
+     */
+    private $selectMock;
+
+    /**
+     * @var Adapter|MockObject
+     */
+    private $connectionMock;
+
+    /**
+     * @var ResourceConnection|MockObject
+     */
+    private $resourceMock;
+
+    /**
+     * @var Context|MockObject
+     */
+    private $contextMock;
+
+    /**
+     * @var Store|MockObject
+     */
+    private $storeMock;
+
+    /**
+     * @var StoreManagerInterface|MockObject
+     */
+    private $storeManagerMock;
+
+    /**
+     * {@inheritdoc}
+     */
+    protected function setUp(): void
+    {
+        $this->objectManager = new ObjectManager($this);
+
+        $this->selectMock = $this->createPartialMock(Select::class, ['where', 'from']);
+        $this->selectMock->expects($this->once())
+            ->method('where')
+            ->willReturn($this->selectMock);
+        $this->selectMock->expects($this->once())
+            ->method('from')
+            ->willReturn($this->selectMock);
+        $this->connectionMock = $this->createMock(Adapter::class);
+        $this->connectionMock->expects($this->once())
+            ->method('select')
+            ->willReturn($this->selectMock);
+        $this->connectionMock->expects($this->once())
+            ->method('fetchOne')
+            ->with($this->selectMock)
+            ->willReturn(self::PARENT_PATH);
+        $this->resourceMock = $this->createPartialMock(ResourceConnection::class, ['getConnection', 'getTableName']);
+        $this->resourceMock->method('getConnection')->willReturn($this->connectionMock);
+        $this->resourceMock->method('getTableName')->willReturn(self::TABLE_NAME);
+        $this->contextMock = $this->createPartialMock(Context::class, ['getResources']);
+        $this->contextMock->method('getResources')->willReturn($this->resourceMock);
+
+        $this->storeMock = $this->createPartialMock(Store::class, ['getId']);
+        $this->storeMock->method('getId')->willReturn(self::STORE_ID);
+        $this->storeManagerMock = $this->createMock(StoreManagerInterface::class);
+        $this->storeManagerMock->method('getStore')->willReturn($this->storeMock);
+    }
+
+    public function testGetCategories()
+    {
+        $this->categoryCollectionFactoryMock = $this->createPartialMock(CollectionFactory::class, ['create']);
+        $this->categoryCollectionMock = $this->createPartialMock(
+            Collection::class,
+            [
+                    'addNameToResult',
+                    'addUrlRewriteToResult',
+                    'addParentPathFilter',
+                    'addStoreFilter',
+                    'addIsActiveFilter',
+                    'addAttributeToFilter',
+                    'addSortedField',
+                    'load'
+                ]
+        );
+        $this->categoryCollectionMock->expects($this->once())
+            ->method('addNameToResult')
+            ->willReturn($this->categoryCollectionMock);
+        $this->categoryCollectionMock->expects($this->once())
+            ->method('addUrlRewriteToResult')
+            ->willReturn($this->categoryCollectionMock);
+        $this->categoryCollectionMock->expects($this->once())
+            ->method('addParentPathFilter')
+            ->with(self::PARENT_PATH)
+            ->willReturn($this->categoryCollectionMock);
+        $this->categoryCollectionMock->expects($this->once())
+            ->method('addStoreFilter')
+            ->willReturn($this->categoryCollectionMock);
+        $this->categoryCollectionMock->expects($this->once())
+            ->method('addIsActiveFilter')
+            ->willReturn($this->categoryCollectionMock);
+        $this->categoryCollectionMock->expects($this->once())
+            ->method('addSortedField')
+            ->with(self::SORTED)
+            ->willReturn($this->categoryCollectionMock);
+        $this->categoryCollectionMock->expects($this->once())
+            ->method('addAttributeToFilter')
+            ->with('include_in_menu', 1)
+            ->willReturn($this->categoryCollectionMock);
+        $this->categoryCollectionMock->expects($this->once())
+            ->method('load')
+            ->willReturn($this->categoryCollectionMock);
+        $this->categoryCollectionFactoryMock->expects($this->once())
+            ->method('create')
+            ->willReturn($this->categoryCollectionMock);
+
+        $this->model = $this->objectManager->getObject(
+            Flat::class,
+            [
+                'context' => $this->contextMock,
+                'storeManager' => $this->storeManagerMock,
+            ]
+        );
+
+        $reflection = new \ReflectionClass(get_class($this->model));
+        $reflectionProperty = $reflection->getProperty('categoryFlatCollectionFactory');
+        $reflectionProperty->setValue($this->model, $this->categoryCollectionFactoryMock);
+
+        $this->assertEquals(
+            $this->model->getCategories(self::PARENT, self::RECURSION_LEVEL, self::SORTED, true),
+            $this->categoryCollectionMock
+        );
+    }
+}

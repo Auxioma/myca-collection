@@ -1,0 +1,32 @@
+<!--
+/**
+ * ADOBE CONFIDENTIAL
+ *
+ * Copyright 2026 Adobe
+ * All Rights Reserved.
+ *
+ * NOTICE: All information contained herein is, and remains
+ * the property of Adobe and its suppliers, if any. The intellectual
+ * and technical concepts contained herein are proprietary to Adobe
+ * and its suppliers and are protected by all applicable intellectual
+ * property laws, including trade secret and copyright laws.
+ * Dissemination of this information or reproduction of this material
+ * is strictly forbidden unless prior written permission is obtained
+ * from Adobe.
+ */
+-->
+<div class="paypal-onboarding-modal-disconnect-global-account admin__page-section">
+    <h4 data-bind="i18n: 'Disconnect from the currently connected account?'"></h4>
+
+    <p data-bind="i18n: 'If you continue, this website will be disconnected from its current account and all future payments for this website will use the new payment account instead.'"></p>
+    <p data-bind="i18n: 'This change only affects this website.'"></p>
+
+    <div class="paypal-onboarding-modal-disconnect-global-account-actions">
+        <button class="button action secondary" data-bind="
+                    click: cancel,
+                    i18n: 'Cancel'"></button>
+        <button class="button action primary" data-bind="
+                    click: confirmAndConnectNewAccount,
+                    i18n: 'Confirm and connect new account'"></button>
+    </div>
+</div>

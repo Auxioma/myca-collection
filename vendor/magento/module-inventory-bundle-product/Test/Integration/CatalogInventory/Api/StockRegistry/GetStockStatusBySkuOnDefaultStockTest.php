@@ -1,0 +1,79 @@
+<?php
+/**
+ * Copyright 2018 Adobe
+ * All Rights Reserved.
+ */
+declare(strict_types=1);
+
+namespace Magento\InventoryBundleProduct\Test\Integration\CatalogInventory\Api\StockRegistry;
+
+use Magento\CatalogInventory\Api\StockRegistryInterface;
+use Magento\InventoryCatalogApi\Api\DefaultStockProviderInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
+use PHPUnit\Framework\Attributes\DataProvider;
+
+class GetStockStatusBySkuOnDefaultStockTest extends TestCase
+{
+    /**
+     * @var StockRegistryInterface
+     */
+    private $stockRegistry;
+
+    /**
+     * @var DefaultStockProviderInterface
+     */
+    private $defaultStockProvider;
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        $this->stockRegistry = Bootstrap::getObjectManager()->get(StockRegistryInterface::class);
+        $this->defaultStockProvider = Bootstrap::getObjectManager()->get(DefaultStockProviderInterface::class);
+    }
+
+    /**
+     * @magentoDataFixture Magento_InventoryBundleProduct::Test/_files/default_stock_bundle_products.php
+     *
+     * @param string $sku
+     * @param int $status
+     * @return void
+     */
+    #[DataProvider('getStockDataProvider')]
+    public function testGetStatusIfScopeIdParameterIsNotPassed(string $sku, int $status): void
+    {
+        $stockStatus = $this->stockRegistry->getStockStatusBySku($sku);
+
+        self::assertEquals($status, $stockStatus->getStockStatus());
+        self::assertEquals(0, $stockStatus->getQty());
+    }
+
+    /**
+     * @magentoDataFixture Magento_InventoryBundleProduct::Test/_files/default_stock_bundle_products.php
+     *
+     * @param string $sku
+     * @param int $status
+     * @return void
+     */
+    #[DataProvider('getStockDataProvider')]
+    public function testGetStatusIfScopeIdParameterIsPassed(string $sku, int $status): void
+    {
+        $stockStatus = $this->stockRegistry->getStockStatusBySku($sku, $this->defaultStockProvider->getId());
+
+        self::assertEquals($status, $stockStatus->getStockStatus());
+        self::assertEquals(0, $stockStatus->getQty());
+    }
+
+    /**
+     * @return array
+     */
+    public static function getStockDataProvider(): array
+    {
+        return [
+            ['bundle-product-in-stock', 1],
+            ['bundle-product-out-of-stock', 0]
+        ];
+    }
+}

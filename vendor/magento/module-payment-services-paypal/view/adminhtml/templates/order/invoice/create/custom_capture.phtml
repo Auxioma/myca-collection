@@ -1,0 +1,53 @@
+<?php
+/**
+ * ADOBE CONFIDENTIAL
+ *
+ * Copyright 2026 Adobe
+ * All Rights Reserved.
+ *
+ * NOTICE: All information contained herein is, and remains
+ * the property of Adobe and its suppliers, if any. The intellectual
+ * and technical concepts contained herein are proprietary to Adobe
+ * and its suppliers and are protected by all applicable intellectual
+ * property laws, including trade secret and copyright laws.
+ * Dissemination of this information or reproduction of this material
+ * is strictly forbidden unless prior written permission is obtained
+ * from Adobe.
+ */
+
+/** @var CustomCapture $block */
+/** @var Escaper $escaper */
+
+use Magento\Framework\Escaper;
+use Magento\PaymentServicesPaypal\Block\Adminhtml\Order\Invoice\Create\CustomCapture;
+
+?>
+<?php if ($block->isAvailable()): ?>
+    <div class="admin__field admin__field-option">
+        <?php
+        $mageInit = [
+            'Magento_Ui/js/core/app' => [
+                'components' => [
+                    'payment-services-custom-capture' => [
+                        'component' => 'Magento_PaymentServicesPaypal/js/custom-capture',
+                        'containerSelector' => '#payment-services-custom-capture',
+                        'customCaptureAmount' => $block->getAmount(),
+                        'customCaptureReason' => $block->getReason(),
+                        'updateTotalsUrl' => $block->getUpdateTotalsUrl(),
+                        'targetId' => '#invoice_item_container',
+                    ],
+                ],
+            ],
+        ];
+        ?>
+        <div id="payment-services-custom-capture"
+            class="payment-services-custom-capture"
+            data-bind="scope: 'payment-services-custom-capture'"
+            data-mage-init="<?= $escaper->escapeHtmlAttr(json_encode(
+                $mageInit,
+                JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT
+            )) ?>">
+            <!-- ko template: getTemplate() --><!-- /ko -->
+        </div>
+    </div>
+<?php endif; ?>

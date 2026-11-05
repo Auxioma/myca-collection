@@ -1,0 +1,20 @@
+<!--
+/**
+ * Copyright 2019 Adobe
+ * All Rights Reserved.
+ */
+-->
+<div id="delivery-method-selector" class="step-content">
+    <button
+        class="action action-select-shipping"
+        css="'selected': !isStorePickupSelected()"
+        click="selectShipping"
+        translate="'Shipping'"
+    ></button>
+    <button
+        class="action action-select-store-pickup"
+        css="'selected': isStorePickupSelected()"
+        click="selectStorePickup"
+        translate="'Pick in Store'"
+    ></button>
+</div>

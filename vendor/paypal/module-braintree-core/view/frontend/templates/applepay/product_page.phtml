@@ -1,0 +1,53 @@
+<?php
+/**
+ * ADOBE CONFIDENTIAL
+ *
+ * Copyright 2025 Adobe
+ * All Rights Reserved.
+ *
+ * NOTICE: All information contained herein is, and remains
+ * the property of Adobe and its suppliers, if any. The intellectual
+ * and technical concepts contained herein are proprietary to Adobe
+ * and its suppliers and are protected by all applicable intellectual
+ * property laws, including trade secret and copyright laws.
+ * Dissemination of this information or reproduction of this material
+ * is strictly forbidden unless prior written permission is obtained
+ * from Adobe.
+ */
+
+/** @var ProductPage $block */
+/** @var Escaper $escaper */
+
+use Magento\Framework\Escaper;
+use PayPal\Braintree\Block\ApplePay\Shortcut\ProductPage;
+
+try {
+    $id = sprintf('%s%s', $block->getContainerId(), random_int(PHP_INT_MIN, PHP_INT_MAX));
+} catch (Exception $e) {
+    /**
+     * Exception only thrown if an appropriate source of randomness cannot be found.
+     * https://www.php.net/manual/en/function.random-int.php
+     */
+    $id = 0;
+}
+
+$config = [
+    'PayPal_Braintree/js/applepay/implementations/product-page' => [
+        'id' => $id,
+        'clientToken' => $block->getClientToken(),
+        'quoteId' => $block->getQuoteId(),
+        'displayName' => $block->getMerchantName(),
+        'actionSuccess' => $block->getActionSuccess(),
+        'grandTotalAmount' => $block->getAmount(),
+        'currencyCode' => $block->getCurrencyCode(),
+        'storeCode' => $block->getStoreCode(),
+        'priceIncludesTax' => $block->priceIncludesTax(),
+        'isVirtual' => $block->isProductVirtual()
+    ]
+];
+$extraClassName = $block->getExtraClassName();
+?>
+<div id="<?= $escaper->escapeHtmlAttr($id) ?>"
+     data-mage-init="<?= $escaper->escapeHtmlAttr(json_encode($config)) ?>"
+     class="braintree-hidden braintree-applepay-product-page <?= $escaper->escapeHtmlAttr($extraClassName) ?>">
+</div>

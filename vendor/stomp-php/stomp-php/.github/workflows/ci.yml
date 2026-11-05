@@ -1,0 +1,65 @@
+name: CI
+on:
+  pull_request:
+    branches:
+      - 'master'
+  push:
+    branches:
+      - '**'
+
+jobs:
+  static_analysis:
+    name: Static analysis with phpstan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          tools: phpstan, composer:v2
+
+      - run: phpstan analyse
+
+  tests:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: true
+      matrix:
+        php: ['7.4', '8.0', '8.1', '8.2','8.3', '8.4', '8.5']
+    name: PHP ${{ matrix.php }} tests
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Setup Brokers
+        run: ./travisci/bin/start.sh
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          coverage: xdebug
+          ini-values: error_reporting=E_ALL
+          tools: composer:v2
+
+      - name: Get composer cache directory
+        id: composercache
+        run: |
+          echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
+
+      - name: Cache dependencies
+        uses: actions/cache@v3
+        with:
+          path: ${{ steps.composercache.outputs.dir }}
+          key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-composer-
+
+      - name: Install dependencies
+        run: composer install --prefer-dist --no-progress
+
+      - name: Run tests
+        run: |
+          ./travisci/bin/logs.sh
+          vendor/bin/phpunit --debug

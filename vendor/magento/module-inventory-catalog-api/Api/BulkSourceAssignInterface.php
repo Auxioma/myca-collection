@@ -1,0 +1,26 @@
+<?php
+/**
+ * Copyright 2018 Adobe
+ * All Rights Reserved.
+ */
+declare(strict_types=1);
+
+namespace Magento\InventoryCatalogApi\Api;
+
+/**
+ * Perform bulk product source assignment
+ *
+ * @api
+ */
+interface BulkSourceAssignInterface
+{
+    /**
+     * Run mass product to source assignment
+     *
+     * @param string[] $skus
+     * @param string[] $sourceCodes
+     * @return int
+     * @throws \Magento\Framework\Validation\ValidationException
+     */
+    public function execute(array $skus, array $sourceCodes): int;
+}

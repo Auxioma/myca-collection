@@ -1,0 +1,16 @@
+/**
+ * Copyright 2020 Adobe
+ * All Rights Reserved.
+ */
+
+.login-content > li {
+    list-style: none;
+}
+.tfa-logout-link {
+    position: absolute;
+    top: 1em;
+    right: 1em;
+}
+.tfa-provider-link {
+    color: #333;
+}

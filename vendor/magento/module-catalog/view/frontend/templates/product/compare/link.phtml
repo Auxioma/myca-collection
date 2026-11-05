@@ -1,0 +1,20 @@
+<?php
+/**
+ * Copyright 2014 Adobe
+ * All Rights Reserved.
+ */
+
+/** @var $block Magento\Framework\View\Element\Template */
+?>
+<li class="item link compare" data-bind="scope: 'compareProducts'" data-role="compare-products-link">
+    <a class="action compare no-display" title="<?= $escaper->escapeHtmlAttr(__('Compare Products')) ?>"
+        href="<?= $escaper->escapeUrl($block->getUrl('catalog/product_compare')) ?>"
+       data-bind="css: {'no-display': !compareProducts().count}"
+    >
+        <?= $escaper->escapeHtml(__('Compare Products')) ?>
+        <span class="counter qty" data-bind="text: compareProducts().countCaption"></span>
+    </a>
+</li>
+<script type="text/x-magento-init">
+{"[data-role=compare-products-link]": {"Magento_Ui/js/core/app": <?= /* @noEscape */ $block->getJsLayout() ?>}}
+</script>

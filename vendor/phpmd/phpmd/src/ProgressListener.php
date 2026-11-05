@@ -1,0 +1,108 @@
+<?php
+
+/**
+ * This file is part of PHP Mess Detector.
+ *
+ * Copyright (c) Manuel Pichler <mapi@phpmd.org>.
+ * All rights reserved.
+ *
+ * Licensed under BSD License
+ * For full copyright and license information, please see the LICENSE file.
+ * Redistributions of files must retain the above copyright notice.
+ *
+ * @author Manuel Pichler <mapi@phpmd.org>
+ * @copyright Manuel Pichler. All rights reserved.
+ * @license https://opensource.org/licenses/bsd-license.php BSD License
+ * @link http://phpmd.org/
+ */
+
+namespace PHPMD;
+
+use PDepend\Metrics\Analyzer;
+use PDepend\ProcessListener;
+use PDepend\Source\ASTVisitor\AbstractASTVisitListener;
+use PHPMD\Attribute\SuppressWarnings;
+use PHPMD\Rule\Design\TooManyPublicMethods;
+use PHPMD\Rule\UnusedFormalParameter;
+use Symfony\Component\Console\Helper\ProgressBar;
+use Symfony\Component\Console\Output\ConsoleOutputInterface;
+use Symfony\Component\Console\Output\OutputInterface;
+
+/**
+ * @internal
+ */
+#[SuppressWarnings(TooManyPublicMethods::class)]
+class ProgressListener extends AbstractASTVisitListener implements ProcessListener
+{
+    private ProgressBar $progressBar;
+
+    public function __construct(
+        protected OutputInterface $output,
+    ) {
+    }
+
+    public function startParseProcess(int $fileCount): void
+    {
+        $this->progressBar = new ProgressBar($this->output, $fileCount);
+        $this->progressBar->setBarCharacter('▓');
+        $this->progressBar->setEmptyBarCharacter('░');
+        $this->progressBar->setProgressCharacter('░');
+        $this->progressBar->start();
+    }
+
+    public function endParseProcess(): void
+    {
+        $this->progressBar->finish();
+        $this->progressBar->clear();
+
+        $output = $this->getProgressOutput();
+
+        if (!$output->isDecorated()) {
+            $output->writeln('');
+        }
+    }
+
+    public function startFileParsing(): void
+    {
+    }
+
+    public function endFileParsing(): void
+    {
+        $this->progressBar->advance();
+    }
+
+    public function startAnalyzeProcess(): void
+    {
+    }
+
+    public function endAnalyzeProcess(): void
+    {
+    }
+
+    public function startLogProcess(): void
+    {
+    }
+
+    public function endLogProcess(): void
+    {
+    }
+
+    #[SuppressWarnings(UnusedFormalParameter::class)]
+    public function startAnalyzer(Analyzer $analyzer): void
+    {
+    }
+
+    #[SuppressWarnings(UnusedFormalParameter::class)]
+    public function endAnalyzer(Analyzer $analyzer): void
+    {
+    }
+
+    private function getProgressOutput(): OutputInterface
+    {
+        if ($this->output instanceof ConsoleOutputInterface) {
+            return $this->output->getErrorOutput();
+        }
+
+        return $this->output;
+    }
+}

@@ -1,0 +1,100 @@
+name: Build
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches:
+      - '*'
+  push:
+    branches:
+      - 'main'
+
+permissions:
+  contents: read
+
+jobs:
+  tests:
+    name: PHP ${{ matrix.php-version }} PHPUnit ${{matrix.phpunit-version}} on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        php-version:
+          - "8.2"
+          - "8.3"
+          - "8.4"
+          - "8.5"
+        os:
+          - ubuntu-latest
+          - windows-latest
+          - macOS-latest
+        phpunit-version:
+          - "10"
+          - "11"
+          - "12"
+          - "13"
+
+        exclude:
+          # PHPUnit ^12 requires PHP 8.3
+          - phpunit-version: "12"
+            php-version: "8.1"
+          - phpunit-version: "12"
+            php-version: "8.2"
+
+          # PHPUnit ^13 requires PHP 8.4
+          - phpunit-version: "13"
+            php-version: "8.1"
+          - phpunit-version: "13"
+            php-version: "8.2"
+          - phpunit-version: "13"
+            php-version: "8.3"
+
+          # the lowest paratest version that supports PHP 8.5 requires PHPUnit ^12
+          - phpunit-version: "10"
+            php-version: "8.5"
+          - phpunit-version: "11"
+            php-version: "8.5"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Set up PHP ${{ matrix.php-version }}
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php-version }}
+          extensions: pcntl, posix
+          coverage: xdebug
+          ini-values: error_reporting=E_ALL
+
+      - name: Validate composer.json and composer.lock
+        run: composer validate
+
+      - name: Install dependencies
+        run: >
+          composer update --prefer-dist --no-progress
+          '--with=phpunit/phpunit:^${{ matrix.phpunit-version }}'
+        shell: bash
+
+      - name: Set PHPUnit version
+        id: set-phpunit-version
+        run: |
+          echo "Tested against PHPUnit **v$(composer print-phpunit-version)**" >> "$GITHUB_STEP_SUMMARY"
+          echo "PHPUNIT_SCHEMA_VERSION=$(composer print-phpunit-schema-version)" >> "$GITHUB_OUTPUT"
+        shell: bash
+
+      - name: Run tests
+        if: ${{ matrix.os != 'windows-latest' && steps.set-phpunit-version.outputs.PHPUNIT_SCHEMA_VERSION != '10.0' }}
+        run: composer test
+
+      - name: Run tests (phpunit10.0)
+        if: ${{ matrix.os != 'windows-latest' && steps.set-phpunit-version.outputs.PHPUNIT_SCHEMA_VERSION == '10.0' }}
+        run: composer test-phpunit10.0
+
+      - name: Run tests (windows)
+        if: ${{ matrix.os == 'windows-latest'  && steps.set-phpunit-version.outputs.PHPUNIT_SCHEMA_VERSION != '10.0' }}
+        run: composer test-windows
+
+      - name: Run tests (windows-phpunit10.0)
+        if: ${{ matrix.os == 'windows-latest'  && steps.set-phpunit-version.outputs.PHPUNIT_SCHEMA_VERSION == '10.0' }}
+        run: composer test-windows-phpunit10.0

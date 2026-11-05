@@ -1,0 +1,77 @@
+{% extends '@WebProfiler/Profiler/layout.html.twig' %}
+
+{% block toolbar %}
+    {% set icon %}
+        {{ source('@JoseFramework/data_collector/icon.svg') }}
+        <span class="sf-toolbar-value">JWT</span>
+    {% endset %}
+
+    {% set text %}
+        <div class="sf-toolbar-info-piece">
+            <b>Keys</b>
+            <span class="sf-toolbar-status">{{ collector.getData().key.jwk|length }}</span>
+        </div>
+        <div class="sf-toolbar-info-piece">
+            <b>Key Sets</b>
+            <span class="sf-toolbar-status">{{ collector.getData().key.jwkset|length }}</span>
+        </div>
+        <div class="sf-toolbar-info-piece">
+            <b>Signature Algorithms</b>
+            <span class="sf-toolbar-status">{{ collector.getData().algorithm.types.signature }}</span>
+        </div>
+        <div class="sf-toolbar-info-piece">
+            <b>MAC Algorithms</b>
+            <span class="sf-toolbar-status">{{ collector.getData().algorithm.types.mac }}</span>
+        </div>
+        <div class="sf-toolbar-info-piece">
+            <b>Key Encryption Algorithms</b>
+            <span class="sf-toolbar-status">{{ collector.getData().algorithm.types.key_encryption }}</span>
+        </div>
+        <div class="sf-toolbar-info-piece">
+            <b>Content Encryption Algorithms</b>
+            <span class="sf-toolbar-status">{{ collector.getData().algorithm.types.content_encryption }}</span>
+        </div>
+    {% endset %}
+
+    {{ include('@WebProfiler/Profiler/toolbar_item.html.twig', { 'link': true }) }}
+{% endblock %}
+
+{% block menu %}
+    <span class="label">
+        <span class="icon">{{ source('@JoseFramework/data_collector/icon.svg') }}</span>
+        <strong>JWT-Framework</strong>
+    </span>
+{% endblock %}
+
+{% block panel %}
+    {% import _self as helper %}
+    <div class="sf-tabs">
+        {% include '@JoseFramework/data_collector/tab/key.html.twig' %}
+        {% include '@JoseFramework/data_collector/tab/jws.html.twig' %}
+        {% include '@JoseFramework/data_collector/tab/jwe.html.twig' %}
+        {% include '@JoseFramework/data_collector/tab/header_checker.html.twig' %}
+        {% include '@JoseFramework/data_collector/tab/claim_checker.html.twig' %}
+    </div>
+{% endblock %}
+
+{% block head %}
+    {{ parent() }}
+    <style>
+        tr.severity-low td, li.severity-low {
+            background: rgba(186, 186, 35, 0.3);
+        }
+
+        tr.severity-medium td, li.severity-medium {
+            background: rgba(186, 105, 35, 0.3);
+        }
+
+        tr.severity-high td, li.severity-high {
+            background: rgba(176, 65, 62, 0.2);
+            font-weight: bold;
+        }
+
+        tr.no-severity td, li.no-severity {
+            background: rgba(94, 151, 110, 0.3);
+        }
+    </style>
+{% endblock %}

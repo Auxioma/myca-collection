@@ -1,0 +1,34 @@
+<?xml version="1.0"?>
+<!--
+/**
+ * ADOBE CONFIDENTIAL
+ *
+ * Copyright 2026 Adobe
+ * All Rights Reserved.
+ *
+ * NOTICE: All information contained herein is, and remains
+ * the property of Adobe and its suppliers, if any. The intellectual
+ * and technical concepts contained herein are proprietary to Adobe
+ * and its suppliers and are protected by all applicable intellectual
+ * property laws, including trade secret and copyright laws.
+ * Dissemination of this information or reproduction of this material
+ * is strictly forbidden unless prior written permission is obtained
+ * from Adobe.
+ */
+-->
+<page xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:noNamespaceSchemaLocation="urn:magento:framework:View/Layout/etc/page_configuration.xsd">
+    <body>
+        <referenceBlock name="order_items">
+            <block class="Magento\PaymentServicesPaypal\Block\Adminhtml\Order\Invoice\Create\CustomCapture"
+                   name="paymentservicespaypal.invoice.custom_capture.updateqty"
+                   as="submit_before"
+                   template="Magento_PaymentServicesPaypal::order/invoice/create/custom_capture.phtml"/>
+        </referenceBlock>
+        <referenceBlock name="invoice_totals">
+            <block class="Magento\PaymentServicesPaypal\Block\Adminhtml\Order\Invoice\Totals\CustomCapture"
+                   name="paymentservicespaypal.invoice.custom_capture_total.updateqty"
+                   after="tax"/>
+        </referenceBlock>
+    </body>
+</page>

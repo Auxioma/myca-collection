@@ -1,0 +1,16 @@
+<?php
+
+declare(strict_types=1);
+
+namespace PhpDb\Sql\Ddl\Column;
+
+/**
+ * Column representing a FLOAT type.
+ *
+ * Cannot name a class "float" starting in PHP 7, as it's a reserved keyword;
+ * hence, "floating", with a type of "FLOAT".
+ */
+class Floating extends AbstractPrecisionColumn
+{
+    protected string $type = 'FLOAT';
+}

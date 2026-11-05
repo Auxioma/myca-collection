@@ -1,0 +1,55 @@
+<?php
+/**
+ * Copyright 2016 Adobe
+ * All Rights Reserved.
+ */
+declare(strict_types=1);
+
+namespace Magento\Catalog\Test\Unit\Model\ResourceModel\Product;
+
+use Magento\Catalog\Model\ResourceModel\Product\BaseSelectProcessorInterface;
+use Magento\Catalog\Model\ResourceModel\Product\CompositeBaseSelectProcessor;
+use Magento\Framework\DB\Select;
+use Magento\Framework\TestFramework\Unit\Helper\ObjectManager;
+use PHPUnit\Framework\TestCase;
+
+class CompositeBaseSelectProcessorTest extends TestCase
+{
+    /**
+     * @var ObjectManager
+     */
+    private $objectManager;
+
+    protected function setUp(): void
+    {
+        $this->objectManager =  new ObjectManager($this);
+    }
+
+    public function testInitializeWithWrongProcessorInstance()
+    {
+        $this->expectException('Magento\Framework\Exception\InputException');
+        $processorValid = $this->createMock(BaseSelectProcessorInterface::class);
+        $processorInvalid = $this->createMock(\stdClass::class);
+
+        $this->objectManager->getObject(CompositeBaseSelectProcessor::class, [
+            'baseSelectProcessors' => [$processorValid, $processorInvalid],
+        ]);
+    }
+
+    public function testProcess()
+    {
+        $select = $this->createMock(Select::class);
+
+        $processorFirst = $this->createMock(BaseSelectProcessorInterface::class);
+        $processorFirst->expects($this->once())->method('process')->with($select)->willReturn($select);
+
+        $processorSecond = $this->createMock(BaseSelectProcessorInterface::class);
+        $processorSecond->expects($this->once())->method('process')->with($select)->willReturn($select);
+
+        /** @var CompositeBaseSelectProcessor $baseSelectProcessors */
+        $baseSelectProcessors = $this->objectManager->getObject(CompositeBaseSelectProcessor::class, [
+            'baseSelectProcessors' => [$processorFirst, $processorSecond],
+        ]);
+        $this->assertEquals($select, $baseSelectProcessors->process($select));
+    }
+}

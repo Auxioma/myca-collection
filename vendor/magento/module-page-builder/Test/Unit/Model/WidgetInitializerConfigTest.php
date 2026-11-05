@@ -1,0 +1,100 @@
+<?php
+/**
+ * Copyright 2020 Adobe
+ * All Rights Reserved.
+ */
+declare(strict_types=1);
+
+namespace Magento\PageBuilder\Test\Unit\Model;
+
+use Magento\PageBuilder\Model\WidgetInitializerConfig;
+use PHPUnit\Framework\TestCase;
+use PHPUnit\Framework\Attributes\DataProvider;
+use Magento\Framework\TestFramework\Unit\Helper\ObjectManager;
+
+/**
+ * Test for WidgetInitializerConfig
+ */
+class WidgetInitializerConfigTest extends TestCase
+{
+    /**
+     * Test different config variation.
+     *
+     * @param array $config
+     * @param array $expectedConfig
+     */
+    #[DataProvider('configProvider')]
+    public function testGetConfig(array $config, array $expectedConfig): void
+    {
+        $objectManagerHelper = new ObjectManager($this);
+        $objectManagerHelper->prepareObjectManager();
+        
+        $model = new WidgetInitializerConfig(
+            $config
+        );
+
+        $actualConfig = $model->getConfig();
+        $this->assertEquals($expectedConfig, $actualConfig);
+    }
+
+    /**
+     * @return array
+     */
+    public static function configProvider(): array
+    {
+        return [
+            [
+                [
+                    'products' => [
+                        'default' => [
+                            'component' => 'test',
+                            'appearance' => 'default',
+                            'config' => [
+                                'a' => true
+                            ]
+                        ]
+                    ]
+                ],
+                [
+                    '[data-content-type="products"][data-appearance="default"]' => [
+                        'test' => [
+                            'a' => true
+                        ]
+                    ]
+                ]
+            ],
+            [
+                [
+                    'products' => [
+                        'default' => [
+                            'component' => 'test-component',
+                            'appearance' => 'default',
+                            'config' => [
+                                'a' => true
+                            ]
+                        ],
+                        'another' => [
+                            'component' => 'another-test-component',
+                            'appearance' => 'not_default',
+                            'config' => [
+                                'b' => false
+                            ]
+                        ]
+                    ]
+                ],
+                [
+                    '[data-content-type="products"][data-appearance="default"]' => [
+                        'test-component' => [
+                            'a' => true
+                        ]
+                    ],
+                    '[data-content-type="products"][data-appearance="not_default"]' => [
+                        'another-test-component' => [
+                            'b' => false
+                        ]
+                    ]
+                ]
+            ]
+        ];
+    }
+}

@@ -1,0 +1,98 @@
+<?php
+/**
+ * ADOBE CONFIDENTIAL
+ *
+ * Copyright 2023 Adobe
+ * All Rights Reserved.
+ *
+ * NOTICE: All information contained herein is, and remains
+ * the property of Adobe and its suppliers, if any. The intellectual
+ * and technical concepts contained herein are proprietary to Adobe
+ * and its suppliers and are protected by all applicable intellectual
+ * property laws, including trade secret and copyright laws.
+ * Dissemination of this information or reproduction of this material
+ * is strictly forbidden unless prior written permission is obtained
+ * from Adobe.
+ */
+
+// @codingStandardsIgnoreFile
+/**
+ * Store(Vault) New Card
+ *
+ * @var Template $block
+ * @var BraintreeConfig $braintreeConfigViewModel
+ * @var BraintreeThreeDSecureConfig $braintreeThreeDSecureConfigViewModel
+ */
+
+use Magento\Framework\View\Element\Template;
+use PayPal\Braintree\ViewModel\BraintreeConfig;
+use PayPal\Braintree\ViewModel\BraintreeThreeDSecureConfig;
+
+$braintreeConfigViewModel = $block->getData('braintreeConfigViewModel');
+$braintreeThreeDSecureConfigViewModel = $block->getData('braintreeThreeDSecureConfigViewModel');
+$isActive = $braintreeConfigViewModel->isActive();
+$isCardVaultEnabled = $braintreeConfigViewModel->isCCVaultEnabled();
+$isThreeDSecureEnabled = $braintreeThreeDSecureConfigViewModel->isEnabled();
+?>
+<?php if ($isActive && $isCardVaultEnabled) {
+    $clientToken = $braintreeConfigViewModel->getClientToken();
+    $availableCardTypes = $braintreeConfigViewModel->getAvailableCardTypes();
+    $cardIcons = $braintreeConfigViewModel->getCardIcons();
+    $cvvImage = $braintreeConfigViewModel->getCvvImageUrl();
+    $typesMapper = $braintreeConfigViewModel->getCcTypesMapper();
+    $storeCode = $braintreeConfigViewModel->getStoreCode();
+    $ipAddress = $braintreeThreeDSecureConfigViewModel->getIpAddress();
+
+    $icons = [];
+    foreach ($availableCardTypes as $cardType) {
+        if (!isset($cardIcons[$cardType])) {
+            continue;
+        }
+        $icons[] = [
+            'type' => $cardType,
+            'url' => $block->getViewFileUrl('PayPal_Braintree::images/cc/'. $cardType .'.png')
+        ];
+    } ?>
+    <div class="payment-form" data-bind="scope: 'store-braintree-card-form'">
+        <!-- ko template: getTemplate() --><!-- /ko -->
+
+        <div><?= $block->getChildHtml('new_card_billing_address') ?></div>
+
+        <input type="submit"
+            id="braintree_submit"
+            data-bind="click: placeOrderClick"
+            style="display:block"
+            class="action primary">
+    </div>
+
+    <script type="text/x-magento-init">
+        {
+            "*": {
+                "Magento_Ui/js/core/app": {
+                    "components": {
+                        "store-braintree-card-form": {
+                            "component": "PayPal_Braintree/js/customer/payment/braintree-card",
+                            "template" : "PayPal_Braintree/customer/payment/braintree-card",
+                            "amount" : "0",
+                            "clientToken" : "<?= /* @noEscape */ $clientToken; ?>",
+                            "icons" : <?= /* @noEscape */ json_encode($icons) ?>,
+                            "cvvImage": "<?= /* @noEscape */ $cvvImage ?>",
+                            "ccTypeMapper" : <?= /* @noEscape */ json_encode($typesMapper) ?>,
+                            "availableCardTypes": <?= /* @noEscape */ json_encode($availableCardTypes) ?>,
+                            "isThreeDSecureEnabled": "<?= /* @noEscape */ $isThreeDSecureEnabled ?>",
+                            "children": {
+                                "address": {
+                                    "component": "PayPal_Braintree/js/customer/payment/address-form-initializer",
+                                    "template": "PayPal_Braintree/customer/payment/billing-address",
+                                    "storeCode": "<?= /* @noEscape */ $storeCode ?>"
+                                }
+                            },
+                            "storeCode": "<?= /* @noEscape */ $storeCode ?>",
+                            "ipAddress": "<?= /* @noEscape */ $ipAddress ?>"
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+<?php } ?>

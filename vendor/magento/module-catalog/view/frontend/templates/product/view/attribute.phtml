@@ -1,0 +1,66 @@
+<?php
+/**
+ * Copyright 2014 Adobe
+ * All Rights Reserved.
+ */
+
+// phpcs:disable Magento2.Templates.ThisInTemplate.FoundThis
+// phpcs:disable Magento2.Templates.ThisInTemplate.FoundHelper
+
+/**
+ * Product view template
+ *
+ * @var $block Description
+ * @var $escaper Escaper
+ */
+
+use Magento\Catalog\Block\Product\View\Description;
+use Magento\Catalog\Model\Product;
+use Magento\Framework\Escaper;
+use Magento\Catalog\Helper\Output;
+
+?>
+<?php
+$_helper = $this->helper(Output::class);
+$_product = $block->getProduct();
+
+if (!$_product instanceof Product) {
+    return;
+}
+
+$_call = $block->getAtCall();
+$_code = $block->getAtCode();
+$_className = $block->getCssClass();
+$_attributeLabel = $block->getAtLabel();
+$_attributeType = $block->getAtType();
+$_attributeAddAttribute = $block->getAddAttribute();
+
+$renderLabel = true;
+// if defined as 'none' in layout, do not render
+if ($_attributeLabel == 'none') {
+    $renderLabel = false;
+}
+
+if ($_attributeLabel && $_attributeLabel == 'default') {
+    $_attributeLabel = $_product->getResource()->getAttribute($_code)->getStoreLabel();
+}
+if ($_attributeType && $_attributeType == 'text') {
+    $_attributeValue = ($_helper->productAttribute($_product, $_product->$_call(), $_code))
+        ? $_product->getAttributeText($_code)
+        : '';
+} else {
+    $_attributeValue = $_helper->productAttribute($_product, $_product->$_call(), $_code);
+}
+$processedAttributeString = !empty($_attributeAddAttribute)
+    ? ' ' . $_helper->processString($_attributeAddAttribute)
+    : '';
+?>
+
+<?php if ($_attributeValue):?>
+<div class="product attribute <?= $escaper->escapeHtmlAttr($_className) ?>">
+    <?php if ($renderLabel):?>
+        <strong class="type"><?= $escaper->escapeHtml($_attributeLabel) ?></strong>
+    <?php endif; ?>
+    <div class="value"<?= /* @noEscape */ $processedAttributeString ?>><?= /* @noEscape */ $_attributeValue ?></div>
+</div>
+<?php endif; ?>

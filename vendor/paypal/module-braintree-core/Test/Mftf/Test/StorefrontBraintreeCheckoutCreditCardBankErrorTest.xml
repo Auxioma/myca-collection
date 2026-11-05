@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+/**
+ * ADOBE CONFIDENTIAL
+ *
+ * Copyright 2025 Adobe
+ * All Rights Reserved.
+ *
+ * NOTICE: All information contained herein is, and remains
+ * the property of Adobe and its suppliers, if any. The intellectual
+ * and technical concepts contained herein are proprietary to Adobe
+ * and its suppliers and are protected by all applicable intellectual
+ * property laws, including trade secret and copyright laws.
+ * Dissemination of this information or reproduction of this material
+ * is strictly forbidden unless prior written permission is obtained
+ * from Adobe.
+ */
+-->
+<tests xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:noNamespaceSchemaLocation="urn:magento:mftf:Test/etc/testSchema.xsd">
+    <test name="StorefrontBraintreeCheckoutCreditCardBankErrorTest">
+        <annotations>
+            <features value="Braintree"/>
+            <stories value="Checkout with Braintree Credit Card"/>
+            <title value="Customer checkout with invalid credit card shows bank error and stays on payment step"/>
+            <description value="Customer should see error message when using credit card that triggers bank error and remain on payment step"/>
+            <severity value="MINOR"/>
+            <testCaseId value="AC-9844"/>
+            <group value="braintree"/>
+            <group value="3rd_party_integration"/>
+        </annotations>
+        <before>
+            <!--Precondition 1: Create US Customer-->
+            <createData entity="Invalid_US_Customer" stepKey="createCustomer"/>
+            <!--Create simple product-->
+            <createData entity="SimpleProduct" stepKey="createSimpleProduct"/>
+        </before>
+        <after>
+            <actionGroup ref="StorefrontCustomerLogoutActionGroup" stepKey="logoutCustomer"/>
+            <!--Delete Simple Product-->
+            <deleteData createDataKey="createSimpleProduct" stepKey="deleteSimpleProduct"/>
+            <!--Delete Customer-->
+            <deleteData createDataKey="createCustomer" stepKey="deleteCustomer"/>
+        </after>
+        <!--Step 1: Navigate to storefront > add product to cart > proceed to checkout > add shipping address details-->
+        <actionGroup ref="LoginToStorefrontActionGroup" stepKey="loginAsCustomer">
+            <argument name="Customer" value="$$createCustomer$$"/>
+        </actionGroup>
+        <!--Add simple product to shopping cart-->
+        <actionGroup ref="StorefrontOpenProductEntityPageActionGroup" stepKey="gotToProductPage">
+            <argument name="product" value="$$createSimpleProduct$$"/>
+        </actionGroup>
+        <actionGroup ref="StorefrontAddToTheCartActionGroup" stepKey="addProductToCart">
+            <argument name="product" value="$$createSimpleProduct$$"/>
+        </actionGroup>
+        <actionGroup ref="StorefrontOpenCheckoutPageActionGroup" stepKey="goToCheckout"/>
+        <!--Navigate to checkout-->
+        <actionGroup ref="StorefrontOpenCheckoutPageActionGroup" stepKey="openCheckoutPage"/>
+        <!--Select flat rate shipping-->
+        <actionGroup ref="CheckoutSelectFlatRateShippingMethodActionGroup" stepKey="selectFlatRateShipping"/>
+        <actionGroup ref="StorefrontCheckoutClickNextOnShippingStepActionGroup" stepKey="goToCheckoutPaymentPage"/>
+        <!--Step 2: Select payment method as credit card -->
+        <waitForElementClickable selector="{{CheckoutPaymentSection.braintreeCreditCardRadio}}" stepKey="waitForBraintreeCreditCard"/>
+        <click selector="{{CheckoutPaymentSection.braintreeCreditCardRadio}}" stepKey="selectCreditCardPayment"/>
+        <!--Fill Credit card details-->
+        <actionGroup ref="StorefrontFillPaymentServicesBraintreeCreditCardFormActionGroup" stepKey="fillBrainTreeCreditCardDetails">
+            <argument name="creditCard" value="braintreeInvalidCreditCard"/>
+        </actionGroup>
+        <!--Step 3: Check My billing and shipping address are the same option -->
+        <checkOption selector="{{CheckoutPaymentSection.myBillingAddressSameAsShipping}}" stepKey="checkBillingAddressSameAsShippingCheckbox"/>
+        <!--Step 4: Click On Place order btn and verify the error -->
+        <waitForElementClickable selector="{{CheckoutPaymentSection.magentoPaymentServicesHostedFieldsPlaceOrderButton}}" stepKey="waitPlaceOrderButton"/>
+        <click selector="{{CheckoutPaymentSection.magentoPaymentServicesHostedFieldsPlaceOrderButton}}" stepKey="clickPlaceOrderButton"/>
+        <waitForText selector="{{CheckoutPaymentSection.paymentErrorMessage}}" userInput="{{braintreePaymentErrorMessageAssertion.errorMessage}}" stepKey="verifyErrorMessageWhilePlacingTheOrder"/>
+    </test>
+</tests>

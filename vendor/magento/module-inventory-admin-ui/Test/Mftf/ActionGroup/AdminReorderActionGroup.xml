@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+/**
+ * Copyright 2020 Adobe
+ * All Rights Reserved.
+ */
+-->
+
+<actionGroups xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:mftf:Test/etc/actionGroupSchema.xsd">
+    <actionGroup name="AdminReorderActionGroup">
+        <annotations>
+            <description>Admin clicks reorder button and submit order button. Starts on admin order page.</description>
+        </annotations>
+        <click selector="{{AdminOrderDetailsMainActionsSection.reorder}}" stepKey="clickReorderButton"/>
+        <waitForPageLoad stepKey="waitForOrderPageLoad"/>
+        <click selector="{{AdminOrderFormActionSection.SubmitOrder}}" stepKey="clickSubmitOrder"/>
+        <waitForPageLoad stepKey="waitForOrderPlaced"/>
+    </actionGroup>
+</actionGroups>

@@ -1,0 +1,27 @@
+<!--
+/**
+ * ADOBE CONFIDENTIAL
+ *
+ * Copyright 2025 Adobe
+ * All Rights Reserved.
+ *
+ * NOTICE: All information contained herein is, and remains
+ * the property of Adobe and its suppliers, if any. The intellectual
+ * and technical concepts contained herein are proprietary to Adobe
+ * and its suppliers and are protected by all applicable intellectual
+ * property laws, including trade secret and copyright laws.
+ * Dissemination of this information or reproduction of this material
+ * is strictly forbidden unless prior written permission is obtained
+ * from Adobe.
+ */
+-->
+<!-- ko if: viewModel.errorMessage() -->
+    <div aria-atomic="true" role="alert" class="message message-error error">
+        <span data-bind="text: viewModel.errorMessage"></span>
+    </div>
+<!--/ko-->
+<form id="braintree-google-pay-form" class="form" method="post" novalidate="novalidate">
+    <div id="google-pay_container_account"></div>
+    <input type="hidden" name="braintree-google-pay-payment-method-nonce" id="braintree-google-pay-payment-method-nonce">
+    <input type="submit" data-bind="text: 'Update to Use google-pay'" style="display: none" class="button" id="braintree-google-pay-submit">
+</form>

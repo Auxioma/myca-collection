@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<!--
+/**
+ * Copyright 2020 Adobe
+ * All Rights Reserved.
+ */
+-->
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="urn:magento:framework:Event/etc/events.xsd">
+
+    <event name="controller_action_predispatch_paypal_transparent_requestsecuretoken">
+        <observer name="recaptcha_on_paypal" instance="Magento\ReCaptchaPaypal\Observer\PayPalObserver"/>
+    </event>
+</config>
