@@ -1,0 +1,40 @@
+services:
+  php:
+    build: ./docker/php
+    volumes:
+      - ./:/var/www/html
+    depends_on: [db, opensearch]
+
+  nginx:
+    image: nginx:1.27
+    ports:
+      - "8088:80"
+    volumes:
+      - ./:/var/www/html
+      - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on: [php]
+
+  db:
+    image: mysql:8.4
+    command: ["--log-bin-trust-function-creators=1"]
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: magento
+      MYSQL_USER: magento
+      MYSQL_PASSWORD: magento
+    volumes:
+      - dbdata:/var/lib/mysql
+
+  opensearch:
+    image: opensearchproject/opensearch:2.19.1
+    environment:
+      discovery.type: single-node
+      DISABLE_SECURITY_PLUGIN: "true"
+      DISABLE_INSTALL_DEMO_CONFIG: "true"
+      OPENSEARCH_JAVA_OPTS: "-Xms1g -Xmx1g"
+    volumes:
+      - osdata:/usr/share/opensearch/data
+
+volumes:
+  dbdata:
+  osdata:

@@ -1,0 +1,10 @@
+/auth.json
+/app/etc/env.php
+/vendor/
+/generated/*
+!/generated/.htaccess
+/var/*
+!/var/.htaccess
+/pub/static/*
+!/pub/static/.htaccess
+/pub/media/catalog/

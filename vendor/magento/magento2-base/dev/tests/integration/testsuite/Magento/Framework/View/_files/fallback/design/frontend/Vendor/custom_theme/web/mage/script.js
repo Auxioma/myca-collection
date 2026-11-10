@@ -1,5 +1,0 @@
-/**
- * Copyright 2014 Adobe
- * All Rights Reserved.
- */
-/* Non-modular file in package/custom_theme, which overrides js lib file */
