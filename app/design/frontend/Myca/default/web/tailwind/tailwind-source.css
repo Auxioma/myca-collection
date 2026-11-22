@@ -1,0 +1,39 @@
+/*
+ * Point d'entrée Tailwind 4 du thème MYCA (enfant de Hyvä default).
+ * Les dossiers base/, components/, theme/ et utilities/ sont ceux du parent Hyvä ;
+ * les jetons et composants MYCA sont dans myca/ et chargés en dernier pour prévaloir.
+ */
+
+@import "@hyva-themes/hyva-modules/css";
+@import "tailwindcss" source(none);
+@source "../../**/*.phtml";
+@source "../../**/*.xml";
+
+@import "./base";
+@import "./components";
+@import "./theme";
+@import "./utilities";
+
+@import "./generated/hyva-source.css";
+@import "./generated/hyva-tokens.css";
+@import "./generated/hyva-fonts.css";
+
+@import "./myca/fonts.css";
+@import "./myca/tokens.css";
+@import "./myca/components.css";
+
+/* Couleurs utilisées par les gabarits Hyvä hérités, rattachées à l'identité MYCA. */
+@theme inline {
+    --color-primary: var(--myca-accent-bg);
+    --color-on-primary: var(--myca-accent-fg);
+    --color-secondary: var(--color-navy-900);
+    --color-on-secondary: var(--color-white);
+    --color-ink: var(--myca-text-primary);
+    --color-ink-muted: var(--myca-text-secondary);
+}
+
+@layer base {
+    body {
+        @apply bg-surface font-sans text-fg antialiased;
+    }
+}

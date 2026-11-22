@@ -1,0 +1,20 @@
+#customer-login-container {
+    display: grid;
+    column-gap: --spacing(4);
+    row-gap: --spacing(8);
+    padding-block: --spacing(8);
+
+    @variant md {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+.order-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: --spacing(4);
+
+    a {
+        text-decoration: underline;
+    }
+}

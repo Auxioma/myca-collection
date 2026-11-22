@@ -1,0 +1,46 @@
+<?php
+/**
+ * Bandeau de réassurance. Textes imposés par le cahier des charges : seuil après remise et
+ * destinations desservies ; ne jamais annoncer une livraison « gratuite dans toute l'Europe ».
+ * Mobile : une mention à la fois, défilement manuel (aucun défilement automatique) jusqu’à 1024 px.
+ */
+
+declare(strict_types=1);
+
+use Hyva\Theme\Model\ViewModelRegistry;
+use Hyva\Theme\ViewModel\SvgIcons;
+use Magento\Framework\Escaper;
+use Magento\Framework\View\Element\Template;
+
+/** @var Escaper $escaper */
+/** @var Template $block */
+/** @var ViewModelRegistry $viewModels */
+
+/** @var SvgIcons $icons */
+$icons = $viewModels->require(SvgIcons::class);
+
+$items = [
+    ['icon' => 'truck', 'title' => __('Point relais offert dès 100 € TTC*'), 'text' => __('*après remise, destinations desservies')],
+    ['icon' => 'refresh', 'title' => __('Retours & échanges'), 'text' => __('Rétractation 14 jours, conditions en ligne')],
+    ['icon' => 'shield-check', 'title' => __('Paiement sécurisé'), 'text' => __('CB, PayPal, Apple Pay')],
+];
+?>
+<section
+    class="border-b border-line bg-surface-subtle"
+    aria-label="<?= $escaper->escapeHtmlAttr(__('Nos engagements')) ?>"
+>
+    <ul class="flex snap-x snap-mandatory overflow-x-auto lg:justify-center lg:gap-6 lg:overflow-visible lg:px-6 xl:gap-12">
+        <?php foreach ($items as $index => $item): ?>
+            <?php if ($index > 0): ?>
+                <li class="hidden h-7 w-px shrink-0 self-center bg-line-strong lg:block" aria-hidden="true"></li>
+            <?php endif ?>
+            <li class="flex min-w-full shrink-0 snap-start items-center justify-center gap-2.5 px-4 py-2.5 lg:min-w-0 lg:px-0">
+                <?= $icons->renderHtml($item['icon'], 'shrink-0 text-fg', 22, 22, ['aria-hidden' => 'true']) ?>
+                <span class="flex flex-col">
+                    <span class="myca-body-s-strong text-fg"><?= $escaper->escapeHtml($item['title']) ?></span>
+                    <span class="myca-caption text-fg-secondary"><?= $escaper->escapeHtml($item['text']) ?></span>
+                </span>
+            </li>
+        <?php endforeach ?>
+    </ul>
+</section>

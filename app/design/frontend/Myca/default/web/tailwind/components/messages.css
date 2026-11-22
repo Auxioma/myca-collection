@@ -1,0 +1,59 @@
+@layer components {
+    .message {
+        --message-color: var(--color-ink);
+        display: flex;
+        gap: --spacing(3);
+        align-items: center;
+        justify-content: space-between;
+        width: 100%;
+        padding-block: --spacing(2.5);
+        padding-inline-start: --spacing(5);
+        padding-inline-end: --spacing(4);
+        box-shadow: var(--shadow-sm);
+        border-radius: var(--radius-sm);
+        color: var(--color-ink);
+        font-weight: var(--font-weight-semibold);
+        line-height: var(--leading-tight);
+        margin-block-end: --spacing(2);
+        border-width: 2px;
+        border-color: var(--message-color);
+        background-color: color-mix(
+            in oklch,
+            var(--message-color) 7.5%,
+            var(--color-white)
+        );
+
+        &.error {
+            --message-color: var(--color-red-500);
+        }
+
+        &.success {
+            --message-color: var(--color-green-500);
+        }
+
+        &.info,
+        &.notice {
+            --message-color: var(--color-blue-500);
+        }
+
+        &.warning {
+            --message-color: var(--color-yellow-500);
+        }
+
+        a {
+            text-decoration-line: underline;
+        }
+    }
+}
+
+.page.messages {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+
+    .messages section#messages {
+        @apply container;
+        margin-inline: auto;
+        padding-block: --spacing(3);
+    }
+}

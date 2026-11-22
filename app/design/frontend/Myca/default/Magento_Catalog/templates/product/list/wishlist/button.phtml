@@ -1,0 +1,38 @@
+<?php
+/**
+ * Bouton favori de la carte produit (icône « heart » Figma, 18 px ; zone tactile 44 px).
+ */
+
+declare(strict_types=1);
+
+use Hyva\Theme\Model\ViewModelRegistry;
+use Hyva\Theme\ViewModel\ProductAttributes;
+use Hyva\Theme\ViewModel\SvgIcons;
+use Magento\Catalog\Model\Product;
+use Magento\Framework\Escaper;
+use Magento\Framework\View\Element\Template;
+
+/** @var Template $block */
+/** @var Escaper $escaper */
+/** @var ViewModelRegistry $viewModels */
+
+/** @var Product $product */
+if (!($product = $block->getData('product'))) {
+    return;
+}
+
+/** @var SvgIcons $icons */
+$icons = $viewModels->require(SvgIcons::class);
+$productName = $viewModels->require(ProductAttributes::class)->getValue($product, 'name');
+?>
+<button
+    x-data="initWishlist()"
+    x-defer="intersect"
+    @click.prevent="addToWishlist(<?= (int) $product->getId() ?>)"
+    aria-label="<?= $escaper->escapeHtmlAttr(__('Ajouter %1 aux favoris', $productName)) ?>"
+    type="button"
+    class="-m-3 inline-flex size-11 items-center justify-center rounded-md text-fg-secondary hover:text-accent-text focus-visible:outline-2 focus-visible:outline-accent"
+    data-addto="wishlist"
+>
+    <?= $icons->renderHtml('heart', '', 18, 18, ['aria-hidden' => 'true']) ?>
+</button>

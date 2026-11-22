@@ -1,0 +1,121 @@
+@utility form-input-field {
+    --outline-size: 1px;
+    --outline-offset: 0px;
+}
+
+@utility form-input-control {
+    block-size: --spacing(4.5);
+    inline-size: --spacing(4.5);
+}
+
+@layer base {
+    [type="checkbox"][role="switch"] {
+        --switch-width: --spacing(9);
+        --switch-height: --spacing(5);
+        --switch-thumb-offset: calc(var(--switch-width) - var(--switch-height));
+        border-radius: calc(infinity * 1px);
+        border-width: 2px;
+        block-size: var(--switch-height);
+        inline-size: var(--switch-width);
+
+        &:not(:disabled) {
+            cursor: pointer;
+        }
+
+        &::after {
+            content: "";
+            display: block;
+            aspect-ratio: 1;
+            height: 100%;
+            border-radius: calc(infinity * 1px);
+            border-width: 1px;
+            border-color: var(--form-bg);
+            background-color: var(--form-stroke);
+            transition:
+                background-color 150ms,
+                border-color 150ms,
+                translate 150ms;
+        }
+
+        &:checked {
+            background-image: none;
+
+            &::after {
+                background-color: var(--form-bg);
+                translate: var(--switch-thumb-offset) 0%;
+            }
+        }
+
+        &:dir(rtl):checked::after {
+            translate: calc(var(--switch-thumb-offset) / -1) 0%;
+        }
+    }
+}
+
+@layer components {
+    .form-input.qty {
+        max-inline-size: calc(6ch + var(--form-px));
+    }
+
+    .field {
+        margin-block-start: --spacing(1);
+
+        /* Reserve space for single line form validation messages */
+        &.field-reserved {
+            --reserved-space: 1.5em;
+            margin-block-end: var(--reserved-space);
+
+            @supports (line-height: 1lh) {
+                --reserved-space: 1lh;
+            }
+
+            ul {
+                font-size: var(--text-sm);
+                line-height: var(--text-sm--line-height);
+
+                &:last-of-type {
+                    margin-block-end: calc(var(--reserved-space) * -1);
+                }
+            }
+        }
+
+        &.choice {
+            display: flex;
+            align-items: center;
+
+            label {
+                margin-block-end: 0;
+            }
+
+            input {
+                margin-inline-end: --spacing(3);
+            }
+        }
+
+        &.field-error .messages {
+            color: var(--color-red-600);
+            max-width: fit-content;
+        }
+
+        &.required > label {
+            @apply after:icon-asterisk;
+
+            &::after {
+                position: relative;
+                top: --spacing(-1);
+                color: var(--color-red-600);
+                font-size: var(--text-xs);
+                line-height: var(--text-xs--line-height);
+            }
+        }
+    }
+
+    .field-label {
+        display: block;
+        inline-size: 100%;
+        margin-block-end: var(--field-label-flow, 0.25em);
+        font-size: inherit;
+        font-weight: 500;
+        color: inherit;
+    }
+}

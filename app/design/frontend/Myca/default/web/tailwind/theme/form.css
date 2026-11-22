@@ -1,0 +1,21 @@
+@layer base {
+    :where(form label) {
+        margin-block-end: --spacing(2);
+        display: block;
+        color: var(--color-fg-secondary);
+    }
+
+    :where(form legend) {
+        font-size: var(--text-xl);
+        line-height: var(--text-xl--line-height);
+        margin-block-end: --spacing(3);
+
+        & + br {
+            display: none;
+        }
+    }
+
+    :where(fieldset ~ fieldset) {
+        margin-block-start: --spacing(8);
+    }
+}

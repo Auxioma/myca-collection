@@ -1,0 +1,111 @@
+<?php
+/**
+ * Carte produit (Figma « Carte produit ») : pastille, favori, image, nom, collection, prix, variantes.
+ * Toute la carte est cliquable (lien étendu sur le nom) ; le bouton favori reste au-dessus.
+ * Pas de bouton « Ajouter au panier » sur la carte : la maquette renvoie vers la fiche produit.
+ */
+
+declare(strict_types=1);
+
+use Hyva\Theme\Model\ViewModelRegistry;
+use Hyva\Theme\ViewModel\BlockJsDependencies;
+use Hyva\Theme\ViewModel\ProductAttributes;
+use Hyva\Theme\ViewModel\ProductListItem;
+use Hyva\Theme\ViewModel\Wishlist;
+use Magento\Catalog\Block\Product\AbstractProduct;
+use Magento\Catalog\Model\Product;
+use Magento\Framework\Escaper;
+use Myca\Core\ViewModel\ProductBadge;
+
+/** @var AbstractProduct $block */
+/** @var Escaper $escaper */
+/** @var ViewModelRegistry $viewModels */
+
+/** @var Product $product */
+if (!($product = $block->getData('product'))) {
+    return;
+}
+
+/** @var ProductListItem $productListItemViewModel */
+$productListItemViewModel = $viewModels->require(ProductListItem::class);
+/** @var Wishlist $wishlistViewModel */
+$wishlistViewModel = $viewModels->require(Wishlist::class);
+/** @var ProductBadge $badgeViewModel */
+$badgeViewModel = $viewModels->require(ProductBadge::class);
+/** @var ProductAttributes $productAttributes */
+$productAttributes = $viewModels->require(ProductAttributes::class);
+
+$viewModels->require(BlockJsDependencies::class)
+    ->setBlockTemplateDependency($block, 'Magento_Catalog::product/list/js/price-box.phtml');
+
+$productId = (int) $product->getId();
+$productName = (string) $productAttributes->getValue($product, 'name');
+$badge = $badgeViewModel->get($product);
+$collection = $product->getResource()->getAttribute('myca_collection')
+    ? (string) $product->getAttributeText('myca_collection')
+    : '';
+$imageCustomAttributes = $product->getData('image_custom_attributes')
+    ?? $block->getData('image_custom_attributes')
+    ?? [];
+$wishlistBlock = $wishlistViewModel->isEnabled() ? $block->getChildBlock('wishlist') : null;
+?>
+<article
+    class="item product product-item myca-card relative flex w-full flex-col gap-1.5 p-3 transition-shadow hover:shadow-card"
+    <?php foreach ($block->getData('product_data_attributes') ?? [] as $attribute => $include): ?>
+        <?php if ($include): ?>
+            <?= $escaper->escapeHtml(sprintf('data-%s', $attribute)) ?>="<?= $escaper->escapeHtmlAttr($product->getData($attribute)) ?>"
+        <?php endif ?>
+    <?php endforeach ?>
+>
+    <div class="flex min-h-6 items-center gap-1.5">
+        <?php if ($badge): ?>
+            <span class="myca-badge myca-badge-<?= $escaper->escapeHtmlAttr($badge['tone']) ?>">
+                <?= $escaper->escapeHtml($badge['label']) ?>
+            </span>
+        <?php endif ?>
+        <?php if ($wishlistBlock): ?>
+            <div class="relative z-10 ms-auto">
+                <?= $wishlistBlock->setData('product', $product)->toHtml() ?>
+            </div>
+        <?php endif ?>
+    </div>
+
+    <?php if ($blockImage = $block->getImage($product, $block->getData('image_display_area'))): ?>
+        <div class="product-item-photo flex h-[110px] items-center justify-center overflow-hidden rounded-md">
+            <?= $blockImage
+                ->setTemplate('Magento_Catalog::product/list/image.phtml')
+                ->setData('class', 'max-h-full w-auto object-contain')
+                ->setData('custom_attributes', $imageCustomAttributes)
+                ->setProductId($productId)
+                ->toHtml() ?>
+        </div>
+    <?php endif ?>
+
+    <h3 class="myca-body-s-strong text-fg">
+        <a
+            class="product-item-link after:absolute after:inset-0 after:rounded-lg focus-visible:outline-none focus-visible:after:outline-2 focus-visible:after:outline-accent"
+            href="<?= $escaper->escapeUrl($product->getProductUrl()) ?>"
+        ><?= $escaper->escapeHtml($productName) ?></a>
+    </h3>
+
+    <?php if ($collection !== ''): ?>
+        <p class="myca-caption text-fg-muted"><?= $escaper->escapeHtml($collection) ?></p>
+    <?php endif ?>
+
+    <div
+        class="myca-body-s-strong text-fg [--price-font-size:13px] [--price-font-weight:600]"
+        x-data="initPriceBox()"
+        x-defer="intersect"
+        @update-prices-<?= (int) $productId ?>.window="updatePrice($event.detail);"
+    >
+        <?= /* @noEscape */ $productListItemViewModel->getProductPriceHtml($product) ?>
+    </div>
+
+    <?php if ($product->isAvailable() && !$block->getData('hide_details')): ?>
+        <div class="relative z-10 myca-caption text-fg-secondary">
+            <?= /* @noEscape */ $block->getProductDetailsHtml($product) ?>
+        </div>
+    <?php elseif (!$product->isAvailable()): ?>
+        <p class="myca-caption text-fg-muted"><?= $escaper->escapeHtml(__('Épuisé')) ?></p>
+    <?php endif ?>
+</article>

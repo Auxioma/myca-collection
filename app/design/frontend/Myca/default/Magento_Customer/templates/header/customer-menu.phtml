@@ -1,0 +1,73 @@
+<?php
+/**
+ * Menu compte de l'en-tête : icône « user » Figma, blanche sur la barre sombre. Logique identique au parent Hyvä.
+ */
+
+declare(strict_types=1);
+
+use Hyva\Theme\Model\ViewModelRegistry;
+use Hyva\Theme\ViewModel\SvgIcons;
+use Hyva\Theme\ViewModel\HyvaCsp;
+use Magento\Customer\Block\Account\Customer;
+use Magento\Framework\Escaper;
+
+/** @var Customer $block */
+/** @var Escaper $escaper */
+/** @var HyvaCsp $hyvaCsp */
+/** @var ViewModelRegistry $viewModels */
+
+/** @var SvgIcons $icons */
+$icons = $viewModels->require(SvgIcons::class);
+?>
+
+<div
+    class="relative inline-block"
+    x-data="initCustomerMenu"
+    x-bind="eventListeners"
+>
+    <button
+        type="button"
+        id="customer-menu"
+        class="inline-flex size-11 items-center justify-center rounded-md text-white hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-white lg:size-8"
+        @click="toggleOpen"
+        :aria-expanded="open"
+        aria-label="<?= $escaper->escapeHtmlAttr(__('My Account')) ?>"
+        aria-haspopup="true"
+    >
+        <?= $icons->renderHtml('user', '', 22, 22, ['aria-hidden' => 'true']) ?>
+    </button>
+    <nav
+        class="z-10 absolute right-0 w-48 mt-2 lg:mt-3.5 py-2 rounded-md border border-line bg-surface text-fg shadow-card overflow-auto"
+        aria-label="<?= $escaper->escapeHtmlAttr(__('My Account')) ?>"
+        x-show="open"
+        x-transition
+        x-cloak
+    >
+        <?php if ($block->customerLoggedIn()): ?>
+            <?= $block->getChildHtml('header.customer.logged.in.links') ?>
+        <?php else: ?>
+            <?= $block->getChildHtml('header.customer.logged.out.links') ?>
+        <?php endif; ?>
+    </nav>
+</div>
+<script>
+    function initCustomerMenu() {
+        return hyva.createBooleanObject('open', false, {
+            eventListeners: {
+                ['@pageshow.window'](event) {
+                    if (event.persisted) {
+                        this.setOpenFalse()
+                    }
+                },
+                ['@keyup.escape']() {
+                    this.setOpenFalse()
+                },
+                ['@click.outside']() {
+                    this.setOpenFalse()
+                }
+            }
+        })
+    }
+    window.addEventListener('alpine:init', () => Alpine.data('initCustomerMenu', initCustomerMenu), {once: true})
+</script>
+<?php $hyvaCsp->registerInlineScript() ?>

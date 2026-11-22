@@ -1,0 +1,162 @@
+<?php
+/**
+ * Menu principal desktop (Figma « Navigation principale ») : liens blancs 13 px, écart 28 px.
+ * Logique Alpine identique au parent Hyvä.
+ */
+
+use Hyva\Theme\Model\ViewModelRegistry;
+use Hyva\Theme\ViewModel\HyvaCsp;
+use Hyva\Theme\ViewModel\SvgIcons;
+use Hyva\Theme\ViewModel\Navigation;
+use Magento\Framework\View\Element\Template;
+use Magento\Framework\Escaper;
+
+/** @var Template $block */
+/** @var Escaper $escaper */
+/** @var ViewModelRegistry $viewModels */
+/** @var HyvaCsp $hyvaCsp */
+
+/** @var Navigation $viewModelNavigation */
+$viewModelNavigation = $viewModels->require(Navigation::class, $block);
+
+/** @var SvgIcons $icons */
+$icons = $viewModels->require(SvgIcons::class);
+
+$uniqueId = '_' . uniqid();
+
+// Order is important here: 1. build the menu data, 2. then set the cache tags from the view model identities
+$menuItems = $viewModelNavigation->getNavigation(4);
+$block->setData('cache_tags', $viewModelNavigation->getIdentities());
+
+?>
+<div x-data="initMenuDesktop" class="z-20 navigation hidden lg:flex">
+    <div class="hidden lg:block">
+        <nav
+            class="relative"
+            aria-label="<?= $escaper->escapeHtmlAttr(__('Main menu')) ?>"
+        >
+            <ul class="flex flex-wrap items-center gap-x-7">
+                <li class="level-0">
+                    <a href="<?= $escaper->escapeUrl($block->getBaseUrl()) ?>" class="block border-b-2 border-transparent py-1 text-[13px] leading-[18px] font-semibold text-white hover:border-accent aria-[current=page]:border-accent">
+                        <?= $escaper->escapeHtml(__('Accueil')) ?>
+                    </a>
+                </li>
+                <?php foreach ($menuItems as $index => $menuItem): ?>
+                    <li
+                        class="relative level-0 border-b-2 border-transparent hover:border-accent data-[active]:border-accent"
+                        x-data="initMenuDesktopItem"
+                        x-bind="eventListeners"
+                        @click.outside="close"
+                        @keydown.escape="close"
+                        @mouseenter="canHoverOpen"
+                        @mouseleave="canHoverClose"
+                    >
+                        <span class="flex items-center gap-1 text-[13px] leading-[18px] font-semibold text-white">
+                            <a
+                                href="<?= $escaper->escapeUrl($menuItem['url']) ?>"
+                                class="level-0 block py-1"
+                            >
+                                <?= $escaper->escapeHtml($menuItem['name']) ?>
+                            </a>
+                            <?php if (!empty($menuItem['childData'])): ?>
+                                <button
+                                    type="button"
+                                    class="group rounded-sm focus-visible:outline-2 focus-visible:outline-white"
+                                    @click="toggle"
+                                    aria-expanded="false"
+                                    :aria-expanded="open"
+                                    aria-controls="<?= $escaper->escapeHtml($index) ?>"
+                                >
+                                    <?= $icons->renderHtml(
+                                        'chevron-down',
+                                        'transition-transform group-aria-expanded:rotate-180',
+                                        14,
+                                        14,
+                                        ['aria-hidden' => 'true']
+                                    ) ?>
+                                    <span class="sr-only">
+                                        <?= $escaper->escapeHtml(__('Show submenu for %1 category', $menuItem['name'])) ?>
+                                    </span>
+                                </button>
+                            <?php endif; ?>
+                        </span>
+                        <?php if (!empty($menuItem['childData'])): ?>
+                            <ul
+                                id="<?= $escaper->escapeHtml($index) ?>"
+                                class="z-10 absolute top-full left-1/2 -translate-x-1/2 min-w-48 mt-2 py-2 rounded-md border border-line bg-surface shadow-card"
+                                x-show="open"
+                                x-transition
+                                x-cloak
+                            >
+                                <?php foreach ($menuItem['childData'] as $subMenuItem): ?>
+                                    <li>
+                                        <a
+                                            href="<?= $escaper->escapeUrl($subMenuItem['url']) ?>"
+                                            title="<?= $escaper->escapeHtmlAttr($subMenuItem['name']) ?>"
+                                            class="block px-4 py-2.5 text-sm leading-5 text-fg text-nowrap hover:bg-surface-subtle aria-[current=page]:font-semibold"
+                                        >
+                                            <?= $escaper->escapeHtml($subMenuItem['name']) ?>
+                                        </a>
+                                    </li>
+                                <?php endforeach; ?>
+                            </ul>
+                        <?php endif; ?>
+                    </li>
+                <?php endforeach; ?>
+            </ul>
+        </nav>
+    </div>
+</div>
+
+<script>
+    function initMenuDesktop() {
+        return {
+            init() {
+                this.setActiveMenu();
+            },
+            setActiveMenu() {
+                Array.from(this.$root.querySelectorAll('a')).forEach(link => {
+                    if (link.href === `${window.location.origin}${window.location.pathname}`) {
+                        link.setAttribute('aria-current', 'page');
+                    }
+                });
+            }
+        }
+    }
+
+    function initMenuDesktopItem() {
+        return {
+            open: false,
+            canHover(func) {
+                return window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+            },
+            canHoverOpen() {
+                if (!this.canHover()) return;
+                this.open = true;
+            },
+            canHoverClose() {
+                if (!this.canHover()) return;
+                this.open = false;
+            },
+            toggle() {
+                this.open = !this.open;
+            },
+            close() {
+                this.open = false;
+            },
+            eventListeners: {
+                ['@pageshow.window'](event) {
+                    if (event.persisted) {
+                        this.open = false;
+                    };
+                }
+            }
+        }
+    }
+
+    window.addEventListener('alpine:init', () => {
+        Alpine.data('initMenuDesktop', initMenuDesktop);
+        Alpine.data('initMenuDesktopItem', initMenuDesktopItem);
+    }, { once: true })
+</script>
+<?php $hyvaCsp->registerInlineScript() ?>

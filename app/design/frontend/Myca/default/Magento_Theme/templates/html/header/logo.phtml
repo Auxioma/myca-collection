@@ -1,0 +1,26 @@
+<?php
+/**
+ * Logo MYCA (composant Figma « Logo MYCA », fond sombre). Logotype typographique : le texte reste net à
+ * toutes les tailles et n'exige pas de fichier image. Utilisé dans l'en-tête et le pied de page.
+ */
+
+declare(strict_types=1);
+
+use Magento\Framework\Escaper;
+use Magento\Theme\Block\Html\Header\Logo;
+
+/** @var Logo $block */
+/** @var Escaper $escaper */
+?>
+<a
+    class="inline-flex shrink-0 items-center gap-1.5 p-1 text-white"
+    href="<?= $escaper->escapeUrl($block->getUrl('')) ?>"
+    aria-label="<?= $escaper->escapeHtmlAttr(__('MYCA, retour à l’accueil')) ?>"
+>
+    <span class="text-[32px] leading-8 font-black" aria-hidden="true">M</span>
+    <span class="h-5 w-[22px] rounded-[2px] bg-brand-red" aria-hidden="true"></span>
+    <span class="flex flex-col whitespace-nowrap" aria-hidden="true">
+        <span class="font-display text-2xl leading-6 font-bold">MYCA®</span>
+        <span class="text-[7px] leading-[9px] font-semibold tracking-[0.28em]">L’ÉLÉGANCE SPORTIVE</span>
+    </span>
+</a>

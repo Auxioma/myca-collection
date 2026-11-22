@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+<page xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:noNamespaceSchemaLocation="urn:magento:framework:View/Layout/etc/page_configuration.xsd">
+    <body>
+        <referenceBlock name="header-content">
+            <block name="myca.reassurance" template="Magento_Theme::html/header/reassurance.phtml"/>
+        </referenceBlock>
+
+        <!-- Bouton burger à gauche du logo en mobile, comme sur les maquettes responsive. -->
+        <move element="topmenu_mobile" destination="header-content" as="topmenu_mobile" before="-"/>
+
+        <referenceBlock name="header-compare" remove="true"/>
+
+        <referenceBlock name="footer-content">
+            <block class="Magento\Theme\Block\Html\Header\Logo"
+                   name="myca.footer.logo"
+                   template="Magento_Theme::html/header/logo.phtml"/>
+        </referenceBlock>
+        <referenceBlock name="footer-static-links" remove="true"/>
+        <referenceBlock name="footer-cms-content" remove="true"/>
+        <referenceBlock name="footer-copyright" remove="true"/>
+    </body>
+</page>

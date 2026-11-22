@@ -1,0 +1,9 @@
+{
+  "tailwind": {
+    "include": [
+      { "src": "vendor/hyva-themes/magento2-default-theme" },
+      { "src": "app/code/Myca" }
+    ],
+    "exclude": []
+  }
+}

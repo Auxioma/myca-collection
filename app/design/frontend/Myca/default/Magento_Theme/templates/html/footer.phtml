@@ -1,0 +1,156 @@
+<?php
+/**
+ * Pied de page du site public (Figma « Pied de page/Site public »).
+ * Desktop : colonnes ; mobile : rubriques en accordéon.
+ */
+
+declare(strict_types=1);
+
+use Hyva\Theme\Model\ViewModelRegistry;
+use Hyva\Theme\ViewModel\SvgIcons;
+use Magento\Framework\Escaper;
+use Magento\Framework\View\Element\Template;
+
+/** @var Template $block */
+/** @var Escaper $escaper */
+/** @var ViewModelRegistry $viewModels */
+
+/** @var SvgIcons $icons */
+$icons = $viewModels->require(SvgIcons::class);
+
+// Adresses provisoires : les pages cibles seront créées aux étapes 2 et 4 (voir registre des questions).
+$columns = [
+    ['title' => __('Collections'), 'links' => [
+        [__('España – Hidalgo'), 'collections/espana-hidalgo.html'],
+        [__('England – Westminster'), 'collections/england-westminster.html'],
+        [__('Grèce – Poseidon'), 'collections/grece-poseidon.html'],
+        [__('France – Lys'), 'collections/france-lys.html'],
+        [__('MYCA Signature'), 'myca-signature.html'],
+    ]],
+    ['title' => __('La Marque'), 'links' => [
+        [__('Notre histoire'), 'notre-histoire'],
+        [__('Nos engagements'), 'nos-engagements'],
+        [__('Qualité & matières'), 'qualite-matieres'],
+        [__('Passeport du vêtement'), 'passeport'],
+    ]],
+    ['title' => __('Aide & Services'), 'links' => [
+        [__('Contact / Service client'), 'contact'],
+        [__('Livraison'), 'livraison'],
+        [__('Retours & échanges'), 'retours-echanges'],
+        [__('FAQ'), 'faq'],
+        [__('Suivi de commande'), 'sales/guest/form'],
+    ]],
+];
+
+$socials = [
+    'facebook' => __('Facebook'),
+    'instagram' => __('Instagram'),
+    'tiktok' => __('TikTok'),
+    'youtube' => __('YouTube'),
+    'linkedin' => __('LinkedIn'),
+];
+
+$legalLinks = [
+    [__('CGV'), 'cgv'],
+    [__('CGU'), 'cgu'],
+    [__('Confidentialité'), 'confidentialite'],
+    [__('Cookies'), 'cookies'],
+    [__('Mentions légales'), 'mentions-legales'],
+    [__('Plan du site'), 'plan-du-site'],
+];
+
+$paymentMethods = ['VISA', 'Mastercard', 'PayPal', 'Apple Pay'];
+?>
+<footer class="bg-shell text-white">
+    <div class="mx-auto flex max-w-[1600px] flex-col gap-6 px-4 py-7 md:flex-row md:flex-wrap md:gap-x-16 md:gap-y-8 md:px-10 2xl:px-[120px]">
+        <div class="flex flex-col items-center gap-2.5 self-center md:self-start">
+            <?= $block->getChildHtml('myca.footer.logo') ?>
+            <div class="flex" aria-hidden="true">
+                <span class="h-2.5 w-10 bg-flag-blue"></span>
+                <span class="h-2.5 w-10 bg-white"></span>
+                <span class="h-2.5 w-10 bg-brand-red"></span>
+            </div>
+        </div>
+
+        <?php foreach ($columns as ['title' => $title, 'links' => $links]): ?>
+            <nav
+                class="border-b border-white/20 md:border-0"
+                x-data="{ open: false }"
+                aria-label="<?= $escaper->escapeHtmlAttr($title) ?>"
+            >
+                <h2>
+                    <button
+                        type="button"
+                        class="flex min-h-11 w-full items-center justify-between text-[13px] leading-[18px] font-semibold md:pointer-events-none md:min-h-0"
+                        @click="open = !open"
+                        :aria-expanded="open"
+                    >
+                        <?= $escaper->escapeHtml($title) ?>
+                        <?= $icons->renderHtml('chevron-down', 'transition-transform md:hidden', 16, 16, [
+                            'aria-hidden' => 'true',
+                            ':class' => "open && 'rotate-180'",
+                        ]) ?>
+                    </button>
+                </h2>
+                <ul class="hidden flex-col gap-1 pb-3 md:mt-1 md:flex md:pb-0" :class="open && 'flex!'">
+                    <?php foreach ($links as [$label, $path]): ?>
+                        <li>
+                            <a
+                                href="<?= $escaper->escapeUrl($block->getUrl('', ['_direct' => $path])) ?>"
+                                class="block py-1.5 text-xs leading-4 hover:underline md:py-0"
+                            ><?= $escaper->escapeHtml($label) ?></a>
+                        </li>
+                    <?php endforeach ?>
+                </ul>
+            </nav>
+        <?php endforeach ?>
+
+        <div class="flex flex-col gap-2.5">
+            <h2 class="text-[13px] leading-[18px] font-semibold"><?= $escaper->escapeHtml(__('Suivez MYCA')) ?></h2>
+            <ul class="flex gap-1 md:gap-3">
+                <?php foreach ($socials as $icon => $label): ?>
+                    <li>
+                        <?php /* Liens des réseaux à fournir : rendus inactifs tant que l'URL n'est pas connue. */ ?>
+                        <span
+                            class="inline-flex size-11 items-center justify-center md:size-5"
+                            role="img"
+                            aria-label="<?= $escaper->escapeHtmlAttr($label) ?>"
+                        >
+                            <?= $icons->renderHtml($icon, '', 20, 20, ['aria-hidden' => 'true']) ?>
+                        </span>
+                    </li>
+                <?php endforeach ?>
+            </ul>
+        </div>
+    </div>
+
+    <div class="border-t border-white">
+        <div class="mx-auto flex max-w-[1600px] flex-col gap-4 px-4 py-3.5 md:px-10 xl:flex-row xl:items-center xl:gap-6 2xl:px-[120px]">
+            <ul class="flex flex-wrap items-center gap-x-4 gap-y-1 text-[13px] leading-[18px]">
+                <?php foreach ($legalLinks as $index => [$label, $path]): ?>
+                    <?php if ($index > 0): ?>
+                        <li class="text-xs leading-4" aria-hidden="true">|</li>
+                    <?php endif ?>
+                    <li>
+                        <a
+                            href="<?= $escaper->escapeUrl($block->getUrl('', ['_direct' => $path])) ?>"
+                            class="block py-2 hover:underline xl:py-0"
+                        ><?= $escaper->escapeHtml($label) ?></a>
+                    </li>
+                <?php endforeach ?>
+            </ul>
+
+            <ul class="flex flex-wrap gap-2 xl:ms-auto" aria-label="<?= $escaper->escapeHtmlAttr(__('Moyens de paiement acceptés')) ?>">
+                <?php foreach ($paymentMethods as $method): ?>
+                    <li class="rounded-sm bg-white px-2.5 py-1 text-xs leading-4 font-semibold text-navy-900">
+                        <?= $escaper->escapeHtml($method) ?>
+                    </li>
+                <?php endforeach ?>
+            </ul>
+
+            <p class="text-xs leading-4">
+                <?= $escaper->escapeHtml(__('© %1 MYCA – Tous droits réservés.', date('Y'))) ?>
+            </p>
+        </div>
+    </div>
+</footer>

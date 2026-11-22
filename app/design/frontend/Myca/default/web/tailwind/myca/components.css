@@ -1,0 +1,116 @@
+/* Styles de texte et composants Figma (page Design System). */
+
+@layer components {
+    /* Styles de texte */
+    .myca-hero {
+        @apply font-display text-[28px] leading-9 font-bold italic md:text-4xl md:leading-11;
+    }
+    .myca-section {
+        @apply font-display text-xl leading-7 font-bold italic md:text-2xl md:leading-[30px];
+    }
+    .myca-h1 {
+        @apply text-[22px] leading-7 font-bold md:text-[26px] md:leading-8;
+    }
+    .myca-h2 {
+        @apply text-lg leading-6 font-bold;
+    }
+    .myca-h3 {
+        @apply text-[15px] leading-5 font-semibold;
+    }
+    .myca-kpi {
+        @apply text-[22px] leading-7 font-bold;
+    }
+    .myca-body-m {
+        @apply text-sm leading-5;
+    }
+    .myca-body-s {
+        @apply text-[13px] leading-[18px];
+    }
+    .myca-body-s-strong {
+        @apply text-[13px] leading-[18px] font-semibold;
+    }
+    .myca-caption {
+        @apply text-xs leading-4;
+    }
+    .myca-caption-strong {
+        @apply text-xs leading-4 font-semibold;
+    }
+    .myca-overline {
+        @apply text-xs leading-4 font-bold tracking-[0.12em] uppercase;
+    }
+
+    /* Conteneur du site public (1200 px max, gouttière 16 px en mobile) */
+    .myca-container {
+        @apply mx-auto w-full max-w-site px-4 xl:px-0;
+    }
+
+    /* Bouton : primaire = accent de l'identité (rouge public/partenaire, or client) */
+    .myca-btn {
+        @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-md px-4 py-2 text-sm leading-5 font-semibold
+            whitespace-nowrap transition-colors md:min-h-9
+            focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent
+            disabled:cursor-not-allowed disabled:opacity-50 aria-disabled:cursor-not-allowed aria-disabled:opacity-50;
+    }
+    .myca-btn-primary {
+        @apply bg-accent text-on-accent hover:brightness-90;
+    }
+    .myca-btn-secondary {
+        @apply border border-line-strong bg-surface text-fg hover:bg-surface-subtle;
+    }
+    .myca-btn-outline-accent {
+        @apply border border-accent bg-surface text-accent-text hover:bg-red-50;
+    }
+    .myca-btn-dark {
+        @apply bg-navy-900 text-white hover:bg-navy-800;
+    }
+    .myca-btn > svg {
+        @apply size-4 shrink-0;
+    }
+
+    /* Badge de statut */
+    .myca-badge {
+        @apply inline-flex items-center gap-1 rounded-pill px-2.5 py-[3px] text-xs leading-4 font-semibold whitespace-nowrap;
+    }
+    .myca-badge-success { @apply bg-success-bg text-success; }
+    .myca-badge-warning { @apply bg-warning-bg text-warning; }
+    .myca-badge-info { @apply bg-info-bg text-info; }
+    .myca-badge-danger { @apply bg-danger-bg text-danger; }
+    .myca-badge-neutral { @apply bg-neutral-bg text-neutral; }
+    .myca-badge-premium { @apply bg-premium-bg text-premium; }
+
+    /* Champ de formulaire : 16 px en mobile pour éviter le zoom iOS */
+    .myca-field-label {
+        @apply mb-1 block text-xs leading-4 font-semibold text-fg;
+    }
+    .myca-field {
+        @apply block min-h-11 w-full rounded-md border border-line-strong bg-surface px-3 py-2 text-base text-fg
+            placeholder:text-fg-muted md:min-h-9 md:text-sm
+            focus:border-accent focus:outline-2 focus:outline-offset-0 focus:outline-accent/30
+            disabled:bg-surface-subtle disabled:text-fg-muted
+            aria-invalid:border-danger;
+    }
+    .myca-field-error {
+        @apply mt-1 text-xs leading-4 text-danger;
+    }
+
+    /* Onglets */
+    .myca-tabs {
+        @apply flex gap-6 overflow-x-auto border-b border-line;
+    }
+    .myca-tab {
+        @apply -mb-px min-h-11 border-b-2 border-transparent px-1 text-sm leading-5 font-semibold whitespace-nowrap
+            text-fg-secondary hover:text-fg
+            focus-visible:outline-2 focus-visible:outline-accent
+            aria-selected:border-accent aria-selected:text-fg;
+    }
+
+    /* Fil d'Ariane */
+    .myca-breadcrumb {
+        @apply flex flex-wrap items-center gap-1 text-xs leading-4 text-fg-muted;
+    }
+
+    /* Carte (surface blanche bordée) */
+    .myca-card {
+        @apply rounded-lg border border-line bg-surface;
+    }
+}

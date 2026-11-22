@@ -1,0 +1,22 @@
+@layer components {
+    .account-nav li {
+        & a,
+        & strong {
+            display: flex;
+            justify-content: space-between;
+            padding-block: --spacing(1);
+            color: var(--color-fg-secondary);
+        }
+
+        & a:hover {
+            text-decoration: underline;
+            color: var(--color-fg);
+        }
+
+        & strong {
+            text-decoration: underline;
+            font-weight: var(--font-weight-normal);
+            color: var(--color-fg);
+        }
+    }
+}
