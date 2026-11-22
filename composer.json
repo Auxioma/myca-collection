@@ -10,6 +10,7 @@
         "allow-plugins": {
             "dealerdirect/phpcodesniffer-composer-installer": true,
             "laminas/laminas-dependency-plugin": true,
+            "magento/composer-dependency-version-audit-plugin": false,
             "magento/*": true,
             "php-http/discovery": true
         },
@@ -18,10 +19,11 @@
     },
     "version": "2.4.9",
     "require": {
-        "magento/product-community-edition": "2.4.9",
+        "hyva-themes/magento2-default-theme": "^1.5.4",
+        "magento/composer": "^1.10.1-beta1",
         "magento/composer-dependency-version-audit-plugin": "~0.1",
         "magento/composer-root-update-plugin": "^2.0.4",
-        "magento/composer": "^1.10.1-beta1"
+        "magento/product-community-edition": "2.4.9"
     },
     "autoload": {
         "exclude-from-classmap": [
@@ -77,10 +79,42 @@
         {
             "type": "composer",
             "url": "https://repo.magento.com/"
+        },
+        {
+            "type": "vcs",
+            "url": "https://github.com/hyva-themes/magento2-theme-module.git",
+            "no-api": true
+        },
+        {
+            "type": "vcs",
+            "url": "https://github.com/hyva-themes/magento2-default-theme.git",
+            "no-api": true
+        },
+        {
+            "type": "vcs",
+            "url": "https://github.com/hyva-themes/magento2-base-layout-reset.git",
+            "no-api": true
+        },
+        {
+            "type": "vcs",
+            "url": "https://github.com/hyva-themes/magento2-email-module.git",
+            "no-api": true
+        },
+        {
+            "type": "vcs",
+            "url": "https://github.com/hyva-themes/magento2-order-cancellation-webapi.git",
+            "no-api": true
+        },
+        {
+            "type": "vcs",
+            "url": "https://github.com/hyva-themes/magento2-compat-module-fallback.git",
+            "no-api": true
         }
     ],
     "extra": {
         "magento-force": "override"
+    },
+    "replace": {
+        "hyva-themes/magento2-mollie-theme-bundle": "*"
     }
 }
-

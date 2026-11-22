@@ -8,3 +8,5 @@
 /pub/static/*
 !/pub/static/.htaccess
 /pub/media/catalog/
+/pub/media/tmp/
+/pub/media/theme/
