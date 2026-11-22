@@ -7,6 +7,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && docker-php-ext-install -j"$(nproc)" bcmath gd intl pdo_mysql soap sockets xsl zip ftp \
     && rm -rf /var/lib/apt/lists/*
 
+# igbinary : sérialiseur de cache déclaré dans app/etc/env.php
+RUN pecl install igbinary && docker-php-ext-enable igbinary
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
 RUN { echo 'memory_limit=4G'; echo 'max_execution_time=1800'; echo 'zlib.output_compression=On'; \
