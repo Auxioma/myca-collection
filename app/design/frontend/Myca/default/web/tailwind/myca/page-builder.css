@@ -1,0 +1,265 @@
+/*
+ * Contenus Page Builder aux couleurs MYCA (accueil P01, pages éditoriales).
+ * Les classes myca-pb-* se posent dans l'éditeur (champ « Classes CSS » de chaque élément) ;
+ * elles reprennent les composants Figma sans exiger de HTML spécifique.
+ */
+
+/* Grille Page Builder : colonnes empilées en mobile, côte à côte à partir de 768 px. */
+[data-content-type="column-group"] {
+    display: flex;
+}
+
+[data-content-type="column-line"] {
+    display: flex;
+    flex-wrap: wrap;
+    gap: --spacing(4);
+    width: 100%;
+
+    @variant md {
+        flex-wrap: nowrap;
+    }
+}
+
+[data-content-type="column"] {
+    display: flex;
+    flex-direction: column;
+    flex: 0 1 auto;
+
+    @media (width < 48rem) {
+        width: 100% !important;
+    }
+}
+
+[data-content-type="row"][data-appearance="contained"] + [data-content-type="row"][data-appearance="contained"] {
+    margin-top: --spacing(4);
+}
+
+.myca-pb-section {
+    margin-top: --spacing(4);
+}
+
+/* Boutons Page Builder = boutons MYCA (sélecteurs renforcés pour primer sur les styles Hyvä des boutons) */
+[data-content-type="buttons"] {
+    display: flex;
+    flex-wrap: wrap;
+    gap: --spacing(2.5);
+
+    [data-content-type="button-item"] {
+        margin: 0;
+    }
+}
+
+[data-content-type="buttons"] [data-content-type="button-item"] :is(.pagebuilder-button-primary, .pagebuilder-button-secondary, .pagebuilder-button-link) {
+    @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-md px-4 py-2 text-sm leading-5 font-semibold
+        whitespace-nowrap transition-colors md:min-h-9
+        focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent;
+}
+
+[data-content-type="buttons"] [data-content-type="button-item"] .pagebuilder-button-primary {
+    @apply bg-accent text-on-accent hover:brightness-90;
+}
+
+[data-content-type="buttons"] [data-content-type="button-item"] .pagebuilder-button-secondary {
+    @apply border border-line-strong bg-surface text-fg hover:bg-surface-subtle;
+}
+
+[data-content-type="buttons"] [data-content-type="button-item"] .pagebuilder-button-link {
+    @apply border border-accent bg-surface text-accent-text hover:bg-red-50;
+}
+
+[data-content-type="buttons"] .myca-pb-button-dark .pagebuilder-button-primary {
+    @apply bg-navy-900 text-white hover:bg-navy-800;
+}
+
+[data-content-type="buttons"] .myca-pb-arrow :is(a, div)::before {
+    content: "";
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+    background-color: currentColor;
+    mask: url("../svg/arrow-right.svg") center / contain no-repeat;
+}
+
+/* Icônes posées par classe sur un texte, une tuile ou un élément de liste */
+:is(.myca-pb-tile, .myca-pb-checklist li, .myca-pb-note)::before {
+    content: "";
+    flex-shrink: 0;
+    background-color: currentColor;
+    mask: var(--myca-pb-icon) center / contain no-repeat;
+}
+
+.myca-pb-icon-truck { --myca-pb-icon: url("../svg/truck.svg"); }
+.myca-pb-icon-refresh { --myca-pb-icon: url("../svg/refresh.svg"); }
+.myca-pb-icon-lock { --myca-pb-icon: url("../svg/lock.svg"); }
+.myca-pb-icon-qr { --myca-pb-icon: url("../svg/qr.svg"); }
+.myca-pb-icon-award { --myca-pb-icon: url("../svg/award.svg"); }
+.myca-pb-icon-shield-check { --myca-pb-icon: url("../svg/shield-check.svg"); }
+
+/* Surtitre (« NOUVELLE COLLECTION 2027 », « NOTRE HISTOIRE ») */
+.myca-pb-overline p {
+    @apply text-xs leading-4 font-bold tracking-[0.12em] uppercase text-brand-red;
+}
+
+/* Bannière principale */
+.myca-pb-hero {
+    @apply overflow-hidden rounded-xl bg-navy-950 text-white;
+
+    [data-content-type="column-line"] {
+        gap: 0;
+    }
+
+    .myca-pb-overline p {
+        @apply text-gold-400;
+    }
+}
+
+.myca-pb-hero-text {
+    @apply justify-center gap-4 px-5 pt-2 pb-6 md:px-14 md:py-10;
+}
+
+.myca-pb-hero-title {
+    @apply font-display text-[32px] leading-[38px] font-bold italic md:text-5xl md:leading-[54px];
+}
+
+.myca-pb-hero-media {
+    position: relative;
+    order: -1;
+
+    @variant md {
+        order: 0;
+    }
+
+    figure,
+    img {
+        @apply h-56 w-full object-cover md:h-full md:min-h-[480px];
+    }
+
+    &::before {
+        content: "";
+        position: absolute;
+        inset: auto 0 0;
+        height: --spacing(24);
+        background: linear-gradient(to top, var(--color-navy-950), transparent);
+
+        @variant md {
+            inset: 0 auto 0 0;
+            width: 260px;
+            height: auto;
+            background: linear-gradient(to right, var(--color-navy-950), transparent);
+        }
+    }
+}
+
+/* Tuiles de réassurance */
+.myca-pb-tiles [data-content-type="column-line"] {
+    gap: --spacing(3);
+}
+
+.myca-pb-tiles [data-content-type="column"] {
+    @media (width < 48rem) {
+        width: calc(50% - --spacing(1.5)) !important;
+    }
+}
+
+.myca-pb-tile {
+    @apply flex h-full flex-col items-center gap-1.5 rounded-lg border border-line bg-surface px-2.5 py-3.5 text-center;
+
+    &::before {
+        width: 26px;
+        height: 26px;
+        @apply text-accent-text;
+    }
+
+    strong {
+        @apply text-[13px] leading-[18px] font-semibold text-fg;
+    }
+
+    p:last-child {
+        @apply text-xs leading-4 text-fg-muted;
+    }
+}
+
+/* Titre de section + bouton « Voir tout » + grille de produits */
+.myca-pb-products {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: --spacing(4);
+
+    > [data-content-type="products"] {
+        grid-column: 1 / -1;
+    }
+}
+
+.myca-pb-section-title {
+    @apply font-display text-2xl leading-[30px] font-bold italic text-fg md:text-[32px] md:leading-[37px];
+}
+
+/* Bloc « Notre histoire » */
+.myca-pb-story-media img {
+    @apply h-72 w-full rounded-xl object-cover md:h-[420px];
+}
+
+.myca-pb-story-text {
+    @apply gap-4 rounded-lg bg-surface-subtle p-5 shadow-card md:p-10;
+}
+
+.myca-pb-story-title {
+    @apply font-display text-[28px] leading-[34px] font-bold italic text-fg md:text-4xl md:leading-[41px];
+}
+
+.myca-pb-checklist ul {
+    @apply flex flex-col;
+}
+
+.myca-pb-checklist li {
+    @apply flex items-center gap-2.5 border-b border-line px-1 py-2 text-[13px] leading-[18px] font-semibold text-fg last:border-0;
+
+    &::before {
+        width: 18px;
+        height: 18px;
+        @apply text-gold-700;
+    }
+}
+
+/* Encarts promotionnels (MYCA Signature, Devenir partenaire) */
+.myca-pb-promo {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr);
+    align-content: center;
+    gap: --spacing(2) --spacing(3);
+    @apply rounded-lg bg-navy-900 p-4 text-white;
+
+    @variant sm {
+        grid-template-columns: minmax(0, 1fr) auto;
+
+        > [data-content-type="image"] {
+            grid-column: 2;
+            grid-row: 1 / span 3;
+        }
+    }
+
+    img {
+        @apply h-40 w-full rounded-md object-cover sm:h-[200px] sm:w-[200px] lg:w-[260px];
+    }
+}
+
+.myca-pb-promo-title {
+    @apply font-display text-2xl leading-[30px] font-bold italic text-white;
+}
+
+.myca-pb-promo-round img {
+    @apply lg:w-[200px] lg:rounded-full;
+}
+
+/* Note d'information (renvoi « * ») */
+.myca-pb-note {
+    @apply flex items-start gap-2 rounded-md bg-info-bg px-3 py-2.5 text-xs leading-4 text-info;
+    --myca-pb-icon: url("../svg/info.svg");
+
+    &::before {
+        width: 16px;
+        height: 16px;
+    }
+}

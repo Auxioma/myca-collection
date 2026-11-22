@@ -1,0 +1,54 @@
+<?php
+/**
+ * Liste de produits Page Builder / widget (Best-sellers, Nouveautés) : grille 2, 3 puis 4 colonnes.
+ */
+
+declare(strict_types=1);
+
+use Hyva\Theme\Model\ViewModelRegistry;
+use Hyva\Theme\ViewModel\ProductListItem;
+use Hyva\Theme\ViewModel\ProductPage;
+use Magento\Catalog\Block\Product\ListProduct;
+use Magento\Catalog\Block\Product\ReviewRendererInterface;
+use Magento\Framework\Escaper;
+
+/** @var ListProduct $block */
+/** @var Escaper $escaper */
+/** @var ViewModelRegistry $viewModels */
+
+$productViewModel         = $viewModels->require(ProductPage::class);
+$productListItemViewModel = $viewModels->require(ProductListItem::class);
+
+?>
+<?php if ($block->getProductCollection() && $block->getProductCollection()->getSize()): ?>
+    <?php
+    $type = 'widget-product-grid';
+    $mode = 'grid';
+    $image = 'new_products_content_widget_grid';
+    $items = $block->getProductCollection()->getItems();
+    $templateType = ReviewRendererInterface::SHORT_VIEW;
+    $description = false;
+    ?>
+    <div class="block widget block-products-list <?= /* @noEscape */ $mode ?>">
+        <?php if ($block->getTitle()): ?>
+            <div class="block-title">
+                <strong><?= $escaper->escapeHtml(__($block->getTitle())) ?></strong>
+            </div>
+        <?php endif ?>
+        <div class="block-content">
+            <div class="grid gap-3 <?= $mode === 'grid' ? 'grid-cols-2 md:grid-cols-3 xl:grid-cols-4' : 'grid-cols-1' ?>">
+                <?php foreach ($items as $item): ?>
+                    <?= $productListItemViewModel->getItemHtml(
+                        $item,
+                        $block,
+                        $mode,
+                        $templateType,
+                        $image,
+                        $description
+                    ) ?>
+                <?php endforeach ?>
+            </div>
+            <?= $block->getPagerHtml() ?>
+        </div>
+    </div>
+<?php endif ?>

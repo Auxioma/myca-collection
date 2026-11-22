@@ -8,6 +8,9 @@
     .myca-section {
         @apply font-display text-xl leading-7 font-bold italic md:text-2xl md:leading-[30px];
     }
+    .myca-section-title {
+        @apply font-display text-2xl leading-[30px] font-bold italic text-fg md:text-[32px] md:leading-[37px];
+    }
     .myca-h1 {
         @apply text-[22px] leading-7 font-bold md:text-[26px] md:leading-8;
     }

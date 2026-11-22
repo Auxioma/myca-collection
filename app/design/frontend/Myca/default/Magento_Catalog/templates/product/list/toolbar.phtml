@@ -108,7 +108,7 @@ $additionalOptions = ['page' => 'p'];
             </div>
         <?php else: ?>
             <div class="flex flex-wrap items-end gap-3">
-                <p class="myca-body-s-strong me-auto self-center text-fg"><?= $escaper->escapeHtml($totalLabel) ?></p>
+                <p class="myca-body-s-strong w-full self-center text-fg sm:me-auto sm:w-auto"><?= $escaper->escapeHtml($totalLabel) ?></p>
                 <label class="w-[calc(50%-0.375rem)] sm:w-40">
                     <span class="myca-field-label"><?= $escaper->escapeHtml(__('Trier par')) ?></span>
                     <select

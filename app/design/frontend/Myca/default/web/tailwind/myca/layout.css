@@ -74,3 +74,12 @@
         color: var(--myca-accent-fg);
     }
 }
+
+/* Listes filtrables en mobile : le pied de page reste lisible sous le bouton « Filtrer » fixé en bas. */
+.page-with-filter footer {
+    padding-bottom: --spacing(20);
+
+    @variant lg {
+        padding-bottom: 0;
+    }
+}
