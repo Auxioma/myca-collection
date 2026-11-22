@@ -1,0 +1,83 @@
+<?php
+/**
+ * Totaux du récapitulatif (P06) : lignes 13 px, remise en vert, total TTC sur fond doré.
+ */
+
+declare(strict_types=1);
+
+use Hyva\Theme\Model\ViewModelRegistry;
+use Hyva\Theme\ViewModel\StoreConfig;
+use Magento\Checkout\Block\Cart\Totals;
+use Magento\Framework\Escaper;
+use Magento\Store\Model\ScopeInterface;
+
+/** @var Escaper $escaper */
+/** @var Totals $block */
+/** @var ViewModelRegistry $viewModels */
+
+$storeConfigViewModel = $viewModels->require(StoreConfig::class);
+
+$totalsSort = $storeConfigViewModel->getStoreConfig('sales/totals_sort');
+?>
+<script>
+    function initCartTotals() {
+        return {
+            totalsData: window.checkoutConfig.totalsData,
+            quoteData: window.checkoutConfig.quoteData,
+            shippingMethod: window.checkoutConfig.selectedShippingMethod,
+            totalsSort: <?= /** @noEscape */ json_encode($totalsSort) ?>,
+            isLoading: false,
+            wrapperClass: 'flex items-center justify-between gap-2 py-1 text-[13px] leading-[18px] text-fg-secondary',
+            wrapperClassTotals: 'mt-2 flex items-center justify-between gap-2 rounded-md bg-gold-100 px-3 py-2.5 text-fg',
+            getSortedSegments() {
+                const segments = this.totalsData.total_segments;
+
+                return Array.from(segments).sort((a,b) => {
+
+                    const valueA = this.totalsSort[a.code] || 0;
+                    const valueB = this.totalsSort[b.code] || 0;
+
+                    return valueA - valueB;
+                })
+            },
+            getTotals() {
+                return this.totalsData
+            },
+            updateTotals(totalsData) {
+                this.totalsData = totalsData
+            },
+            updateShippingMethod(shippingMethod) {
+               this.shippingMethod = shippingMethod;
+            },
+            excludingTaxMessage: '<?= $escaper->escapeJs(__('Excl. Tax')) ?>',
+            includingTaxMessage: '<?= $escaper->escapeJs(__('Incl. Tax')) ?>',
+            eventListeners: {
+                ['@update-totals.window']($event) {
+                    this.updateTotals($event.detail.data)
+                },
+                ['@update-shipping-method.window']($event) {
+                    this.updateShippingMethod($event.detail.method)
+                },
+                ['@update-totals-start.window']() {
+                    this.isLoading = true;
+                },
+                ['@update-totals-end.window']() {
+                    this.isLoading = false;
+                }
+            }
+        }
+    }
+</script>
+<div
+    id="cart-totals"
+    class="cart-totals relative"
+    x-data="initCartTotals()"
+    x-bind="eventListeners"
+>
+    <?= $block->getBlockHtml('block-loader') ?>
+    <template x-for="(segment, index) in getSortedSegments()" :key="index">
+        <div>
+            <?= $block->getChildHtml(); ?>
+        </div>
+    </template>
+</div>

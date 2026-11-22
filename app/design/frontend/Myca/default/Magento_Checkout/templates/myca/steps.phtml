@@ -1,0 +1,52 @@
+<?php
+/**
+ * Suivi des étapes du tunnel (Figma « Étape de suivi ») : Panier, Identification, Livraison, Paiement, Confirmation.
+ * L'étape courante est fournie par la mise en page (argument « current_step »).
+ */
+
+declare(strict_types=1);
+
+use Hyva\Theme\Model\ViewModelRegistry;
+use Hyva\Theme\ViewModel\SvgIcons;
+use Magento\Framework\Escaper;
+use Magento\Framework\View\Element\Template;
+
+/** @var Template $block */
+/** @var Escaper $escaper */
+/** @var ViewModelRegistry $viewModels */
+
+$icons = $viewModels->require(SvgIcons::class);
+$steps = [
+    'cart' => ['cart', __('Panier')],
+    'identification' => ['user', __('Identification')],
+    'shipping' => ['truck', __('Livraison')],
+    'payment' => ['card', __('Paiement')],
+    'confirmation' => ['check-circle', __('Confirmation')],
+];
+$current = (string) $block->getData('current_step');
+$currentIndex = (int) array_search($current, array_keys($steps), true);
+?>
+<nav class="container mt-4" aria-label="<?= $escaper->escapeHtmlAttr(__('Étapes de la commande')) ?>">
+    <ol class="flex items-start">
+        <?php foreach (array_values($steps) as $index => [$icon, $label]): ?>
+            <?php
+            $isCurrent = $index === $currentIndex;
+            $isDone = $index < $currentIndex;
+            ?>
+            <?php if ($index > 0): ?>
+                <li class="flex-1 pt-3.5" aria-hidden="true">
+                    <span class="block h-[3px] rounded-[2px] <?= $isDone || $isCurrent ? 'bg-accent' : 'bg-gray-300' ?>"></span>
+                </li>
+            <?php endif ?>
+            <li class="flex w-16 shrink-0 flex-col items-center gap-1 md:w-[110px]" <?= $isCurrent ? 'aria-current="step"' : '' ?>>
+                <span class="flex size-8 items-center justify-center rounded-pill
+                    <?= $isCurrent || $isDone ? 'bg-accent text-on-accent' : 'border border-line-strong bg-surface-subtle text-fg' ?>">
+                    <?= $icons->renderHtml($icon, '', 16, 16, ['aria-hidden' => 'true']) ?>
+                </span>
+                <span class="text-center myca-caption-strong text-fg <?= $isCurrent ? '' : 'max-md:sr-only' ?>">
+                    <?= $escaper->escapeHtml($label) ?>
+                </span>
+            </li>
+        <?php endforeach ?>
+    </ol>
+</nav>

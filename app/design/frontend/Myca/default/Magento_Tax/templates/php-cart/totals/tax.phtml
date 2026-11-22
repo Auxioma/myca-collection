@@ -1,0 +1,17 @@
+<?php
+/**
+ * Ligne « tax » du récapitulatif (P06), rendue par Alpine à partir des totaux du panier.
+ */
+
+declare(strict_types=1);
+
+use Magento\Framework\Escaper;
+
+/** @var Escaper $escaper */
+?>
+<template x-if="segment.code === 'tax' && segment.value > 0">
+    <div :class="wrapperClass">
+        <span><?= $escaper->escapeHtml(__('dont TVA')) ?></span>
+        <span class="text-fg" x-text="hyva.formatPrice(segment.value)"></span>
+    </div>
+</template>

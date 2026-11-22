@@ -1,0 +1,156 @@
+<?php
+/**
+ * Ligne du panier (P06) : vignette, nom, options, référence, alerte de stock faible, sélecteur de quantité −/+,
+ * prix de ligne et prix unitaire, suppression. Un changement de quantité met le panier à jour sans recharger la page.
+ */
+
+declare(strict_types=1);
+
+// phpcs:disable Generic.WhiteSpace.ScopeIndent
+// phpcs:disable Magento2.Files.LineLength.MaxExceeded
+
+use Hyva\Theme\Model\ViewModelRegistry;
+use Hyva\Theme\ViewModel\ProductStockItem;
+use Magento\Checkout\Block\Cart\Item\Renderer;
+use Magento\Framework\Escaper;
+use Myca\Catalog\ViewModel\StockLevel;
+
+/** @var Renderer $block */
+/** @var Escaper $escaper */
+/** @var ViewModelRegistry $viewModels */
+
+/** @var ProductStockItem $stockItemViewModel */
+$stockItemViewModel = $viewModels->require(ProductStockItem::class);
+
+$item = $block->getItem();
+$product = $item->getProduct();
+$isVisibleProduct = $product->isVisibleInSiteVisibility();
+
+$minSalesQty = $stockItemViewModel->getMinSaleQty($product);
+$maxSalesQty = $stockItemViewModel->getMaxSaleQty($product);
+$qty = $stockItemViewModel->isQtyDecimal($product)
+    ? $block->getQty()
+    : (int) $block->getQty();
+
+$step = $stockItemViewModel->getQtyIncrements($product)
+    ? $stockItemViewModel->getQtyIncrements($product)
+    : null;
+
+/**
+ * sets minimum and maximum values taking into account the values set in the admin,
+ * but taking into account the value of Qty Increments
+ */
+if ($step) {
+    $minSalesQty = ceil($minSalesQty / $step) * $step;
+    $maxSalesQty = floor($maxSalesQty / $step) * $step;
+    $qty = ceil($qty / $step) * $step;
+}
+
+$maxSalesQtyLength = ($maxSalesQty ? strlen((string) $maxSalesQty) : 4)
+    + (/* add one if decimal for separator */ (int) $stockItemViewModel->isQtyDecimal($product));
+
+/** @var StockLevel $stockLevel */
+$stockLevel = $viewModels->require(StockLevel::class);
+$sku = (string) $item->getSku();
+$lowStockQty = $stockLevel->getLowStockQty($sku);
+$options = $block->getOptionList();
+$optionText = implode(' · ', array_map(
+    static fn (array $option) => $option['label'] . ' : ' . strip_tags((string) $option['value']),
+    $options
+));
+
+?>
+<article class="cart item relative flex gap-3 md:gap-4"
+    <?php foreach ($block->getData('cart_item_data_attributes') ?? [] as $attribute => $include): ?>
+        <?php if ($include): ?>
+            <?= $escaper->escapeHtml(sprintf('data-%s', $attribute)) ?>="<?= $escaper->escapeHtmlAttr($item->getData($attribute)) ?>"
+        <?php endif ?>
+    <?php endforeach ?>
+>
+    <div class="product-item-photo flex size-20 shrink-0 items-center justify-center overflow-hidden md:h-20 md:w-[84px]">
+        <?= $block->getImage($block->getProductForThumbnail(), 'cart_page_product_thumbnail')
+            ->setTemplate('Magento_Catalog::product/image.phtml')
+            ->toHtml() ?>
+    </div>
+
+    <div class="flex grow flex-col gap-3 md:flex-row md:items-center md:gap-4">
+        <div class="product-item-details flex grow flex-col gap-0.5 pe-11 md:pe-0">
+            <h3 class="product-item-name myca-body-s-strong text-fg">
+                <?php if ($block->hasProductUrl()): ?>
+                    <a href="<?= $escaper->escapeUrl($block->getProductUrl()) ?>" class="hover:underline"><?= $escaper->escapeHtml($block->getProductName()) ?></a>
+                <?php else: ?>
+                    <?= $escaper->escapeHtml($block->getProductName()) ?>
+                <?php endif ?>
+            </h3>
+            <?php if ($optionText !== ''): ?>
+                <p class="myca-caption text-fg-secondary"><?= $escaper->escapeHtml($optionText) ?></p>
+            <?php endif ?>
+            <p class="myca-caption text-fg-muted"><?= $escaper->escapeHtml(__('Réf. %1', $sku)) ?></p>
+            <?php if ($lowStockQty !== null): ?>
+                <p class="mt-1 self-start myca-badge myca-badge-warning">
+                    <?= $escaper->escapeHtml(__('Plus que %1 en stock', $lowStockQty)) ?>
+                </p>
+            <?php endif ?>
+            <?php foreach ($block->getMessages() ?: [] as $message): ?>
+                <p class="cart item message mt-1 myca-caption <?= $message['type'] === 'error' ? 'text-danger' : 'text-warning' ?>">
+                    <?= $escaper->escapeHtml($message['text']) ?>
+                </p>
+            <?php endforeach ?>
+            <?php if ($addInfoBlock = $block->getProductAdditionalInformationBlock()): ?>
+                <?= $addInfoBlock->setItem($item)->toHtml() ?>
+            <?php endif ?>
+        </div>
+
+        <div class="flex items-center justify-between gap-4 md:justify-end">
+            <div
+                class="flex h-11 items-center rounded-md border border-line-strong md:h-9"
+                x-data="{ qty: <?= (float) $qty ?> }"
+            >
+                <button
+                    type="button"
+                    class="inline-flex size-11 items-center justify-center text-fg disabled:opacity-40 md:size-9"
+                    :disabled="qty <= <?= (float) ($minSalesQty ?: 1) ?>"
+                    @click="qty = Math.max(<?= (float) ($minSalesQty ?: 1) ?>, qty - <?= (float) ($step ?: 1) ?>); $nextTick(() => $refs.qty.form.requestSubmit())"
+                    aria-label="<?= $escaper->escapeHtmlAttr(__('Diminuer la quantité de %1', $block->getProductName())) ?>"
+                >−</button>
+                <label>
+                    <span class="sr-only"><?= $escaper->escapeHtml(__('Quantité de %1', $block->getProductName())) ?></span>
+                    <input
+                        name="cart[<?= $escaper->escapeHtmlAttr($item->getId()) ?>][qty]"
+                        x-ref="qty"
+                        x-model.number="qty"
+                        @change="$refs.qty.form.requestSubmit()"
+                        class="w-12 border-0 bg-transparent text-center text-base [appearance:textfield] md:text-sm"
+                        required
+                        type="number"
+                        inputmode="numeric"
+                        <?php if ($minSalesQty): ?>min="<?= /** @noEscape */ $minSalesQty ?>"<?php endif ?>
+                        <?php if ($maxSalesQty): ?>max="<?= /** @noEscape */ $maxSalesQty ?>"<?php endif ?>
+                        <?php if ($step): ?>step="<?= /** @noEscape */ $step ?>"<?php endif ?>
+                        data-role="cart-item-qty"
+                    >
+                </label>
+                <button
+                    type="button"
+                    class="inline-flex size-11 items-center justify-center text-fg md:size-9"
+                    @click="qty = qty + <?= (float) ($step ?: 1) ?>; $nextTick(() => $refs.qty.form.requestSubmit())"
+                    aria-label="<?= $escaper->escapeHtmlAttr(__('Augmenter la quantité de %1', $block->getProductName())) ?>"
+                >+</button>
+            </div>
+
+            <p class="price-box flex flex-col items-end text-right md:min-w-24">
+                <span class="myca-body-s-strong text-fg">
+                    <span class="sr-only"><?= $escaper->escapeHtml(__('Total de la ligne')) ?></span>
+                    <?= $block->getRowTotalHtml($item) ?>
+                </span>
+                <span class="myca-caption whitespace-nowrap text-fg-secondary">
+                    <?= $escaper->escapeHtml(__('%1 / pièce', strip_tags((string) $block->getUnitPriceHtml($item)))) ?>
+                </span>
+            </p>
+
+            <div class="item-actions absolute top-0 right-0 flex items-center md:static">
+                <?= /* @noEscape */ $block->getActions($item) ?>
+            </div>
+        </div>
+    </div>
+</article>

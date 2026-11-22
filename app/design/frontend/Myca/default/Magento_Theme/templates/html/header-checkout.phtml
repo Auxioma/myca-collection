@@ -1,0 +1,34 @@
+<?php
+/**
+ * En-tête épuré du tunnel de commande (Figma « En-tête/Tunnel de commande ») : logo, paiement sécurisé, aide.
+ * Sans navigation, pour limiter les sorties du tunnel.
+ */
+
+declare(strict_types=1);
+
+use Hyva\Theme\Model\ViewModelRegistry;
+use Hyva\Theme\ViewModel\SvgIcons;
+use Magento\Framework\Escaper;
+use Magento\Framework\View\Element\Template;
+
+/** @var Template $block */
+/** @var Escaper $escaper */
+/** @var ViewModelRegistry $viewModels */
+
+$icons = $viewModels->require(SvgIcons::class);
+?>
+<header id="header" class="bg-shell text-white">
+    <div class="container flex items-center gap-5 py-2 md:py-3.5">
+        <?= $block->getChildHtml('logo') ?>
+        <p class="ms-auto flex items-center gap-2 myca-body-s-strong">
+            <?= $icons->renderHtml('lock', 'shrink-0', 18, 18, ['aria-hidden' => 'true']) ?>
+            <span class="hidden sm:inline"><?= $escaper->escapeHtml(__('Paiement 100 % sécurisé')) ?></span>
+            <span class="sm:hidden"><?= $escaper->escapeHtml(__('Sécurisé')) ?></span>
+        </p>
+        <span class="hidden h-6 w-px bg-white md:block" aria-hidden="true"></span>
+        <a href="<?= $escaper->escapeUrl($block->getUrl('', ['_direct' => 'contact'])) ?>" class="hidden items-center gap-2 myca-body-s hover:underline md:flex">
+            <?= $icons->renderHtml('headset', 'shrink-0', 18, 18, ['aria-hidden' => 'true']) ?>
+            <?= $escaper->escapeHtml(__('Besoin d’aide ? Service client')) ?>
+        </a>
+    </div>
+</header>

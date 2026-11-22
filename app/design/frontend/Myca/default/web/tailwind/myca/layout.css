@@ -75,8 +75,9 @@
     }
 }
 
-/* Listes filtrables en mobile : le pied de page reste lisible sous le bouton « Filtrer » fixé en bas. */
-.page-with-filter footer {
+/* Mobile : le pied de page reste lisible sous les boutons fixés en bas (« Filtrer », « Passer la commande »). */
+.page-with-filter footer,
+.checkout-cart-index footer {
     padding-bottom: --spacing(20);
 
     @variant lg {

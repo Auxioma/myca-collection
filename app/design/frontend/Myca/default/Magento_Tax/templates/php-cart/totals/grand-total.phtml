@@ -1,0 +1,17 @@
+<?php
+/**
+ * Ligne « grand-total » du récapitulatif (P06), rendue par Alpine à partir des totaux du panier.
+ */
+
+declare(strict_types=1);
+
+use Magento\Framework\Escaper;
+
+/** @var Escaper $escaper */
+?>
+<template x-if="segment.code === 'grand_total'">
+    <div :class="wrapperClassTotals">
+        <span class="myca-body-s-strong"><?= $escaper->escapeHtml(__('Total TTC')) ?></span>
+        <span class="text-lg leading-6 font-bold" x-text="hyva.formatPrice(segment.value)"></span>
+    </div>
+</template>

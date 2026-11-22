@@ -1,0 +1,42 @@
+<?php
+/**
+ * Suppression d'une ligne du panier (P06) : icône corbeille, zone tactile de 44 px.
+ */
+
+declare(strict_types=1);
+
+use Hyva\Theme\Model\ViewModelRegistry;
+use Hyva\Theme\ViewModel\LucideIcons;
+use Magento\Checkout\Block\Cart\Item\Renderer\Actions\Remove;
+use Magento\Framework\Escaper;
+
+/** @var Remove $block */
+/** @var ViewModelRegistry $viewModels */
+/** @var Escaper $escaper */
+
+/** @var LucideIcons $lucideIcons */
+$lucideIcons = $viewModels->require(LucideIcons::class);
+
+$item = $block->getItem();
+if ($item->getProductType() === 'configurable') {
+    $productOptions = $item->getProduct()->getTypeInstance()->getOrderOptions($item->getProduct());
+    $productName = $productOptions["simple_name"];
+} else {
+    $productName = $item->getName();
+}
+?>
+<button
+    type="button"
+    class="inline-flex size-11 items-center justify-center rounded-md text-fg-secondary hover:text-danger focus-visible:outline-2 focus-visible:outline-accent md:size-9"
+    data-delete-post-json="<?= $escaper->escapeHtmlAttr($block->getDeletePostJson()) ?>"
+    data-cart-item-removed-payload="<?= $escaper->escapeHtml(json_encode([
+        'product_sku' => $item->getSku(),
+        'product_name' => $item->getName(),
+        'product_price_value' => $item->getPrice(),
+        'quantity' => $item->getQty()
+    ])) ?>"
+    @click.prevent="removeItem"
+    aria-label="<?= $escaper->escapeHtmlAttr(__('Remove %1', $productName)) ?>"
+>
+    <?= $lucideIcons->trashHtml('', 18, 18, ['aria-hidden' => 'true']) ?>
+</button>

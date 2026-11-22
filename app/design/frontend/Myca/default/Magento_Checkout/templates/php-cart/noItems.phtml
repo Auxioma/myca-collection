@@ -1,0 +1,21 @@
+<?php
+/**
+ * Panier vide (P06) : message et retour vers les collections.
+ */
+
+declare(strict_types=1);
+
+use Magento\Checkout\Block\Cart;
+use Magento\Framework\Escaper;
+
+/** @var Cart $block */
+/** @var Escaper $escaper */
+?>
+<section class="myca-card mx-auto flex max-w-xl flex-col items-center gap-3 p-8 text-center">
+    <h1 class="myca-section text-fg"><?= $escaper->escapeHtml(__('Votre panier est vide')) ?></h1>
+    <p class="myca-body-m text-fg-secondary"><?= $escaper->escapeHtml(__('Découvrez nos capsules et la ligne MYCA Signature.')) ?></p>
+    <a href="<?= $escaper->escapeUrl($block->getUrl('', ['_direct' => 'collections.html'])) ?>" class="myca-btn myca-btn-primary">
+        <?= $escaper->escapeHtml(__('Voir les collections')) ?>
+    </a>
+    <?= $block->getChildHtml('checkout_cart_empty_widget') ?>
+</section>

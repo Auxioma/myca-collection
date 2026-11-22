@@ -1,0 +1,81 @@
+<?php
+/**
+ * Carte « Mon panier » (P06) : nombre d'articles, lien « Continuer mes achats », lignes du panier.
+ */
+
+declare(strict_types=1);
+
+// phpcs:disable Magento2.Templates.ThisInTemplate
+
+use Hyva\Theme\Model\ViewModelRegistry;
+use Hyva\Theme\ViewModel\Cart\ItemOutput;
+use Hyva\Theme\ViewModel\Modal;
+use Magento\Checkout\Block\Cart\Grid;
+use Magento\Checkout\ViewModel\Cart as CartViewModel;
+use Hyva\Theme\ViewModel\SvgIcons;
+use Magento\Framework\Escaper;
+
+/** @var Grid $block */
+/** @var ViewModelRegistry $viewModels */
+/** @var Escaper $escaper */
+
+/** @var CartViewModel $cartViewModel */
+$cartViewModel = $viewModels->require(CartViewModel::class);
+
+/** @var Modal $modalViewModel */
+$modalViewModel = $viewModels->require(Modal::class);
+
+/** @var ItemOutput $cartItemOutputViewModel */
+$cartItemOutputViewModel = $viewModels->require(ItemOutput::class);
+
+/** @var SvgIcons $icons */
+$icons = $viewModels->require(SvgIcons::class);
+$itemsCount = (int) $block->getQuote()->getItemsQty();
+$mergedCells = ($cartItemOutputViewModel->isItemPriceDisplayBoth() ? 2 : 1);
+?>
+<?= $block->getChildHtml('form_before') ?>
+<section class="myca-card p-4" aria-labelledby="myca-cart-title">
+    <div class="mb-2 flex flex-wrap items-center gap-2">
+        <?= $icons->renderHtml('cart', 'text-fg', 18, 18, ['aria-hidden' => 'true']) ?>
+        <h1 id="myca-cart-title" class="text-[15px] leading-5 font-semibold text-fg">
+            <?= $escaper->escapeHtml(__('Mon panier')) ?>
+            <span class="myca-caption font-normal text-fg-secondary">
+                (<?= $escaper->escapeHtml($itemsCount > 1 ? __('%1 articles', $itemsCount) : __('%1 article', $itemsCount)) ?>)
+            </span>
+        </h1>
+        <a href="<?= $escaper->escapeUrl($block->getContinueShoppingUrl() ?: $block->getBaseUrl()) ?>" class="ms-auto inline-flex min-h-11 items-center gap-1 myca-caption-strong text-accent-text hover:underline md:min-h-0">
+            <?= $escaper->escapeHtml(__('Continuer mes achats')) ?>
+            <?= $icons->renderHtml('arrow-right', '', 14, 14, ['aria-hidden' => 'true']) ?>
+        </a>
+    </div>
+    <form
+        id="form-validate"
+        class="form form-cart"
+        action="<?= $escaper->escapeUrl($block->getUrl('checkout/cart/updatePost')) ?>"
+        method="post"
+        @submit.prevent="postCart"
+    >
+        <?= $block->getBlockHtml('formkey') ?>
+        <fieldset id="shopping-cart-table">
+            <legend class="sr-only"><?= $escaper->escapeHtml(__('Articles du panier')) ?></legend>
+            <ul class="divide-y divide-line">
+                <?php foreach ($block->getItems() as $item): ?>
+                    <li class="py-4"><?= $block->getItemHtml($item) ?></li>
+                <?php endforeach ?>
+            </ul>
+        </fieldset>
+        <?php if ($block->getPagerHtml()): ?>
+            <div class="toolbar cart-products-toolbar mt-4"><?= $block->getPagerHtml() ?></div>
+        <?php endif ?>
+        <div class="actions-toolbar cart actions flex flex-wrap gap-2">
+            <button type="submit" name="update_cart_action" value="update_qty" class="sr-only focus:not-sr-only focus:block focus:underline" data-cart-item-update>
+                <?= $escaper->escapeHtml(__('Mettre à jour le panier')) ?>
+            </button>
+            <?php if ($cartViewModel->isClearShoppingCartEnabled()): ?>
+                <?= $block->getChildHtml('checkout.cart.form.clear') ?>
+            <?php endif ?>
+            <?= $block->getChildHtml('checkout.cart.order.actions') ?>
+        </div>
+    </form>
+</section>
+<?= $block->getChildHtml('shopping.cart.table.after') ?>

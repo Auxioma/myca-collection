@@ -1,0 +1,20 @@
+<?php
+/**
+ * Titre de la carte « Récapitulatif » (P06).
+ */
+
+declare(strict_types=1);
+
+use Hyva\Theme\Model\ViewModelRegistry;
+use Hyva\Theme\ViewModel\SvgIcons;
+use Magento\Framework\Escaper;
+
+/** @var Escaper $escaper */
+/** @var ViewModelRegistry $viewModels */
+
+$icons = $viewModels->require(SvgIcons::class);
+?>
+<h2 class="mb-2 flex items-center gap-2 text-[15px] leading-5 font-semibold text-fg">
+    <?= $icons->renderHtml('file', 'text-gold-700', 18, 18, ['aria-hidden' => 'true']) ?>
+    <?= $escaper->escapeHtml(__('Récapitulatif')) ?>
+</h2>

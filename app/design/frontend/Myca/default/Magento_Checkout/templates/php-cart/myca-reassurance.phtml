@@ -1,0 +1,31 @@
+<?php
+/**
+ * Carte de réassurance du panier (P06) : rétractation et point relais offert.
+ */
+
+declare(strict_types=1);
+
+use Hyva\Theme\Model\ViewModelRegistry;
+use Hyva\Theme\ViewModel\SvgIcons;
+use Magento\Framework\Escaper;
+
+/** @var Escaper $escaper */
+/** @var ViewModelRegistry $viewModels */
+
+$icons = $viewModels->require(SvgIcons::class);
+$items = [
+    ['refresh', __('Rétractation 14 jours'), __('Conditions détaillées en ligne')],
+    ['truck', __('Point relais offert dès 100 € TTC'), __('après remise, destinations desservies')],
+];
+?>
+<ul class="myca-card divide-y divide-line px-4 py-2">
+    <?php foreach ($items as [$icon, $title, $text]): ?>
+        <li class="flex items-start gap-3 py-2.5">
+            <?= $icons->renderHtml($icon, 'mt-0.5 shrink-0 text-gold-700', 18, 18, ['aria-hidden' => 'true']) ?>
+            <span>
+                <span class="block myca-body-s-strong text-fg"><?= $escaper->escapeHtml($title) ?></span>
+                <span class="block myca-caption text-fg-secondary"><?= $escaper->escapeHtml($text) ?></span>
+            </span>
+        </li>
+    <?php endforeach ?>
+</ul>

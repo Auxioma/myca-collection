@@ -1,0 +1,17 @@
+<?php
+/**
+ * Ligne « shipping » du récapitulatif (P06), rendue par Alpine à partir des totaux du panier.
+ */
+
+declare(strict_types=1);
+
+use Magento\Framework\Escaper;
+
+/** @var Escaper $escaper */
+?>
+<template x-if="segment.code === 'shipping' && shippingMethod">
+    <div :class="wrapperClass">
+        <span x-text="segment.title"></span>
+        <span class="text-fg" x-text="segment.value > 0 ? hyva.formatPrice(segment.value) : '<?= $escaper->escapeJs(__('Offerte')) ?>'"></span>
+    </div>
+</template>

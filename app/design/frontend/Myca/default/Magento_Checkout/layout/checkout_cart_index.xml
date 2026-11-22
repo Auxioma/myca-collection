@@ -1,0 +1,49 @@
+<?xml version="1.0"?>
+<page xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:noNamespaceSchemaLocation="urn:magento:framework:View/Layout/etc/page_configuration.xsd">
+    <body>
+        <!-- Panier P06 : en-tête épuré du tunnel et suivi des étapes. -->
+        <referenceBlock name="header-content" template="Magento_Theme::html/header-checkout.phtml"/>
+        <referenceBlock name="page.main.title" remove="true"/>
+        <referenceContainer name="page.top">
+            <block name="myca.checkout.steps" template="Magento_Checkout::myca/steps.phtml" before="-">
+                <arguments>
+                    <argument name="current_step" xsi:type="string">cart</argument>
+                </arguments>
+            </block>
+        </referenceContainer>
+
+        <!-- Colonne de droite : récapitulatif, code promo, réassurance. -->
+        <referenceContainer name="cart.summary" htmlClass="cart-summary myca-card p-4">
+            <block name="myca.cart.summary.title" template="Magento_Checkout::php-cart/myca-summary-title.phtml" before="-"/>
+            <block name="myca.cart.relay" template="Magento_Checkout::php-cart/myca-relay-progress.phtml" after="checkout.cart.totals.container">
+                <arguments>
+                    <argument name="progress" xsi:type="object">Myca\Shipping\ViewModel\FreeRelayProgress</argument>
+                </arguments>
+            </block>
+        </referenceContainer>
+        <move element="checkout.cart.coupon" destination="checkout.cart.wrapper" as="myca.cart.coupon"/>
+        <referenceBlock name="checkout.cart.wrapper">
+            <block name="myca.cart.reassurance" as="myca.cart.reassurance" template="Magento_Checkout::php-cart/myca-reassurance.phtml"/>
+        </referenceBlock>
+        <!-- L'estimation par pays / code postal n'est pas dans la maquette : la livraison se choisit à l'étape Livraison. -->
+        <referenceBlock name="checkout.cart.shipping" remove="true"/>
+
+        <!-- Pas de bouton « Modifier » sur les lignes : la maquette ne prévoit que la quantité et la suppression. -->
+        <referenceBlock name="checkout.cart.item.renderers.bundle.actions.edit" remove="true"/>
+        <referenceBlock name="checkout.cart.item.renderers.configurable.actions.edit" remove="true"/>
+        <referenceBlock name="checkout.cart.item.renderers.default.actions.edit" remove="true"/>
+        <referenceBlock name="checkout.cart.item.renderers.downloadable.actions.edit" remove="true"/>
+        <referenceBlock name="checkout.cart.item.renderers.grouped.actions.edit" remove="true"/>
+        <referenceBlock name="checkout.cart.item.renderers.simple.actions.edit" remove="true"/>
+        <referenceBlock name="checkout.cart.item.renderers.virtual.actions.edit" remove="true"/>
+
+        <!-- « Vous aimerez aussi » sous les articles. -->
+        <move element="crosssell" destination="checkout.cart.widget"/>
+        <referenceBlock name="crosssell">
+            <arguments>
+                <argument name="title" xsi:type="string" translate="true">Vous aimerez aussi</argument>
+            </arguments>
+        </referenceBlock>
+    </body>
+</page>

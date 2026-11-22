@@ -1,0 +1,17 @@
+<?php
+/**
+ * Ligne « subtotal » du récapitulatif (P06), rendue par Alpine à partir des totaux du panier.
+ */
+
+declare(strict_types=1);
+
+use Magento\Framework\Escaper;
+
+/** @var Escaper $escaper */
+?>
+<template x-if="segment.code === 'subtotal'">
+    <div :class="wrapperClass">
+        <span><?= $escaper->escapeHtml(__('Sous-total')) ?> (<span x-text="Number(quoteData.items_qty ?? 0)"></span> <?= $escaper->escapeHtml(__('articles')) ?>)</span>
+        <span class="text-fg" x-text="hyva.formatPrice(segment.value)"></span>
+    </div>
+</template>

@@ -1,0 +1,32 @@
+<?php
+/**
+ * Bouton « Passer la commande » et moyens de paiement (P06). Fixé en bas d'écran en mobile.
+ */
+
+declare(strict_types=1);
+
+use Hyva\Theme\Model\ViewModelRegistry;
+use Hyva\Theme\ViewModel\SvgIcons;
+use Magento\Checkout\Block\Onepage\Link;
+use Magento\Framework\Escaper;
+
+/** @var Escaper $escaper */
+/** @var Link $block */
+/** @var ViewModelRegistry $viewModels */
+
+$icons = $viewModels->require(SvgIcons::class);
+?>
+<?php if ($block->isPossibleOnepageCheckout()): ?>
+    <div class="fixed inset-x-0 bottom-0 z-20 border-t border-line bg-surface p-3 md:static md:mt-3 md:border-0 md:p-0">
+        <a
+            @click.prevent.stop="$dispatch('toggle-authentication', {url: '<?= $escaper->escapeHtmlAttr($escaper->escapeUrl($block->getCheckoutUrl())) ?>'});"
+            href="<?= $escaper->escapeUrl($block->getCheckoutUrl()) ?>"
+            class="myca-btn myca-btn-primary btn-checkout w-full"
+            id="checkout-link-button"
+        >
+            <?= $icons->renderHtml('lock', '', 16, 16, ['aria-hidden' => 'true']) ?>
+            <?= $escaper->escapeHtml(__('Passer la commande')) ?>
+        </a>
+    </div>
+    <p class="mt-2 text-center myca-caption text-fg-secondary"><?= $escaper->escapeHtml(__('Paiement sécurisé : CB, PayPal, Apple Pay')) ?></p>
+<?php endif ?>
