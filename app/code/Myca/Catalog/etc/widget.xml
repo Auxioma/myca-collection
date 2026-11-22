@@ -1,0 +1,37 @@
+<?xml version="1.0"?>
+<widgets xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Widget:etc/widget.xsd">
+    <widget id="myca_category_cards" class="Myca\Catalog\Block\Widget\CategoryCards" is_email_compatible="false">
+        <label translate="true">MYCA – Cartes de catégories</label>
+        <description translate="true">Cartes « Acheter par catégorie » ou « Nos collections » avec titre de section et lien.</description>
+        <parameters>
+            <parameter name="title" xsi:type="text" visible="true" sort_order="10">
+                <label translate="true">Titre de la section</label>
+            </parameter>
+            <parameter name="subtitle" xsi:type="text" visible="true" sort_order="20">
+                <label translate="true">Sous-titre</label>
+            </parameter>
+            <parameter name="url_keys" xsi:type="text" visible="true" required="true" sort_order="30">
+                <label translate="true">Catégories (clés d'URL séparées par des virgules)</label>
+                <description translate="true">Exemple : polos,tee-shirts,sweats,casquettes</description>
+            </parameter>
+            <parameter name="card_style" xsi:type="select" visible="true" required="true" sort_order="40">
+                <label translate="true">Présentation</label>
+                <options>
+                    <option name="category" value="category" selected="true">
+                        <label translate="true">Type de produit (image détourée, nombre de modèles)</label>
+                    </option>
+                    <option name="collection" value="collection">
+                        <label translate="true">Collection (photo, étiquette, accroche)</label>
+                    </option>
+                </options>
+            </parameter>
+            <parameter name="link_label" xsi:type="text" visible="true" sort_order="50">
+                <label translate="true">Libellé du bouton (facultatif)</label>
+            </parameter>
+            <parameter name="link_url" xsi:type="text" visible="true" sort_order="60">
+                <label translate="true">Adresse du bouton (ex. collections.html)</label>
+            </parameter>
+        </parameters>
+    </widget>
+</widgets>

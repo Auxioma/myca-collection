@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<widgets xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Widget:etc/widget.xsd">
+    <widget id="myca_newsletter" class="Myca\Content\Block\Widget\Newsletter" is_email_compatible="false">
+        <label translate="true">MYCA – Inscription à la newsletter</label>
+        <description translate="true">Bloc sombre avec titre, texte, champ e-mail et mention de consentement.</description>
+        <parameters>
+            <parameter name="title" xsi:type="text" visible="true" required="true" sort_order="10">
+                <label translate="true">Titre</label>
+            </parameter>
+            <parameter name="text" xsi:type="text" visible="true" sort_order="20">
+                <label translate="true">Texte</label>
+            </parameter>
+            <parameter name="consent" xsi:type="text" visible="true" required="true" sort_order="30">
+                <label translate="true">Mention de consentement</label>
+            </parameter>
+        </parameters>
+    </widget>
+</widgets>

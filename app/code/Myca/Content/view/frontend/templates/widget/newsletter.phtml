@@ -1,0 +1,64 @@
+<?php
+/**
+ * Bloc « Rejoignez le cercle MYCA » (P01) : fond bleu nuit, champ e-mail + « S'inscrire », consentement distinct.
+ * Envoi natif Magento_Newsletter ; validation du navigateur (type="email", required).
+ */
+
+declare(strict_types=1);
+
+use Hyva\Theme\Model\ViewModelRegistry;
+use Hyva\Theme\ViewModel\SvgIcons;
+use Magento\Framework\Escaper;
+use Myca\Content\Block\Widget\Newsletter;
+
+/** @var Newsletter $block */
+/** @var Escaper $escaper */
+/** @var ViewModelRegistry $viewModels */
+
+/** @var SvgIcons $icons */
+$icons = $viewModels->require(SvgIcons::class);
+$formId = 'myca-newsletter-' . substr(sha1((string) $block->getNameInLayout()), 0, 6);
+?>
+<section class="rounded-lg bg-navy-950 p-5 text-white md:p-8" aria-labelledby="<?= $escaper->escapeHtmlAttr($formId) ?>-title">
+    <div class="flex flex-col gap-4 lg:flex-row lg:items-start">
+        <div class="flex flex-1 flex-col gap-3">
+            <h2 id="<?= $escaper->escapeHtmlAttr($formId) ?>-title" class="myca-section text-white">
+                <?= $escaper->escapeHtml($block->getData('title')) ?>
+            </h2>
+            <?php if ($block->getData('text')): ?>
+                <p class="myca-body-s"><?= $escaper->escapeHtml($block->getData('text')) ?></p>
+            <?php endif ?>
+        </div>
+        <form
+            class="flex flex-col gap-3 lg:w-[520px]"
+            action="<?= $escaper->escapeUrl($block->getFormActionUrl()) ?>"
+            method="post"
+        >
+            <div class="flex flex-col gap-3 sm:flex-row">
+                <label class="flex-1">
+                    <span class="sr-only"><?= $escaper->escapeHtml(__('Votre adresse e-mail')) ?></span>
+                    <input
+                        type="email"
+                        name="email"
+                        required
+                        autocomplete="email"
+                        class="myca-field"
+                        placeholder="<?= $escaper->escapeHtmlAttr(__('Votre adresse e-mail')) ?>"
+                        aria-describedby="<?= $escaper->escapeHtmlAttr($formId) ?>-consent"
+                    >
+                </label>
+                <?= $block->getBlockHtml('formkey') ?>
+                <button type="submit" class="myca-btn myca-btn-primary">
+                    <?= $icons->renderHtml('send', '', 16, 16, ['aria-hidden' => 'true']) ?>
+                    <?= $escaper->escapeHtml(__('S’inscrire')) ?>
+                </button>
+            </div>
+            <p id="<?= $escaper->escapeHtmlAttr($formId) ?>-consent" class="myca-caption">
+                <?= $escaper->escapeHtml($block->getData('consent')) ?>
+                <a href="<?= $escaper->escapeUrl($block->getUrl('', ['_direct' => 'confidentialite'])) ?>" class="underline">
+                    <?= $escaper->escapeHtml(__('Voir la politique de confidentialité.')) ?>
+                </a>
+            </p>
+        </form>
+    </div>
+</section>
