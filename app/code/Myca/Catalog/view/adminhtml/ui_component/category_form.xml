@@ -1,0 +1,63 @@
+<?xml version="1.0"?>
+<form xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Ui:etc/ui_configuration.xsd">
+    <fieldset name="myca" sortOrder="15">
+        <settings>
+            <label translate="true">MYCA</label>
+            <collapsible>true</collapsible>
+        </settings>
+        <field name="myca_card_label" sortOrder="10" formElement="input">
+            <settings>
+                <dataType>text</dataType>
+                <label translate="true">Étiquette de la carte (ex. « Capsule »)</label>
+                <scopeLabel>[STORE VIEW]</scopeLabel>
+            </settings>
+        </field>
+        <field name="myca_hero_kicker" sortOrder="20" formElement="input">
+            <settings>
+                <dataType>text</dataType>
+                <label translate="true">Surtitre de la bannière (ex. « Capsule España »)</label>
+                <scopeLabel>[STORE VIEW]</scopeLabel>
+            </settings>
+        </field>
+        <field name="myca_hero_title" sortOrder="22" formElement="input">
+            <settings>
+                <dataType>text</dataType>
+                <label translate="true">Titre de la bannière (ex. « Hidalgo »)</label>
+                <scopeLabel>[STORE VIEW]</scopeLabel>
+            </settings>
+        </field>
+        <field name="myca_hero_text" sortOrder="24" formElement="input">
+            <settings>
+                <dataType>text</dataType>
+                <label translate="true">Texte de la bannière</label>
+                <scopeLabel>[STORE VIEW]</scopeLabel>
+            </settings>
+        </field>
+        <field name="myca_tagline" sortOrder="30" formElement="input">
+            <settings>
+                <dataType>text</dataType>
+                <label translate="true">Accroche courte</label>
+                <scopeLabel>[STORE VIEW]</scopeLabel>
+            </settings>
+        </field>
+        <field name="myca_in_collections" sortOrder="40" formElement="checkbox">
+            <settings>
+                <dataType>boolean</dataType>
+                <label translate="true">Afficher sur la page « Nos collections »</label>
+                <scopeLabel>[GLOBAL]</scopeLabel>
+            </settings>
+            <formElements>
+                <checkbox>
+                    <settings>
+                        <valueMap>
+                            <map name="false" xsi:type="string">0</map>
+                            <map name="true" xsi:type="string">1</map>
+                        </valueMap>
+                        <prefer>toggle</prefer>
+                    </settings>
+                </checkbox>
+            </formElements>
+        </field>
+    </fieldset>
+</form>
