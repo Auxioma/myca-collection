@@ -1,0 +1,24 @@
+<?xml version="1.0"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Store:etc/config.xsd">
+    <default>
+        <myca_shipping>
+            <relay>
+                <free_threshold>100</free_threshold>
+            </relay>
+            <destinations>
+                <!-- France seule par défaut : liste des pays desservis à confirmer (question Q8). -->
+                <list>{"fr":{"country_id":"FR","relay":"1","home":"1"}}</list>
+            </destinations>
+        </myca_shipping>
+        <carriers>
+            <mycahome>
+                <active>1</active>
+                <model>Myca\Shipping\Model\Carrier\Home</model>
+                <title>MYCA</title>
+                <name>Livraison à domicile</name>
+                <sort_order>20</sort_order>
+            </mycahome>
+        </carriers>
+    </default>
+</config>

@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="urn:magento:framework:ObjectManager/etc/config.xsd">
+    <type name="Magento\Shipping\Model\Shipping">
+        <plugin name="myca_shipping_destination_rules" type="Myca\Shipping\Plugin\ApplyDestinationRules"/>
+    </type>
+    <type name="Magento\Quote\Model\QuoteManagement">
+        <plugin name="myca_shipping_block_unserved_destination" type="Myca\Shipping\Plugin\BlockUnservedDestination"/>
+    </type>
+</config>
