@@ -15,6 +15,7 @@ use Hyva\Theme\ViewModel\Wishlist;
 use Magento\Catalog\Block\Product\AbstractProduct;
 use Magento\Catalog\Model\Product;
 use Magento\Framework\Escaper;
+use Myca\Catalog\ViewModel\ProductVariants;
 use Myca\Core\ViewModel\ProductBadge;
 
 /** @var AbstractProduct $block */
@@ -32,6 +33,8 @@ $productListItemViewModel = $viewModels->require(ProductListItem::class);
 $wishlistViewModel = $viewModels->require(Wishlist::class);
 /** @var ProductBadge $badgeViewModel */
 $badgeViewModel = $viewModels->require(ProductBadge::class);
+/** @var ProductVariants $variantsViewModel */
+$variantsViewModel = $viewModels->require(ProductVariants::class);
 /** @var ProductAttributes $productAttributes */
 $productAttributes = $viewModels->require(ProductAttributes::class);
 
@@ -47,6 +50,8 @@ $collection = $product->getResource()->getAttribute('myca_collection')
 $imageCustomAttributes = $product->getData('image_custom_attributes')
     ?? $block->getData('image_custom_attributes')
     ?? [];
+$colors = $variantsViewModel->getColors($product);
+$sizes = $variantsViewModel->getSizes($product);
 $wishlistBlock = $wishlistViewModel->isEnabled() ? $block->getChildBlock('wishlist') : null;
 ?>
 <article
@@ -101,11 +106,26 @@ $wishlistBlock = $wishlistViewModel->isEnabled() ? $block->getChildBlock('wishli
         <?= /* @noEscape */ $productListItemViewModel->getProductPriceHtml($product) ?>
     </div>
 
-    <?php if ($product->isAvailable() && !$block->getData('hide_details')): ?>
-        <div class="relative z-10 myca-caption text-fg-secondary">
-            <?= /* @noEscape */ $block->getProductDetailsHtml($product) ?>
-        </div>
-    <?php elseif (!$product->isAvailable()): ?>
-        <p class="myca-caption text-fg-muted"><?= $escaper->escapeHtml(__('Épuisé')) ?></p>
+    <?php if ($colors): ?>
+        <p class="flex items-center gap-1">
+            <span class="sr-only">
+                <?= $escaper->escapeHtml(__('Couleurs : %1', implode(', ', array_column($colors, 'label')))) ?>
+            </span>
+            <?php foreach ($colors as $color): ?>
+                <span
+                    class="size-3 rounded-full border border-line-strong"
+                    style="background-color: <?= $escaper->escapeHtmlAttr($color['hex']) ?>"
+                    title="<?= $escaper->escapeHtmlAttr($color['label']) ?>"
+                    aria-hidden="true"
+                ></span>
+            <?php endforeach ?>
+        </p>
+    <?php endif ?>
+
+    <?php if ($sizes): ?>
+        <p class="myca-caption text-fg-secondary">
+            <span class="sr-only"><?= $escaper->escapeHtml(__('Tailles :')) ?></span>
+            <?= $escaper->escapeHtml(implode(' · ', $sizes)) ?>
+        </p>
     <?php endif ?>
 </article>

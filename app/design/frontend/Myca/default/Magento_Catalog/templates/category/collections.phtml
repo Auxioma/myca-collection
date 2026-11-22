@@ -1,0 +1,33 @@
+<?php
+/**
+ * Page « Nos collections » (P02) : cartes des capsules et des lignes permanentes, sur 3 colonnes en desktop.
+ */
+
+declare(strict_types=1);
+
+use Hyva\Theme\Model\ViewModelRegistry;
+use Magento\Catalog\Block\Category\View;
+use Magento\Framework\Escaper;
+use Myca\Catalog\ViewModel\CategoryCards;
+
+/** @var View $block */
+/** @var Escaper $escaper */
+/** @var ViewModelRegistry $viewModels */
+
+$category = $block->getCurrentCategory();
+if (!$category) {
+    return;
+}
+
+/** @var CategoryCards $cards */
+$cards = $viewModels->require(CategoryCards::class);
+$collections = $cards->getCollectionCards($category);
+$cardRenderer = $block->getChildBlock('card');
+?>
+<?php if ($collections && $cardRenderer): ?>
+    <ul role="list" class="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3" aria-label="<?= $escaper->escapeHtmlAttr($category->getName()) ?>">
+        <?php foreach ($collections as $collection): ?>
+            <li><?= $cardRenderer->setData('category', $collection)->toHtml() ?></li>
+        <?php endforeach ?>
+    </ul>
+<?php endif ?>

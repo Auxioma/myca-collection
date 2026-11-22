@@ -21,6 +21,7 @@
 @import "./myca/fonts.css";
 @import "./myca/tokens.css";
 @import "./myca/components.css";
+@import "./myca/layout.css";
 
 /* Couleurs utilisées par les gabarits Hyvä hérités, rattachées à l'identité MYCA. */
 @theme inline {

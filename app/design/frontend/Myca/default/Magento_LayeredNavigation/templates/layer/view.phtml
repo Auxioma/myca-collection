@@ -1,0 +1,133 @@
+<?php
+/**
+ * Filtres de la liste produits (maquette P04, carte « Filtrer »).
+ * À partir de 1024 px : colonne latérale. En dessous : bouton « Filtrer » fixé en bas d'écran qui ouvre
+ * un tiroir plein écran, avec le nombre de résultats sur le bouton de validation.
+ * Les filtres actifs (pastilles) sont affichés au-dessus de la grille, dans product/list.phtml.
+ */
+
+declare(strict_types=1);
+
+use Hyva\Theme\Model\ViewModelRegistry;
+use Hyva\Theme\ViewModel\HyvaCsp;
+use Hyva\Theme\ViewModel\LucideIcons;
+use Hyva\Theme\ViewModel\SvgIcons;
+use Magento\Framework\Escaper;
+use Magento\LayeredNavigation\Block\Navigation;
+use Magento\LayeredNavigation\Block\Navigation\State;
+
+/** @var Navigation $block */
+/** @var Escaper $escaper */
+/** @var ViewModelRegistry $viewModels */
+/** @var HyvaCsp $hyvaCsp */
+
+if (!$block->canShowBlock()) {
+    return;
+}
+
+/** @var SvgIcons $icons */
+$icons = $viewModels->require(SvgIcons::class);
+/** @var LucideIcons $lucideIcons */
+$lucideIcons = $viewModels->require(LucideIcons::class);
+/** @var State $stateBlock */
+$stateBlock = $block->getChildBlock('state');
+$hasActiveFilters = (bool) $block->getLayer()->getState()->getFilters();
+$resultCount = (int) $block->getLayer()->getProductCollection()->getSize();
+$resultLabel = $resultCount > 1
+    ? __('Afficher %1 résultats', $resultCount)
+    : __('Afficher %1 résultat', $resultCount);
+?>
+<div x-data="initMycaFilters" x-bind="eventListeners">
+    <button
+        type="button"
+        class="myca-btn myca-btn-dark fixed inset-x-4 bottom-4 z-30 shadow-card lg:hidden"
+        @click="open"
+        aria-controls="myca-filters"
+        :aria-expanded="isOpen"
+    >
+        <?= $icons->renderHtml('filter', '', 16, 16, ['aria-hidden' => 'true']) ?>
+        <?= $escaper->escapeHtml(__('Filtrer')) ?>
+        <span class="font-normal">· <?= $escaper->escapeHtml(__('%1 résultats', $resultCount)) ?></span>
+    </button>
+
+    <section
+        id="myca-filters"
+        class="fixed inset-0 z-50 flex-col overflow-y-auto bg-surface p-4
+            lg:static lg:z-auto lg:flex lg:overflow-visible lg:rounded-lg lg:border lg:border-line lg:p-4 lg:shadow-card"
+        :class="isOpen ? 'flex' : 'hidden'"
+        aria-labelledby="myca-filters-title"
+        @keydown.escape="close"
+    >
+        <div class="flex items-center gap-2 pb-3">
+            <?= $icons->renderHtml('filter', 'text-fg', 18, 18, ['aria-hidden' => 'true']) ?>
+            <h2 id="myca-filters-title" tabindex="-1" class="outline-none text-[15px] leading-5 font-semibold text-fg">
+                <?= $escaper->escapeHtml(__('Filtrer')) ?>
+            </h2>
+            <?php if ($hasActiveFilters): ?>
+                <a
+                    href="<?= $escaper->escapeUrl($stateBlock->getClearUrl()) ?>"
+                    class="ms-auto inline-flex min-h-11 items-center gap-1 myca-body-s-strong text-accent-text hover:underline lg:min-h-0"
+                    rel="nofollow"
+                >
+                    <?= $escaper->escapeHtml(__('Tout effacer')) ?>
+                    <?= $icons->renderHtml('arrow-right', '', 14, 14, ['aria-hidden' => 'true']) ?>
+                </a>
+            <?php endif ?>
+            <button
+                type="button"
+                class="ms-auto inline-flex size-11 items-center justify-center rounded-md text-fg lg:hidden"
+                @click="close"
+                aria-label="<?= $escaper->escapeHtmlAttr(__('Fermer les filtres')) ?>"
+            >
+                <?= $lucideIcons->xHtml('', 20, 20, ['aria-hidden' => 'true']) ?>
+            </button>
+        </div>
+
+        <a href="#product-list" class="sr-only focus:not-sr-only focus:mb-2 focus:block focus:underline">
+            <?= $escaper->escapeHtml(__('Aller à la liste des produits')) ?>
+        </a>
+
+        <div class="flex flex-col divide-y divide-line">
+            <?php foreach ($block->getFilters() as $filter): ?>
+                <?php if ($filter->getItemsCount()): ?>
+                    <div class="py-3">
+                        <h3 class="mb-2 myca-body-s-strong text-fg"><?= $escaper->escapeHtml(__($filter->getName())) ?></h3>
+                        <?= /* @noEscape */ $block->getChildBlock('renderer')
+                            ->setFilterTitle($filter->getName())
+                            ->render($filter) ?>
+                    </div>
+                <?php endif ?>
+            <?php endforeach ?>
+        </div>
+
+        <button type="button" class="myca-btn myca-btn-primary mt-auto w-full lg:hidden" @click="close">
+            <?= $escaper->escapeHtml($resultLabel) ?>
+        </button>
+    </section>
+</div>
+<script>
+    function initMycaFilters() {
+        return {
+            isOpen: false,
+            open() {
+                this.isOpen = true;
+                document.body.classList.add('overflow-hidden');
+                this.$nextTick(() => this.$root.querySelector('#myca-filters-title').focus());
+            },
+            close() {
+                this.isOpen = false;
+                document.body.classList.remove('overflow-hidden');
+            },
+            eventListeners: {
+                ['@resize.window.debounce']() {
+                    if (window.matchMedia('(min-width: 1024px)').matches) {
+                        this.close();
+                    }
+                }
+            }
+        }
+    }
+
+    window.addEventListener('alpine:init', () => Alpine.data('initMycaFilters', initMycaFilters), { once: true });
+</script>
+<?php $hyvaCsp->registerInlineScript() ?>

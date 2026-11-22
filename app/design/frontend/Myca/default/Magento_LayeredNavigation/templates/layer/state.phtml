@@ -1,0 +1,46 @@
+<?php
+/**
+ * Filtres actifs en pastilles au-dessus de la grille (maquette P04) : chaque pastille retire son filtre,
+ * « Tout effacer » les retire tous.
+ */
+
+declare(strict_types=1);
+
+use Hyva\Theme\Model\ViewModelRegistry;
+use Hyva\Theme\ViewModel\LucideIcons;
+use Magento\Framework\Escaper;
+use Magento\LayeredNavigation\Block\Navigation\State;
+
+/** @var State $block */
+/** @var Escaper $escaper */
+/** @var ViewModelRegistry $viewModels */
+
+$filters = $block->getActiveFilters();
+if (!$filters) {
+    return;
+}
+
+/** @var LucideIcons $lucideIcons */
+$lucideIcons = $viewModels->require(LucideIcons::class);
+?>
+<ul class="flex flex-wrap gap-2" aria-label="<?= $escaper->escapeHtmlAttr(__('Filtres actifs')) ?>">
+    <?php foreach ($filters as $filter): ?>
+        <?php $filterLabel = $block->stripTags($filter->getLabel()); ?>
+        <li>
+            <a
+                href="<?= $escaper->escapeUrl($filter->getRemoveUrl()) ?>"
+                rel="nofollow"
+                class="myca-btn myca-btn-secondary"
+                aria-label="<?= $escaper->escapeHtmlAttr(__('Retirer le filtre %1 : %2', __($filter->getName()), $filterLabel)) ?>"
+            >
+                <?= $escaper->escapeHtml($filterLabel) ?>
+                <?= $lucideIcons->xHtml('', 14, 14, ['aria-hidden' => 'true']) ?>
+            </a>
+        </li>
+    <?php endforeach ?>
+    <li>
+        <a href="<?= $escaper->escapeUrl($block->getClearUrl()) ?>" rel="nofollow" class="myca-btn myca-btn-outline-accent">
+            <?= $escaper->escapeHtml(__('Tout effacer')) ?>
+        </a>
+    </li>
+</ul>

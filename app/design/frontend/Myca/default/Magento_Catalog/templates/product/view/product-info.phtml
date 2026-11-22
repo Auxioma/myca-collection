@@ -1,0 +1,95 @@
+<?php
+/**
+ * Colonne d'information de la fiche produit (M45) : collection, titre, accroche, prix, avis, description courte,
+ * choix couleur / taille, disponibilité, achat + favori, tuiles de réassurance.
+ * Mobile : le bouton d'achat reste visible en bas d'écran (règle responsive de theme.md).
+ */
+
+declare(strict_types=1);
+
+use Hyva\Theme\Model\ViewModelRegistry;
+use Hyva\Theme\ViewModel\ProductPage;
+use Hyva\Theme\ViewModel\SvgIcons;
+use Magento\Catalog\Model\Product;
+use Magento\Framework\Escaper;
+use Magento\Framework\View\Element\Template;
+
+/** @var Template $block */
+/** @var Escaper $escaper */
+/** @var ViewModelRegistry $viewModels */
+
+/** @var ProductPage $productViewModel */
+$productViewModel = $viewModels->require(ProductPage::class);
+/** @var SvgIcons $icons */
+$icons = $viewModels->require(SvgIcons::class);
+
+/** @var Product $product */
+$product = $productViewModel->getProduct();
+$collection = (string) $product->getAttributeText('myca_collection');
+$tagline = (string) $product->getData('myca_tagline');
+
+$tiles = [
+    ['truck', __('Point relais offert'), __('dès 100 € TTC*')],
+    ['refresh', __('Rétractation'), __('14 jours')],
+    ['shield-check', __('Paiement'), __('sécurisé')],
+    ['crown', __('Qualité'), __('premium')],
+];
+?>
+<div class="product-info-main flex flex-col items-start gap-3.5">
+    <?php if ($collection !== ''): ?>
+        <p class="myca-badge myca-badge-danger"><?= $escaper->escapeHtml(__('Collection %1', $collection)) ?></p>
+    <?php endif ?>
+
+    <h1 class="font-display text-[32px] leading-10 font-bold italic text-fg md:text-4xl md:leading-11">
+        <?= $escaper->escapeHtml($product->getName()) ?>
+    </h1>
+
+    <?php if ($tagline !== ''): ?>
+        <p class="myca-body-m text-fg-secondary"><?= $escaper->escapeHtml($tagline) ?></p>
+    <?php endif ?>
+
+    <div class="text-fg [--price-font-size:26px] [--price-font-weight:700]" role="group" aria-label="<?= $escaper->escapeHtmlAttr(__('Prix')) ?>">
+        <?= $block->getChildHtml('product.info.price') ?>
+    </div>
+
+    <?= $block->getChildHtml('product.info.review') ?>
+
+    <?php if ($shortDescription = $productViewModel->getShortDescription()): ?>
+        <div class="myca-body-m text-fg"><?= /* @noEscape */ $shortDescription ?></div>
+    <?php endif ?>
+
+    <hr class="w-full border-line">
+
+    <div class="myca-pdp-options w-full">
+        <?= $block->getChildHtml('product.info.form') ?>
+    </div>
+
+    <?= $block->getChildHtml('product.info.stockstatus') ?>
+    <?= $block->getChildHtml('alert.urls') ?>
+
+    <?php if ($product->isSaleable()): ?>
+        <div class="fixed inset-x-0 bottom-0 z-20 flex w-full gap-2.5 border-t border-line bg-surface p-3 md:static md:border-0 md:p-0">
+            <div class="flex-1"><?= $block->getChildHtml('product.info.addtocart') ?></div>
+            <?= $block->getChildHtml('product.info.addtowishlist') ?>
+        </div>
+        <?php if ($shortcuts = $block->getChildHtml('addtocart.shortcut.buttons')): ?>
+            <div class="flex w-full flex-wrap gap-2"><?= /* @noEscape */ $shortcuts ?></div>
+        <?php endif ?>
+    <?php endif ?>
+
+    <ul class="grid w-full grid-cols-2 gap-3 sm:grid-cols-4" aria-label="<?= $escaper->escapeHtmlAttr(__('Nos engagements')) ?>">
+        <?php foreach ($tiles as [$icon, $title, $text]): ?>
+            <li class="myca-card flex flex-col items-center gap-1.5 px-2.5 py-3.5 text-center">
+                <?= $icons->renderHtml($icon, 'text-accent-text', 26, 26, ['aria-hidden' => 'true']) ?>
+                <span class="myca-body-s-strong text-fg"><?= $escaper->escapeHtml($title) ?></span>
+                <span class="myca-caption text-fg-muted"><?= $escaper->escapeHtml($text) ?></span>
+            </li>
+        <?php endforeach ?>
+    </ul>
+
+    <?php if ($tierPriceBlock = $block->getChildHtml('product.price.tier')): ?>
+        <div class="tier-price-container w-full"><?= /** @noEscape */ $tierPriceBlock ?></div>
+    <?php endif ?>
+
+    <?= $block->getChildHtml('product.info.additional') ?>
+</div>

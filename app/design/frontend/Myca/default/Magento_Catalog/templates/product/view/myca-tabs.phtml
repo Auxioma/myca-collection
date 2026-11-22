@@ -1,0 +1,132 @@
+<?php
+/**
+ * Onglets de la fiche produit (M45, M47, M50) : Description, Passeport & certificat, Matières & entretien.
+ * La description produit reste éditable avec Page Builder ; le passeport détaillé arrive avec Myca_Passport (lot 2).
+ */
+
+declare(strict_types=1);
+
+use Hyva\Theme\Model\ViewModelRegistry;
+use Hyva\Theme\ViewModel\CurrentProduct;
+use Hyva\Theme\ViewModel\HyvaCsp;
+use Hyva\Theme\ViewModel\SvgIcons;
+use Magento\Catalog\Helper\Output as OutputHelper;
+use Magento\Framework\Escaper;
+use Magento\Framework\View\Element\Template;
+
+// phpcs:disable Magento2.Templates.ThisInTemplate.FoundHelper
+
+/** @var Template $block */
+/** @var Escaper $escaper */
+/** @var ViewModelRegistry $viewModels */
+/** @var HyvaCsp $hyvaCsp */
+
+/** @var CurrentProduct $currentProduct */
+$currentProduct = $viewModels->require(CurrentProduct::class);
+if (!$currentProduct->exists()) {
+    return;
+}
+$product = $currentProduct->get();
+
+/** @var SvgIcons $icons */
+$icons = $viewModels->require(SvgIcons::class);
+/** @var OutputHelper $outputHelper */
+$outputHelper = $this->helper(OutputHelper::class);
+
+$collection = (string) $product->getAttributeText('myca_collection');
+$description = (string) $product->getDescription();
+$materials = (string) $product->getData('myca_materials');
+
+$tabs = ['description' => __('Description'), 'passport' => __('Passeport & certificat')];
+if ($materials !== '') {
+    $tabs['materials'] = __('Matières & entretien');
+}
+?>
+<section class="mt-10" x-data="initMycaProductTabs" aria-label="<?= $escaper->escapeHtmlAttr(__('Informations produit')) ?>">
+    <div class="myca-tabs" role="tablist" @keydown.arrow-right.prevent="move(1)" @keydown.arrow-left.prevent="move(-1)">
+        <?php foreach ($tabs as $key => $label): ?>
+            <button
+                type="button"
+                role="tab"
+                id="myca-tab-<?= $escaper->escapeHtmlAttr($key) ?>"
+                class="myca-tab"
+                aria-controls="myca-panel-<?= $escaper->escapeHtmlAttr($key) ?>"
+                data-tab="<?= $escaper->escapeHtmlAttr($key) ?>"
+                :aria-selected="active === '<?= $escaper->escapeJs($key) ?>'"
+                :tabindex="active === '<?= $escaper->escapeJs($key) ?>' ? 0 : -1"
+                @click="select('<?= $escaper->escapeJs($key) ?>')"
+            ><?= $escaper->escapeHtml($label) ?></button>
+        <?php endforeach ?>
+    </div>
+
+    <div id="myca-panel-description" role="tabpanel" aria-labelledby="myca-tab-description" tabindex="0"
+         class="grid gap-4 pt-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,315px)]" x-show="active === 'description'">
+        <div>
+            <h2 class="myca-h2 mb-3 text-fg">
+                <?= $escaper->escapeHtml($collection !== ''
+                    ? __('Le %1 – Collection %2', $product->getName(), $collection)
+                    : $product->getName()) ?>
+            </h2>
+            <div class="myca-body-m text-fg-secondary">
+                <?= /* @noEscape */ $outputHelper->productAttribute($product, $description, 'description') ?>
+            </div>
+        </div>
+        <button
+            type="button"
+            class="flex items-start gap-3 self-start rounded-lg border border-gold-500 bg-gold-100 p-5 text-left hover:shadow-card"
+            @click="select('passport')"
+        >
+            <?= $icons->renderHtml('qr', 'mt-0.5 shrink-0 text-gold-700', 18, 18, ['aria-hidden' => 'true']) ?>
+            <span class="flex-1">
+                <span class="block myca-body-s-strong text-fg"><?= $escaper->escapeHtml(__('Passeport du vêtement')) ?></span>
+                <span class="block myca-caption text-fg-secondary"><?= $escaper->escapeHtml(__('& certificat d’authenticité')) ?></span>
+            </span>
+            <?= $icons->renderHtml('chevron-right', 'shrink-0 text-fg-secondary', 16, 16, ['aria-hidden' => 'true']) ?>
+        </button>
+    </div>
+
+    <div id="myca-panel-passport" role="tabpanel" aria-labelledby="myca-tab-passport" tabindex="0"
+         class="pt-4" x-show="active === 'passport'" x-cloak>
+        <div class="max-w-2xl myca-body-m text-fg-secondary">
+            <p>
+                <?= $escaper->escapeHtml(__(
+                    'Chaque pièce MYCA est accompagnée d’un passeport numérique, consultable par QR code : origine, '
+                    . 'contrôles qualité et certificat d’authenticité.'
+                )) ?>
+            </p>
+            <a href="<?= $escaper->escapeUrl($block->getUrl('', ['_direct' => 'passeport'])) ?>" class="mt-3 inline-flex items-center gap-1 myca-body-s-strong text-accent-text hover:underline">
+                <?= $escaper->escapeHtml(__('Découvrir le passeport du vêtement')) ?>
+                <?= $icons->renderHtml('arrow-right', '', 14, 14, ['aria-hidden' => 'true']) ?>
+            </a>
+        </div>
+    </div>
+
+    <?php if ($materials !== ''): ?>
+        <div id="myca-panel-materials" role="tabpanel" aria-labelledby="myca-tab-materials" tabindex="0"
+             class="pt-4" x-show="active === 'materials'" x-cloak>
+            <div class="max-w-2xl myca-body-m text-fg-secondary">
+                <?= /* @noEscape */ $outputHelper->productAttribute($product, $materials, 'myca_materials') ?>
+            </div>
+        </div>
+    <?php endif ?>
+</section>
+<script>
+    function initMycaProductTabs() {
+        return {
+            active: 'description',
+            select(tab) {
+                this.active = tab;
+            },
+            move(step) {
+                const tabs = Array.from(this.$root.querySelectorAll('[role="tab"]'));
+                const index = tabs.findIndex(tab => tab.dataset.tab === this.active);
+                const next = tabs[(index + step + tabs.length) % tabs.length];
+                this.select(next.dataset.tab);
+                next.focus();
+            }
+        }
+    }
+
+    window.addEventListener('alpine:init', () => Alpine.data('initMycaProductTabs', initMycaProductTabs), { once: true });
+</script>
+<?php $hyvaCsp->registerInlineScript() ?>

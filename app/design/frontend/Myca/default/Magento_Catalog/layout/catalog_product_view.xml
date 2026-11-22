@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<page xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:noNamespaceSchemaLocation="urn:magento:framework:View/Layout/etc/page_configuration.xsd">
+    <body>
+        <!-- Fiche produit M45 : le titre est rendu dans la colonne d'information ; ni quantité ni comparateur. -->
+        <referenceBlock name="page.main.title" remove="true"/>
+        <referenceBlock name="product.info.title" remove="true"/>
+        <referenceBlock name="product.info.quantity" remove="true"/>
+        <referenceBlock name="product.info.addtocompare" remove="true"/>
+        <move element="product.info.addtowishlist" destination="product.info"/>
+
+        <referenceBlock name="product.info.details" template="Magento_Catalog::product/view/myca-tabs.phtml"/>
+        <referenceBlock name="product.attributes" remove="true"/>
+        <referenceBlock name="description" remove="true"/>
+    </body>
+</page>

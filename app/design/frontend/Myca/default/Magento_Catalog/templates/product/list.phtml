@@ -1,0 +1,68 @@
+<?php
+/**
+ * Liste produits (maquettes P03, P04, P05) : barre d'outils, filtres actifs, grille de cartes
+ * (2 colonnes en mobile, 3 en tablette, 4 en desktop), récapitulatif et pagination.
+ * Mode grille uniquement : la maquette ne prévoit pas de vue en liste.
+ */
+
+declare(strict_types=1);
+
+use Hyva\Theme\Model\ViewModelRegistry;
+use Hyva\Theme\ViewModel\ProductListItem;
+use Magento\Catalog\Block\Product\ListProduct;
+use Magento\Catalog\Block\Product\ReviewRendererInterface;
+use Magento\Framework\Escaper;
+
+/** @var ListProduct $block */
+/** @var Escaper $escaper */
+/** @var ViewModelRegistry $viewModels */
+
+/** @var ProductListItem $productListItemViewModel */
+$productListItemViewModel = $viewModels->require(ProductListItem::class);
+
+$eagerLoadImagesCount = (int) ($block->getData('eager_load_images_count') ?? 4);
+$productCollection = $block->getLoadedProductCollection();
+$layout = $block->getLayout();
+$stateBlock = $layout->getBlock('catalog.navigation.state') ?: $layout->getBlock('catalogsearch.navigation.state');
+?>
+<?php if (!$productCollection->count()): ?>
+    <div class="myca-card flex flex-col items-start gap-3 p-6">
+        <p class="myca-h3 text-fg"><?= $escaper->escapeHtml(__('Aucun produit ne correspond à votre sélection.')) ?></p>
+        <p class="myca-body-m text-fg-secondary">
+            <?= $escaper->escapeHtml(__('Retirez un filtre ou essayez une autre recherche.')) ?>
+        </p>
+        <?php if ($stateBlock): ?>
+            <?= $stateBlock->toHtml() ?>
+        <?php endif ?>
+    </div>
+<?php else: ?>
+    <section id="product-list" class="flex flex-col gap-3" aria-label="<?= $escaper->escapeHtmlAttr(__('Liste des produits')) ?>" tabindex="-1">
+        <?= $block->getToolbarHtml() ?>
+        <?php if ($stateBlock): ?>
+            <?= $stateBlock->toHtml() ?>
+        <?php endif ?>
+        <?= $block->getAdditionalHtml() ?>
+
+        <ul role="list" class="products grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-4">
+            <?php foreach (array_values($productCollection->getItems()) as $i => $product): ?>
+                <?php
+                if ($i < $eagerLoadImagesCount) {
+                    $product->setData('image_custom_attributes', ['loading' => 'eager', 'fetchpriority' => 'high']);
+                }
+                ?>
+                <li class="flex">
+                    <?= $productListItemViewModel->getItemHtml(
+                        $product,
+                        $block,
+                        'grid',
+                        ReviewRendererInterface::SHORT_VIEW,
+                        'category_page_grid',
+                        false
+                    ) ?>
+                </li>
+            <?php endforeach ?>
+        </ul>
+
+        <?= $block->getChildBlock('toolbar')->setIsBottom(true)->toHtml() ?>
+    </section>
+<?php endif ?>

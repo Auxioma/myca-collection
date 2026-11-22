@@ -1,0 +1,47 @@
+<?php
+/**
+ * Filtres à pastilles (maquette P04) : carrés de couleur 44 px et cases de taille 44 × 36 px.
+ * Une pastille est un lien vers la liste filtrée ; le nom de la couleur reste lisible par les lecteurs d'écran.
+ */
+
+declare(strict_types=1);
+
+use Magento\Framework\Escaper;
+use Magento\Swatches\Block\LayeredNavigation\RenderLayered;
+use Magento\Swatches\Model\Swatch;
+
+/** @var RenderLayered $block */
+/** @var Escaper $escaper */
+
+$swatchData = $block->getSwatchData();
+?>
+<ul class="flex flex-wrap gap-1.5" aria-label="<?= $escaper->escapeHtmlAttr(__('Options du filtre %1', $swatchData['attribute_label'])) ?>">
+    <?php foreach ($swatchData['options'] as $option => $label): ?>
+        <?php
+        if (!isset($swatchData['swatches'][$option])) {
+            continue;
+        }
+        $swatchType = (int) $swatchData['swatches'][$option]['type'];
+        $swatchValue = (string) $swatchData['swatches'][$option]['value'];
+        $isColor = $swatchType === Swatch::SWATCH_TYPE_VISUAL_COLOR;
+        $isDisabled = !empty($label['custom_style']);
+        ?>
+        <li>
+            <a
+                href="<?= $escaper->escapeUrl($label['link']) ?>"
+                rel="nofollow"
+                title="<?= $escaper->escapeHtmlAttr($label['label']) ?>"
+                class="flex items-center justify-center rounded-md border border-line-strong hover:border-accent
+                    focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent
+                    <?= $isColor ? 'size-11' : 'h-11 min-w-11 px-2 myca-body-s-strong text-fg lg:h-9' ?>
+                    <?= $isDisabled ? 'pointer-events-none opacity-40' : '' ?>"
+                <?php if ($isColor): ?>
+                    style="background-color: <?= $escaper->escapeHtmlAttr($swatchValue) ?>"
+                <?php endif ?>
+                <?= $isDisabled ? 'aria-disabled="true" tabindex="-1"' : '' ?>
+            >
+                <span class="<?= $isColor ? 'sr-only' : '' ?>"><?= $escaper->escapeHtml($label['label']) ?></span>
+            </a>
+        </li>
+    <?php endforeach ?>
+</ul>

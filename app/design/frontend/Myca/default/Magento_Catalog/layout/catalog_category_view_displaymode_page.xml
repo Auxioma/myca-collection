@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<page xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      layout="1column"
+      xsi:noNamespaceSchemaLocation="urn:magento:framework:View/Layout/etc/page_configuration.xsd">
+    <body>
+        <referenceBlock name="catalog.leftnav" remove="true"/>
+        <referenceContainer name="content">
+            <block class="Magento\Catalog\Block\Category\View"
+                   name="myca.category.collections"
+                   template="Magento_Catalog::category/collections.phtml"
+                   before="-">
+                <block name="myca.category.collections.card" as="card"
+                       template="Magento_Catalog::category/collection-card.phtml"/>
+            </block>
+        </referenceContainer>
+    </body>
+</page>

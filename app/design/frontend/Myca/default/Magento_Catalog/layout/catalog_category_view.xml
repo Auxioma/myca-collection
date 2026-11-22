@@ -1,0 +1,27 @@
+<?xml version="1.0"?>
+<page xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:noNamespaceSchemaLocation="urn:magento:framework:View/Layout/etc/page_configuration.xsd">
+    <body>
+        <!-- Le titre, l'image et la description sont rendus par l'en-tête MYCA (bannière ou titre + accroche). -->
+        <referenceBlock name="page.main.title" remove="true"/>
+        <referenceBlock name="category.image" remove="true"/>
+        <referenceBlock name="category.description" remove="true"/>
+
+        <referenceContainer name="category.view.container" htmlClass="category-view container">
+            <block class="Magento\Catalog\Block\Category\View"
+                   name="myca.category.header"
+                   template="Magento_Catalog::category/header.phtml"
+                   before="-">
+                <block class="Magento\Theme\Block\Html\Header\Logo"
+                       name="myca.category.logo"
+                       template="Magento_Theme::html/header/logo.phtml"/>
+            </block>
+        </referenceContainer>
+
+        <referenceBlock name="category.products.list">
+            <arguments>
+                <argument name="eager_load_images_count" xsi:type="number">4</argument>
+            </arguments>
+        </referenceBlock>
+    </body>
+</page>

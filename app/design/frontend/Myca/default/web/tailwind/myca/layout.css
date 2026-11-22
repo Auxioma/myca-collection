@@ -1,0 +1,76 @@
+/*
+ * Mise en page du site public : contenu plafonné à 1200 px (maquettes en 1600 px), gouttières de 16 px,
+ * colonne de filtres de 280 px seulement à partir de 1024 px (en dessous : tiroir « Filtrer »).
+ */
+
+@utility container {
+    width: 100%;
+    max-width: calc(var(--container-site) + 2rem);
+    padding-inline: --spacing(4);
+}
+
+.page-main {
+    margin-block: --spacing(4) --spacing(10);
+}
+
+.columns {
+    gap: --spacing(4);
+}
+
+@media (width >= 48rem) and (width < 64rem) {
+    [class*="page-layout-2columns-"] .columns {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .page-layout-2columns-left .columns > .column.main {
+        grid-column-start: 1;
+    }
+}
+
+@variant lg {
+    [class*="page-layout-2columns-"] {
+        --sidebar-width: 280px;
+    }
+}
+
+/* Fiche produit en mobile : réserve la place de la barre d'achat fixée en bas d'écran. */
+.catalog-product-view .page-main {
+    padding-bottom: --spacing(20);
+
+    @variant md {
+        padding-bottom: 0;
+    }
+}
+
+/*
+ * Pastilles de couleur et cases de taille de la fiche produit (M45). Hors couche : ces règles doivent
+ * l'emporter sur les classes utilitaires posées par le gabarit Hyvä des pastilles.
+ */
+.myca-pdp-options {
+    --form-active-color: var(--myca-accent-bg);
+
+    & legend,
+    & .label {
+        @apply text-[13px] leading-[18px] font-semibold text-fg;
+    }
+
+    & .swatch-option {
+        --swatch-radius: var(--radius-md);
+        min-block-size: 36px;
+        min-inline-size: 44px;
+        border-color: var(--myca-border-strong);
+        @apply text-[13px] leading-[18px] font-semibold;
+    }
+
+    & .swatch-option[data-swatch-type="visual"] {
+        --swatch-radius: var(--radius-md);
+        --swatch-px: 0px;
+        --swatch-py: 0px;
+        min-block-size: 44px;
+    }
+
+    & .swatch-option:not([data-swatch-type="visual"]):is(:has(:checked), [aria-checked="true"]) {
+        background: var(--myca-accent-bg);
+        color: var(--myca-accent-fg);
+    }
+}

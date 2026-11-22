@@ -1,0 +1,36 @@
+<?php
+/**
+ * Bouton d'achat de la fiche produit (M45) : pleine largeur, « Acheter maintenant ».
+ */
+
+declare(strict_types=1);
+
+use Hyva\Theme\Model\ViewModelRegistry;
+use Hyva\Theme\ViewModel\SvgIcons;
+use Magento\Framework\Escaper;
+use Magento\Framework\View\Element\Template;
+
+/** @var Template $block */
+/** @var Escaper $escaper */
+/** @var ViewModelRegistry $viewModels */
+
+/** @var SvgIcons $icons */
+$icons = $viewModels->require(SvgIcons::class);
+
+$buttonLabel = $block->getData('is_cart_configure')
+    ? __('Update item')
+    : __('Add to Cart');
+?>
+
+<button
+    type="submit"
+    form="product_addtocart_form"
+    class="myca-btn myca-btn-primary w-full"
+    id="product-addtocart-button"
+    data-addto="cart"
+>
+    <?= $icons->renderHtml('cart', 'shrink-0', 16, 16, ['aria-hidden' => 'true']) ?>
+    <?= $escaper->escapeHtml($block->getData('is_cart_configure') ? $buttonLabel : __('Acheter maintenant')) ?>
+</button>
+
+<?= $block->getChildHtml('', true) ?>

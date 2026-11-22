@@ -1,0 +1,108 @@
+<?php
+/**
+ * Page de résultats de recherche (P05) : titre « Résultats pour « … » », champ de recherche, raccourcis de filtres,
+ * grille ; à défaut de résultat, suggestions et recherches populaires.
+ */
+
+declare(strict_types=1);
+
+use Hyva\Theme\Model\ViewModelRegistry;
+use Hyva\Theme\ViewModel\SvgIcons;
+use Magento\CatalogSearch\Block\Result;
+use Magento\Framework\Escaper;
+use Magento\Search\Helper\Data as SearchHelper;
+use Myca\Catalog\ViewModel\CategoryCards;
+use Myca\Catalog\ViewModel\SearchSuggestions;
+
+// phpcs:disable Magento2.Templates.ThisInTemplate.FoundHelper
+
+/** @var Result $block */
+/** @var Escaper $escaper */
+/** @var ViewModelRegistry $viewModels */
+
+/** @var SearchHelper $searchHelper */
+$searchHelper = $this->helper(SearchHelper::class);
+/** @var SvgIcons $icons */
+$icons = $viewModels->require(SvgIcons::class);
+/** @var SearchSuggestions $suggestions */
+$suggestions = $viewModels->require(SearchSuggestions::class);
+/** @var CategoryCards $cards */
+$cards = $viewModels->require(CategoryCards::class);
+
+$queryText = (string) $searchHelper->getEscapedQueryText();
+$count = (int) $block->getResultCount();
+$countLabel = $count > 1 ? __('%1 produits', $count) : __('%1 produit', $count);
+?>
+<header class="mt-4 flex flex-col gap-2">
+    <h1 class="font-display text-[28px] leading-9 font-bold italic text-fg md:text-4xl md:leading-11">
+        <?= $escaper->escapeHtml(__('Résultats pour « %1 »', $queryText)) ?>
+    </h1>
+    <p class="myca-body-s text-fg-secondary">
+        <?= $escaper->escapeHtml($countLabel) ?> · <?= $escaper->escapeHtml(__('recherche par nom, référence, collection, catégorie et termes associés')) ?>
+    </p>
+</header>
+
+<form class="mt-4 flex gap-3" action="<?= $escaper->escapeUrl($searchHelper->getResultUrl()) ?>" method="get" role="search">
+    <label class="relative flex-1">
+        <span class="sr-only"><?= $escaper->escapeHtml(__('Rechercher un produit')) ?></span>
+        <?= $icons->renderHtml('search', 'pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-fg-muted', 16, 16, ['aria-hidden' => 'true']) ?>
+        <input
+            type="search"
+            name="<?= $escaper->escapeHtmlAttr($searchHelper->getQueryParamName()) ?>"
+            value="<?= /* @noEscape */ $queryText ?>"
+            class="myca-field ps-9"
+            maxlength="<?= (int) $searchHelper->getMaxQueryLength() ?>"
+            enterkeyhint="search"
+        >
+    </label>
+    <button type="submit" class="myca-btn myca-btn-primary">
+        <?= $icons->renderHtml('search', '', 16, 16, ['aria-hidden' => 'true']) ?>
+        <span class="hidden sm:inline"><?= $escaper->escapeHtml(__('Rechercher')) ?></span>
+        <span class="sr-only sm:hidden"><?= $escaper->escapeHtml(__('Rechercher')) ?></span>
+    </button>
+</form>
+
+<?php if ($count): ?>
+    <?= $block->getChildHtml('myca.search.chips') ?>
+    <div class="mt-4"><?= $block->getProductListHtml() ?></div>
+<?php else: ?>
+    <?php
+    $alternatives = $cards->getByUrlKeys(['polos', 'collections', 'myca-signature']);
+    $popularTerms = $suggestions->getPopularTerms();
+    ?>
+    <div class="mt-4 grid gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+        <section class="myca-card flex flex-col items-start gap-3 p-4">
+            <h2 class="myca-h3 text-fg"><?= $escaper->escapeHtml(__('Aucun produit ne correspond à « %1 ».', $queryText)) ?></h2>
+            <p class="myca-body-m text-fg-secondary">
+                <?= $escaper->escapeHtml(__('Vérifiez l’orthographe ou essayez un terme plus général. Voici des alternatives proches :')) ?>
+            </p>
+            <ul class="flex flex-wrap gap-2">
+                <?php foreach ($alternatives as $category): ?>
+                    <li>
+                        <a href="<?= $escaper->escapeUrl($category->getUrl()) ?>" class="myca-btn myca-btn-secondary">
+                            <?= $escaper->escapeHtml($category->getName()) ?>
+                        </a>
+                    </li>
+                <?php endforeach ?>
+            </ul>
+        </section>
+        <?php if ($popularTerms): ?>
+            <section class="myca-card p-4" aria-labelledby="myca-popular-searches">
+                <h2 id="myca-popular-searches" class="myca-h3 mb-2 text-fg"><?= $escaper->escapeHtml(__('Recherches populaires')) ?></h2>
+                <ul class="divide-y divide-line">
+                    <?php foreach ($popularTerms as $term): ?>
+                        <li>
+                            <a
+                                href="<?= $escaper->escapeUrl($searchHelper->getResultUrl($term)) ?>"
+                                class="flex min-h-11 items-center justify-between myca-body-s-strong text-fg hover:text-accent-text"
+                            >
+                                <?= $escaper->escapeHtml($term) ?>
+                                <?= $icons->renderHtml('chevron-right', 'text-fg-secondary', 16, 16, ['aria-hidden' => 'true']) ?>
+                            </a>
+                        </li>
+                    <?php endforeach ?>
+                </ul>
+            </section>
+        <?php endif ?>
+    </div>
+<?php endif ?>

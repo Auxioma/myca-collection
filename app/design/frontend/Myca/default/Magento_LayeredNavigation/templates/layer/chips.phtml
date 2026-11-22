@@ -1,0 +1,35 @@
+<?php
+/**
+ * Raccourcis de filtres de la page de recherche (P05) : « Collection : España – Hidalgo (3) », « England (2) »…
+ * Les filtres actifs s'affichent au-dessus de la grille (layer/state.phtml).
+ */
+
+declare(strict_types=1);
+
+use Magento\Framework\Escaper;
+use Magento\LayeredNavigation\Block\Navigation;
+
+/** @var Navigation $block */
+/** @var Escaper $escaper */
+
+if (!$block->canShowBlock()) {
+    return;
+}
+
+$shortcutFilters = ['myca_collection', 'cat'];
+?>
+<ul class="mt-4 flex flex-wrap gap-2" aria-label="<?= $escaper->escapeHtmlAttr(__('Affiner la recherche')) ?>">
+    <?php foreach ($block->getFilters() as $filter): ?>
+        <?php if (!in_array($filter->getRequestVar(), $shortcutFilters, true) || !$filter->getItemsCount()) {
+            continue;
+        } ?>
+        <?php foreach (array_values($filter->getItems()) as $index => $item): ?>
+            <li>
+                <a href="<?= $escaper->escapeUrl($item->getUrl()) ?>" rel="nofollow" class="myca-btn myca-btn-secondary">
+                    <?php if ($index === 0): ?><?= $escaper->escapeHtml(__($filter->getName())) ?> : <?php endif ?>
+                    <?= $escaper->escapeHtml(strip_tags((string) $item->getLabel())) ?> (<?= (int) $item->getCount() ?>)
+                </a>
+            </li>
+        <?php endforeach ?>
+    <?php endforeach ?>
+</ul>

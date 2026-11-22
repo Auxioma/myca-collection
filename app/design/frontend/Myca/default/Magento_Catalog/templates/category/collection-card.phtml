@@ -1,0 +1,62 @@
+<?php
+/**
+ * Carte d'une collection (Figma « Carte image », P01 et P02) : photo, étiquette, nom, accroche, « Découvrir ».
+ * Reçoit la catégorie dans la donnée « category » ; hauteur d'image réglable par « image_class ».
+ */
+
+declare(strict_types=1);
+
+use Hyva\Theme\Model\ViewModelRegistry;
+use Hyva\Theme\ViewModel\SvgIcons;
+use Magento\Catalog\Model\Category;
+use Magento\Framework\Escaper;
+use Magento\Framework\View\Element\Template;
+
+/** @var Template $block */
+/** @var Escaper $escaper */
+/** @var ViewModelRegistry $viewModels */
+
+/** @var Category|null $category */
+$category = $block->getData('category');
+if (!$category) {
+    return;
+}
+
+/** @var SvgIcons $icons */
+$icons = $viewModels->require(SvgIcons::class);
+$label = (string) $category->getData('myca_card_label');
+$tagline = (string) $category->getData('myca_tagline');
+$imageClass = (string) ($block->getData('image_class') ?: 'h-56 md:h-60');
+?>
+<article class="myca-card relative flex h-full flex-col overflow-hidden shadow-card transition-shadow hover:shadow-md">
+    <div class="<?= $escaper->escapeHtmlAttr($imageClass) ?> bg-surface-subtle">
+        <?php if ($category->getImage()): ?>
+            <img
+                src="<?= $escaper->escapeUrl($category->getImageUrl()) ?>"
+                alt=""
+                class="size-full object-cover"
+                loading="lazy"
+                width="390"
+                height="240"
+            >
+        <?php endif ?>
+    </div>
+    <div class="flex flex-1 flex-col items-start gap-1.5 p-4">
+        <?php if ($label !== ''): ?>
+            <p class="myca-overline text-brand-red normal-case"><?= $escaper->escapeHtml($label) ?></p>
+        <?php endif ?>
+        <h3 class="myca-h3 text-fg">
+            <a
+                href="<?= $escaper->escapeUrl($category->getUrl()) ?>"
+                class="after:absolute after:inset-0 focus-visible:outline-none focus-visible:after:rounded-lg focus-visible:after:outline-2 focus-visible:after:outline-accent"
+            ><?= $escaper->escapeHtml($category->getName()) ?></a>
+        </h3>
+        <?php if ($tagline !== ''): ?>
+            <p class="myca-body-s text-fg-secondary"><?= $escaper->escapeHtml($tagline) ?></p>
+        <?php endif ?>
+        <p class="mt-auto inline-flex items-center gap-1 pt-1 myca-body-s-strong text-accent-text" aria-hidden="true">
+            <?= $escaper->escapeHtml(__('Découvrir')) ?>
+            <?= $icons->renderHtml('arrow-right', '', 14, 14) ?>
+        </p>
+    </div>
+</article>

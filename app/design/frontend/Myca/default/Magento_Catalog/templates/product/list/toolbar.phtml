@@ -1,0 +1,145 @@
+<?php
+/**
+ * Barre d'outils de la liste (maquette P04). En haut : nombre de résultats, « Trier par », « Afficher ».
+ * En bas : récapitulatif et pagination. Logique de changement d'URL identique au parent Hyvä.
+ */
+
+declare(strict_types=1);
+
+use Magento\Catalog\Block\Product\ProductList\Toolbar;
+use Hyva\Theme\Model\LocaleFormatter;
+use Magento\Framework\Escaper;
+
+/** @var Escaper $escaper */
+/** @var Toolbar $block */
+/** @var LocaleFormatter $localeFormatter */
+
+$uniqueId = '_' . uniqid();
+$additionalOptions = ['page' => 'p'];
+?>
+<script>
+    function initToolbar<?= /** @noEscape */  $uniqueId ?>() {
+        return {
+            options: <?= /* @noEscape */ $block->getWidgetOptionsJson($additionalOptions) ?>.productListToolbarForm || {},
+            getUrlParams: function () {
+                let decode = window.decodeURIComponent,
+                    urlPaths = this.options.url.split('?'),
+                    urlParams = urlPaths[1] ? urlPaths[1].split('&') : [],
+                    params = {},
+                    parameters, i;
+
+                for (i = 0; i < urlParams.length; i++) {
+                    parameters = urlParams[i].split('=');
+                    params[decode(parameters[0])] = parameters[1] !== undefined ?
+                        decode(parameters[1].replace(/\+/g, '%20')) :
+                        '';
+                }
+
+                return params;
+            },
+            getCurrentLimit: function () {
+                return this.getUrlParams()[this.options.limit] || this.options.limitDefault;
+            },
+            getCurrentPage: function () {
+                return this.getUrlParams()[this.options.page] || 1;
+            },
+            changeUrl(paramName, paramValue, defaultValue) {
+                let urlPaths = this.options.url.split('?'),
+                    baseUrl = urlPaths[0],
+                    paramData = this.getUrlParams(),
+                    currentPage = this.getCurrentPage(),
+                    newPage;
+
+                /**
+                 * calculates the page on which the first item of the current page will
+                 * be with the new limit and sets that number as the new page
+                 */
+                if (currentPage > 1 && paramName === this.options.limit) {
+                    newPage = Math.floor(this.getCurrentLimit() * (currentPage - 1) / paramValue) + 1;
+
+                    if (newPage > 1) {
+                        paramData[this.options.page] = newPage;
+                    } else {
+                        delete paramData[this.options.page];
+                    }
+                }
+
+                paramData[paramName] = paramValue;
+
+                if (this.options.post) {
+                    hyva.postForm({action: baseUrl, data: paramData, skipUenc: true});
+                } else {
+                    if (paramValue === defaultValue.toString()) {
+                        delete paramData[paramName];
+                    }
+                    paramData = Object.keys(paramData).length === 0
+                        ? ''
+                        : '?' + (new URLSearchParams(paramData));
+                    location.href = baseUrl + paramData
+                }
+            }
+        }
+    }
+</script>
+<?php if ($block->getCollection()->getSize()): ?>
+    <?php
+    $total = (int) $block->getTotalNum();
+    $totalLabel = $total > 1 ? __('%1 résultats', $localeFormatter->formatNumber($total)) : __('%1 résultat', $total);
+    ?>
+    <div x-data="initToolbar<?= /** @noEscape */ $uniqueId ?>()" class="toolbar toolbar-products">
+        <?php if ($block->getIsBottom()): ?>
+            <div class="flex flex-col items-center gap-3 pt-4">
+                <p class="myca-caption text-fg-secondary" id="toolbar-amount">
+                    <?php if ($block->getLastPageNum() > 1): ?>
+                        <?= $escaper->escapeHtml(__(
+                            'Produits %1 à %2 sur %3',
+                            $localeFormatter->formatNumber($block->getFirstNum()),
+                            $localeFormatter->formatNumber($block->getLastNum()),
+                            $localeFormatter->formatNumber($total)
+                        )) ?>
+                    <?php else: ?>
+                        <?= $escaper->escapeHtml(__(
+                            '%1 produits sur %1 — tous les résultats sont affichés',
+                            $localeFormatter->formatNumber($total)
+                        )) ?>
+                    <?php endif ?>
+                </p>
+                <?= $block->getPagerHtml() ?>
+            </div>
+        <?php else: ?>
+            <div class="flex flex-wrap items-end gap-3">
+                <p class="myca-body-s-strong me-auto self-center text-fg"><?= $escaper->escapeHtml($totalLabel) ?></p>
+                <label class="w-[calc(50%-0.375rem)] sm:w-40">
+                    <span class="myca-field-label"><?= $escaper->escapeHtml(__('Trier par')) ?></span>
+                    <select
+                        class="myca-field"
+                        @change="changeUrl('product_list_order', $event.currentTarget.value, options.orderDefault)"
+                    >
+                        <?php foreach ($block->getAvailableOrders() as $orderCode => $orderLabel): ?>
+                            <option
+                                value="<?= $escaper->escapeHtmlAttr($orderCode) ?>"
+                                <?= $block->isOrderCurrent($orderCode) ? 'selected' : '' ?>
+                            ><?= $escaper->escapeHtml(__($orderLabel)) ?></option>
+                        <?php endforeach ?>
+                    </select>
+                </label>
+                <?php if (count($block->getAvailableLimit()) > 1): ?>
+                    <label class="w-[calc(50%-0.375rem)] sm:w-40">
+                        <span class="myca-field-label"><?= $escaper->escapeHtml(__('Afficher')) ?></span>
+                        <select
+                            class="myca-field"
+                            @change="changeUrl('product_list_limit', $event.currentTarget.value, options.limitDefault)"
+                        >
+                            <?php foreach ($block->getAvailableLimit() as $key => $limit): ?>
+                                <option
+                                    value="<?= $escaper->escapeHtmlAttr($key) ?>"
+                                    <?= $block->isLimitCurrent($key) ? 'selected' : '' ?>
+                                ><?= $escaper->escapeHtml(is_numeric($limit) ? __('%1 par page', $limit) : __('Tout')) ?></option>
+                            <?php endforeach ?>
+                        </select>
+                    </label>
+                <?php endif ?>
+            </div>
+        <?php endif ?>
+    </div>
+<?php endif ?>

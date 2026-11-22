@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+<page xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      layout="1column"
+      xsi:noNamespaceSchemaLocation="urn:magento:framework:View/Layout/etc/page_configuration.xsd">
+    <body>
+        <!-- P05 : pas de colonne de filtres, des raccourcis en pastilles sous le champ de recherche. -->
+        <referenceBlock name="page.main.title" remove="true"/>
+        <referenceBlock name="catalogsearch.leftnav" template="Magento_LayeredNavigation::layer/chips.phtml"/>
+        <move element="catalogsearch.leftnav" destination="search.result" as="myca.search.chips"/>
+    </body>
+</page>

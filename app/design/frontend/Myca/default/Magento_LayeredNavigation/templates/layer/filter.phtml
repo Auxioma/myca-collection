@@ -1,0 +1,107 @@
+<?php
+/**
+ * Options d'un filtre (maquette P04) : cases à cocher avec nombre de produits ;
+ * pour le prix, deux champs Min / Max qui construisent le paramètre natif « price=min-max ».
+ */
+
+declare(strict_types=1);
+
+use Hyva\Theme\Model\LocaleFormatter;
+use Hyva\Theme\Model\ViewModelRegistry;
+use Hyva\Theme\ViewModel\HyvaCsp;
+use Hyva\Theme\ViewModel\SvgIcons;
+use Magento\Catalog\Model\Layer\Filter\Item;
+use Magento\Framework\Escaper;
+use Magento\LayeredNavigation\Block\Navigation\FilterRenderer;
+
+/** @var FilterRenderer $block */
+/** @var Escaper $escaper */
+/** @var LocaleFormatter $localeFormatter */
+/** @var ViewModelRegistry $viewModels */
+/** @var HyvaCsp $hyvaCsp */
+/** @var Item[] $filterItems */
+
+/** @var SvgIcons $icons */
+$icons = $viewModels->require(SvgIcons::class);
+$firstItem = reset($filterItems);
+$isPrice = $firstItem && $firstItem->getFilter()->getRequestVar() === 'price';
+?>
+<?php if ($isPrice): ?>
+    <?php
+    $lastItem = end($filterItems);
+    $min = (int) floor((float) explode('-', (string) $firstItem->getValueString())[0]);
+    $maxParts = explode('-', (string) $lastItem->getValueString());
+    $max = (int) ceil((float) ($maxParts[1] ?? $maxParts[0]));
+    ?>
+    <form class="flex items-end gap-3" x-data="initMycaPriceFilter" @submit.prevent="apply">
+        <label class="flex-1">
+            <span class="mb-1 block myca-caption-strong text-fg-secondary"><?= $escaper->escapeHtml(__('Min')) ?></span>
+            <input
+                type="number"
+                inputmode="numeric"
+                min="0"
+                name="min"
+                class="myca-field"
+                placeholder="<?= (int) $min ?> €"
+                x-model="min"
+            >
+        </label>
+        <label class="flex-1">
+            <span class="mb-1 block myca-caption-strong text-fg-secondary"><?= $escaper->escapeHtml(__('Max')) ?></span>
+            <input
+                type="number"
+                inputmode="numeric"
+                min="0"
+                name="max"
+                class="myca-field"
+                placeholder="<?= (int) $max ?> €"
+                x-model="max"
+            >
+        </label>
+        <button type="submit" class="myca-btn myca-btn-secondary" aria-label="<?= $escaper->escapeHtmlAttr(__('Appliquer le filtre de prix')) ?>">
+            <?= $icons->renderHtml('check', '', 16, 16, ['aria-hidden' => 'true']) ?>
+        </button>
+    </form>
+    <script>
+        function initMycaPriceFilter() {
+            return {
+                min: '',
+                max: '',
+                apply() {
+                    const url = new URL(window.location.href);
+                    url.searchParams.delete('p');
+                    if (this.min === '' && this.max === '') {
+                        url.searchParams.delete('price');
+                    } else {
+                        url.searchParams.set('price', `${this.min || 0}-${this.max || ''}`);
+                    }
+                    window.location.href = url.toString();
+                }
+            }
+        }
+
+        window.addEventListener('alpine:init', () => Alpine.data('initMycaPriceFilter', initMycaPriceFilter), { once: true });
+    </script>
+    <?php $hyvaCsp->registerInlineScript() ?>
+<?php else: ?>
+    <ul class="flex flex-col gap-2" aria-label="<?= $escaper->escapeHtmlAttr(__('Options du filtre %1', $block->getFilterTitle())) ?>">
+        <?php foreach ($filterItems as $filterItem): ?>
+            <?php
+            $label = strip_tags((string) $filterItem->getLabel());
+            $count = (int) $filterItem->getCount();
+            ?>
+            <li>
+                <a
+                    href="<?= $escaper->escapeUrl($filterItem->getUrl()) ?>"
+                    rel="nofollow"
+                    class="group flex min-h-11 items-center gap-2 myca-body-s text-fg hover:text-accent-text lg:min-h-0
+                        <?= $count === 0 ? 'pointer-events-none opacity-50' : '' ?>"
+                    <?= $count === 0 ? 'aria-disabled="true" tabindex="-1"' : '' ?>
+                >
+                    <span class="size-4 shrink-0 rounded-sm border border-line-strong bg-surface group-hover:border-accent" aria-hidden="true"></span>
+                    <span><?= $escaper->escapeHtml($label) ?> (<?= $escaper->escapeHtml($localeFormatter->formatNumber($count)) ?>)</span>
+                </a>
+            </li>
+        <?php endforeach ?>
+    </ul>
+<?php endif ?>

@@ -1,0 +1,131 @@
+<?php
+/**
+ * En-tête de catégorie :
+ * - capsule (P03) : bannière sombre avec photo, surtitre, titre, texte et bouton vers la liste, puis le récit
+ *   de la collection (description de la catégorie, éditable avec Page Builder) ;
+ * - page « Nos collections » (P02, mode d'affichage « contenu statique ») : bandeau logo + titre serif ;
+ * - autre catégorie (P04) : titre serif et « N modèles · accroche ».
+ */
+
+declare(strict_types=1);
+
+use Hyva\Theme\Model\ViewModelRegistry;
+use Hyva\Theme\ViewModel\SvgIcons;
+use Magento\Catalog\Block\Category\View;
+use Magento\Catalog\Model\Category;
+use Magento\Catalog\ViewModel\Category\Output;
+use Magento\Framework\Escaper;
+use Myca\Catalog\ViewModel\CategoryCards;
+
+/** @var View $block */
+/** @var Escaper $escaper */
+/** @var ViewModelRegistry $viewModels */
+
+/** @var Category|null $category */
+$category = $block->getCurrentCategory();
+if (!$category) {
+    return;
+}
+
+/** @var SvgIcons $icons */
+$icons = $viewModels->require(SvgIcons::class);
+/** @var CategoryCards $cards */
+$cards = $viewModels->require(CategoryCards::class);
+/** @var Output $output */
+$output = $viewModels->require(Output::class);
+
+$name = (string) $category->getName();
+$heroTitle = (string) $category->getData('myca_hero_title');
+$heroKicker = (string) $category->getData('myca_hero_kicker');
+$heroText = (string) $category->getData('myca_hero_text');
+$tagline = (string) $category->getData('myca_tagline');
+$imageUrl = $category->getImage() ? (string) $category->getImageUrl() : '';
+$description = (string) $category->getDescription();
+$isLanding = $category->getDisplayMode() === Category::DM_PAGE;
+$count = $isLanding ? 0 : $cards->getProductCount($category);
+$countLabel = $count > 1 ? __('%1 modèles', $count) : __('%1 modèle', $count);
+?>
+<?php if ($heroTitle !== '' && !$isLanding): ?>
+    <section class="relative mt-4 overflow-hidden rounded-xl bg-navy-950 text-white">
+        <?php if ($imageUrl): ?>
+            <div class="relative h-56 md:absolute md:inset-y-0 md:right-0 md:h-auto md:w-3/5">
+                <img
+                    src="<?= $escaper->escapeUrl($imageUrl) ?>"
+                    alt=""
+                    class="size-full object-cover"
+                    width="720"
+                    height="380"
+                    fetchpriority="high"
+                >
+                <div class="absolute inset-y-0 left-0 hidden w-[260px] bg-gradient-to-r from-navy-950 to-navy-950/0 md:block" aria-hidden="true"></div>
+                <div class="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-navy-950 to-navy-950/0 md:hidden" aria-hidden="true"></div>
+            </div>
+        <?php endif ?>
+        <div class="relative flex flex-col items-start gap-4 px-5 pb-6 md:min-h-[380px] md:max-w-[556px] md:justify-center md:px-14 md:py-10">
+            <?php if ($heroKicker !== ''): ?>
+                <p class="myca-overline text-gold-400"><?= $escaper->escapeHtml($heroKicker) ?></p>
+            <?php endif ?>
+            <h1 class="font-display text-[40px] leading-[46px] font-bold italic md:text-[56px] md:leading-[63px]">
+                <span class="sr-only"><?= $escaper->escapeHtml($name) ?> — </span><?= $escaper->escapeHtml($heroTitle) ?>
+            </h1>
+            <?php if ($heroText !== ''): ?>
+                <p class="myca-body-m"><?= $escaper->escapeHtml($heroText) ?></p>
+            <?php endif ?>
+            <?php if ($count > 0): ?>
+                <a href="#product-list" class="myca-btn myca-btn-primary">
+                    <?= $icons->renderHtml('arrow-right', '', 16, 16, ['aria-hidden' => 'true']) ?>
+                    <?= $escaper->escapeHtml(__('Voir les %1', $countLabel)) ?>
+                </a>
+            <?php endif ?>
+        </div>
+    </section>
+
+    <?php if ($description !== ''): ?>
+        <section class="mt-4 mb-6" aria-labelledby="myca-collection-story">
+            <h2 id="myca-collection-story" class="myca-section mb-3 text-fg md:text-[32px] md:leading-[37px]">
+                <?= $escaper->escapeHtml(__('Le récit de la collection')) ?>
+            </h2>
+            <div class="myca-body-m text-fg-secondary">
+                <?= /* @noEscape */ $output->categoryAttribute($category, $description, 'description') ?>
+            </div>
+        </section>
+    <?php endif ?>
+<?php elseif ($isLanding): ?>
+    <section class="mt-4 flex flex-col overflow-hidden rounded-xl bg-hero text-white md:flex-row md:items-center">
+        <?php if ($imageUrl): ?>
+            <div class="relative h-48 shrink-0 overflow-hidden md:h-[260px] md:w-1/2">
+                <img src="<?= $escaper->escapeUrl($imageUrl) ?>" alt="" class="size-full object-cover" width="600" height="260" fetchpriority="high">
+                <img src="<?= $escaper->escapeUrl($block->getViewFileUrl('images/bandeau-trait-large.svg')) ?>" alt="" class="absolute inset-y-0 right-0 hidden h-full w-[95px] md:block" aria-hidden="true">
+                <img src="<?= $escaper->escapeUrl($block->getViewFileUrl('images/bandeau-trait-fin.svg')) ?>" alt="" class="absolute right-0 bottom-0 hidden h-[200px] w-[60px] md:block" aria-hidden="true">
+            </div>
+        <?php endif ?>
+        <div class="flex flex-1 flex-col items-center gap-3 px-5 py-6 text-center">
+            <?= $block->getChildHtml('myca.category.logo') ?>
+            <div class="flex" aria-hidden="true">
+                <span class="h-1 w-10 bg-flag-blue"></span>
+                <span class="h-1 w-10 bg-white"></span>
+                <span class="h-1 w-10 bg-brand-red"></span>
+            </div>
+            <div class="flex items-center gap-4">
+                <?= $icons->renderHtml('layers', 'shrink-0 text-brand-red', 40, 40, ['aria-hidden' => 'true']) ?>
+                <h1 class="font-display text-4xl leading-[44px] font-black italic md:text-[44px] md:leading-[52px]">
+                    <?= $escaper->escapeHtml($heroTitle ?: $name) ?>
+                </h1>
+            </div>
+            <?php if ($description !== ''): ?>
+                <div class="myca-body-m max-w-[480px]">
+                    <?= /* @noEscape */ $output->categoryAttribute($category, $description, 'description') ?>
+                </div>
+            <?php endif ?>
+        </div>
+    </section>
+<?php else: ?>
+    <header class="mt-4 mb-6 flex flex-col gap-2">
+        <h1 class="font-display text-[32px] leading-10 font-bold italic text-fg md:text-4xl md:leading-11">
+            <?= $escaper->escapeHtml($name) ?>
+        </h1>
+        <p class="myca-body-m text-fg-secondary">
+            <?= $escaper->escapeHtml($countLabel) ?><?php if ($tagline !== ''): ?> · <?= $escaper->escapeHtml($tagline) ?><?php endif ?>
+        </p>
+    </header>
+<?php endif ?>
