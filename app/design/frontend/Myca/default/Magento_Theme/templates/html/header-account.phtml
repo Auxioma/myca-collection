@@ -1,0 +1,71 @@
+<?php
+/**
+ * En-tête de l'espace client (Figma « En-tête/Client B2C ») : logo, « Espace Client MYCA », aide, menu du compte.
+ * Fond « shell » de l'identité (vert pour un client, bleu nuit pour un partenaire).
+ */
+
+declare(strict_types=1);
+
+use Hyva\Theme\Model\ViewModelRegistry;
+use Hyva\Theme\ViewModel\SvgIcons;
+use Magento\Framework\Escaper;
+use Magento\Framework\View\Element\Template;
+use Myca\Core\ViewModel\AccountOverview;
+
+/** @var Template $block */
+/** @var Escaper $escaper */
+/** @var ViewModelRegistry $viewModels */
+
+$icons = $viewModels->require(SvgIcons::class);
+/** @var AccountOverview $account */
+$account = $viewModels->require(AccountOverview::class);
+$groupLabel = $account->getGroupLabel();
+?>
+<header id="header" class="bg-shell text-white">
+    <div class="flex items-center gap-3 px-2 py-2 md:gap-5 md:px-6 md:py-3">
+        <?= $block->getChildHtml('logo') ?>
+        <span class="hidden h-7 w-px bg-white md:block" aria-hidden="true"></span>
+        <p class="hidden font-display text-[22px] leading-7 font-bold md:block"><?= $escaper->escapeHtml(__('Espace Client MYCA')) ?></p>
+
+        <a
+            href="<?= $escaper->escapeUrl($block->getUrl('', ['_direct' => 'contact'])) ?>"
+            class="ms-auto inline-flex size-11 items-center justify-center rounded-md hover:bg-white/10 md:size-8"
+            aria-label="<?= $escaper->escapeHtmlAttr(__('Aide et contact')) ?>"
+        >
+            <?= $icons->renderHtml('help', '', 22, 22, ['aria-hidden' => 'true']) ?>
+        </a>
+        <span class="hidden h-7 w-px bg-white md:block" aria-hidden="true"></span>
+
+        <div class="relative" x-data="{ open: false }" @keydown.escape="open = false" @click.outside="open = false">
+            <button
+                type="button"
+                class="flex min-h-11 items-center gap-2.5 rounded-md px-1 text-left hover:bg-white/10"
+                @click="open = !open"
+                :aria-expanded="open"
+                aria-haspopup="true"
+            >
+                <span class="flex size-9 items-center justify-center rounded-pill bg-white text-shell">
+                    <?= $icons->renderHtml('user', '', 20, 20, ['aria-hidden' => 'true']) ?>
+                </span>
+                <span class="hidden flex-col md:flex">
+                    <span class="myca-body-s-strong"><?= $escaper->escapeHtml($account->getCustomerName()) ?></span>
+                    <?php if ($groupLabel !== ''): ?>
+                        <span class="myca-caption opacity-85"><?= $escaper->escapeHtml($groupLabel) ?></span>
+                    <?php endif ?>
+                </span>
+                <span class="sr-only md:hidden"><?= $escaper->escapeHtml(__('Mon compte')) ?></span>
+                <?= $icons->renderHtml('chevron-down', 'hidden md:block', 16, 16, ['aria-hidden' => 'true']) ?>
+            </button>
+            <ul
+                class="absolute right-0 z-30 mt-2 w-56 rounded-md border border-line bg-surface py-2 text-fg shadow-card"
+                x-show="open"
+                x-transition
+                x-cloak
+            >
+                <li><a class="block px-4 py-2.5 myca-body-s hover:bg-surface-subtle" href="<?= $escaper->escapeUrl($block->getUrl('customer/account/edit')) ?>"><?= $escaper->escapeHtml(__('Mon profil')) ?></a></li>
+                <li><a class="block px-4 py-2.5 myca-body-s hover:bg-surface-subtle" href="<?= $escaper->escapeUrl($block->getBaseUrl()) ?>"><?= $escaper->escapeHtml(__('Retour à la boutique')) ?></a></li>
+                <li><a class="block px-4 py-2.5 myca-body-s hover:bg-surface-subtle" href="<?= $escaper->escapeUrl($block->getUrl('customer/account/logout')) ?>"><?= $escaper->escapeHtml(__('Se déconnecter')) ?></a></li>
+            </ul>
+        </div>
+    </div>
+</header>

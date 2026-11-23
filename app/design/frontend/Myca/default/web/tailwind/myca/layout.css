@@ -84,3 +84,29 @@
         padding-bottom: 0;
     }
 }
+
+/* Espace client : pleine largeur jusqu'à 1600 px, menu de 268 px, fond gris clair (maquette M28). */
+.account .page-main {
+    max-width: 1600px;
+    margin-block: --spacing(4);
+}
+
+.account {
+    background-color: var(--myca-surface-page);
+}
+
+@variant lg {
+    .account[class*="page-layout-2columns-"] {
+        --sidebar-width: 268px;
+    }
+}
+
+/* Espace client : formulaires et listes Magento présentés en cartes (profil, adresses, paramètres, avis). */
+.account .column.main :is(.form-edit-account, .form-address-edit, .form-newsletter-manage, .block-addresses-default,
+    .block-addresses-list, .block-reviews-dashboard, .table-wrapper.reviews, .form-wishlist-items) {
+    @apply rounded-lg border border-line bg-surface p-4 shadow-card md:p-6;
+}
+
+.account .column.main :is(legend, .block-title, h2.title) {
+    @apply text-[15px] leading-5 font-semibold text-fg;
+}

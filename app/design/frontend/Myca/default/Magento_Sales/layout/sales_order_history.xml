@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+<page xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:noNamespaceSchemaLocation="urn:magento:framework:View/Layout/etc/page_configuration.xsd">
+    <body>
+        <!-- « Mes commandes » M29 : indicateurs, filtres, historique et détail sur une même page. -->
+        <referenceBlock name="myca.account.banner">
+            <arguments>
+                <argument name="title" xsi:type="string" translate="true">Mes commandes MYCA</argument>
+                <argument name="subtitle" xsi:type="string" translate="true">Consultez, suivez et gérez l’ensemble de vos commandes en toute simplicité.</argument>
+            </arguments>
+        </referenceBlock>
+        <referenceBlock name="sales.order.history">
+            <block name="myca.order.history.table" as="orders.table" template="Magento_Sales::order/myca-orders-table.phtml"/>
+            <block name="myca.order.history.tracking" as="tracking" template="Magento_Sales::order/myca-tracking.phtml"/>
+        </referenceBlock>
+        <referenceBlock name="customer.account.link.back" remove="true"/>
+    </body>
+</page>

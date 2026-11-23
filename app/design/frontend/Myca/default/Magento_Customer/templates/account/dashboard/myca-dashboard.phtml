@@ -1,0 +1,184 @@
+<?php
+/**
+ * Tableau de bord client (M28) : indicateurs, dernière commande et son suivi, encart collections,
+ * commandes des 30 derniers jours, favoris, avantages, profil.
+ * Le programme fidélité (lot 2, Myca_Loyalty) n'est pas encore affiché.
+ */
+
+declare(strict_types=1);
+
+use Hyva\Theme\Model\ViewModelRegistry;
+use Hyva\Theme\ViewModel\SvgIcons;
+use Magento\Framework\Escaper;
+use Magento\Framework\View\Element\Template;
+use Myca\Core\ViewModel\AccountOverview;
+use Myca\Core\ViewModel\OrderProgress;
+
+/** @var Template $block */
+/** @var Escaper $escaper */
+/** @var ViewModelRegistry $viewModels */
+
+$icons = $viewModels->require(SvgIcons::class);
+/** @var AccountOverview $account */
+$account = $viewModels->require(AccountOverview::class);
+/** @var OrderProgress $progress */
+$progress = $viewModels->require(OrderProgress::class);
+
+$orders = $account->getOrders();
+$inProgress = $account->countOrdersInProgress();
+$wishlistCount = $account->countWishlistItems();
+$reviewsCount = $account->countReviews();
+$groupLabel = $account->getGroupLabel();
+$lastOrder = $account->getLastOrder();
+$recentOrders = $account->getRecentOrders();
+$wishlistItems = $account->getWishlistItems();
+$trackingBlock = $block->getChildBlock('tracking');
+
+$kpis = [
+    ['box', __('Mes commandes'), (string) count($orders), $inProgress > 1 ? __('%1 en cours', $inProgress) : __('%1 en cours', $inProgress), $block->getUrl('sales/order/history')],
+    ['heart', __('Mes favoris'), (string) $wishlistCount, __('articles'), $block->getUrl('wishlist')],
+    ['star', __('Mes avis & notes'), (string) $reviewsCount, __('avis déposés'), $block->getUrl('review/customer')],
+    ['user', __('Mon statut'), $groupLabel, __('remises & offres'), $block->getUrl('customer/account/edit')],
+];
+$advantages = [
+    ['percent', __('Remises'), __('exclusives')],
+    ['truck', __('Point relais offert'), __('dès 100 € TTC*')],
+    ['refresh', __('Rétractation'), __('14 jours')],
+    ['headset', __('Service client'), __('dédié')],
+];
+?>
+<div class="flex flex-col gap-4">
+    <ul class="grid grid-cols-2 gap-3 lg:grid-cols-4" aria-label="<?= $escaper->escapeHtmlAttr(__('Indicateurs')) ?>">
+        <?php foreach ($kpis as [$icon, $label, $value, $hint, $url]): ?>
+            <li>
+                <a href="<?= $escaper->escapeUrl($url) ?>" class="myca-card flex h-full items-center gap-3 p-4 shadow-card hover:shadow-md">
+                    <?= $icons->renderHtml($icon, 'shrink-0 text-icon-kpi', 26, 26, ['aria-hidden' => 'true']) ?>
+                    <span class="flex min-w-0 flex-1 flex-col">
+                        <span class="myca-caption-strong text-fg-secondary"><?= $escaper->escapeHtml($label) ?></span>
+                        <span class="text-lg leading-6 font-bold break-words text-fg sm:text-[22px] sm:leading-7"><?= $escaper->escapeHtml($value) ?></span>
+                        <span class="myca-caption text-fg-muted"><?= $escaper->escapeHtml($hint) ?></span>
+                    </span>
+                    <?= $icons->renderHtml('chevron-right', 'hidden shrink-0 text-fg-secondary sm:block', 16, 16, ['aria-hidden' => 'true']) ?>
+                </a>
+            </li>
+        <?php endforeach ?>
+    </ul>
+
+    <div class="grid gap-4 lg:grid-cols-3">
+        <section class="myca-card p-4" aria-labelledby="myca-last-order">
+            <h2 id="myca-last-order" class="myca-card-title"><?= $icons->renderHtml('box', '', 18, 18, ['aria-hidden' => 'true']) ?><?= $escaper->escapeHtml(__('Ma dernière commande')) ?></h2>
+            <?php if ($lastOrder): ?>
+                <?php
+                $item = $account->getFirstItem($lastOrder);
+                $status = $progress->getStatus($lastOrder);
+                ?>
+                <a href="<?= $escaper->escapeUrl($block->getUrl('sales/order/view', ['order_id' => $lastOrder->getId()])) ?>" class="flex items-center gap-3 rounded-md py-2 hover:bg-surface-subtle">
+                    <?php if ($item && ($image = $account->getImageUrl($item->getProduct()))): ?>
+                        <img src="<?= $escaper->escapeUrl($image) ?>" alt="" class="size-10 shrink-0 object-contain" width="40" height="40" loading="lazy">
+                    <?php endif ?>
+                    <span class="flex min-w-0 flex-1 flex-col">
+                        <span class="myca-body-s-strong truncate text-fg"><?= $escaper->escapeHtml($item?->getName() ?? '') ?></span>
+                        <span class="myca-caption text-fg-secondary">
+                            <?= $escaper->escapeHtml(__('Commande n° %1 · le %2', $lastOrder->getIncrementId(), $block->formatDate($lastOrder->getCreatedAt(), IntlDateFormatter::MEDIUM))) ?>
+                        </span>
+                    </span>
+                    <span class="myca-badge myca-badge-<?= $escaper->escapeHtmlAttr($status['tone']) ?>"><?= $escaper->escapeHtml($status['label']) ?></span>
+                </a>
+            <?php else: ?>
+                <p class="myca-body-s text-fg-secondary"><?= $escaper->escapeHtml(__('Vous n’avez pas encore passé de commande.')) ?></p>
+            <?php endif ?>
+        </section>
+
+        <section class="myca-card p-4" aria-labelledby="myca-tracking">
+            <h2 id="myca-tracking" class="myca-card-title"><?= $icons->renderHtml('check-circle', '', 18, 18, ['aria-hidden' => 'true']) ?><?= $escaper->escapeHtml(__('Suivi de ma commande')) ?></h2>
+            <?php if ($lastOrder && $trackingBlock): ?>
+                <?= $trackingBlock->setData('order', $lastOrder)->toHtml() ?>
+            <?php else: ?>
+                <p class="myca-body-s text-fg-secondary"><?= $escaper->escapeHtml(__('Le suivi apparaîtra ici après votre première commande.')) ?></p>
+            <?php endif ?>
+        </section>
+
+        <section class="flex items-center gap-3 overflow-hidden rounded-lg bg-hero p-4 text-white">
+            <div class="flex flex-1 flex-col items-start gap-3">
+                <h2 class="myca-section text-white"><?= $escaper->escapeHtml(__('Découvrez nos collections MYCA')) ?></h2>
+                <a href="<?= $escaper->escapeUrl($block->getUrl('', ['_direct' => 'collections.html'])) ?>" class="myca-btn myca-btn-primary">
+                    <?= $icons->renderHtml('arrow-right', '', 16, 16, ['aria-hidden' => 'true']) ?>
+                    <?= $escaper->escapeHtml(__('Voir le catalogue')) ?>
+                </a>
+            </div>
+        </section>
+    </div>
+
+    <div class="grid gap-4 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)]">
+        <section class="myca-card p-4" aria-labelledby="myca-recent-orders">
+            <h2 id="myca-recent-orders" class="myca-card-title">
+                <?= $icons->renderHtml('file', '', 18, 18, ['aria-hidden' => 'true']) ?>
+                <?= $escaper->escapeHtml(__('Mes commandes')) ?>
+                <span class="myca-caption font-normal text-fg-secondary">(<?= $escaper->escapeHtml(__('30 derniers jours')) ?>)</span>
+            </h2>
+            <?php if ($recentOrders): ?>
+                <?= $block->getChildBlock('orders.table')?->setData('orders', $recentOrders)->toHtml() ?>
+            <?php else: ?>
+                <p class="myca-body-s text-fg-secondary"><?= $escaper->escapeHtml(__('Aucune commande ces 30 derniers jours.')) ?></p>
+            <?php endif ?>
+        </section>
+
+        <section class="myca-card p-4" aria-labelledby="myca-favorites">
+            <h2 id="myca-favorites" class="myca-card-title">
+                <?= $icons->renderHtml('heart', '', 18, 18, ['aria-hidden' => 'true']) ?>
+                <?= $escaper->escapeHtml(__('Mes favoris')) ?>
+                <span class="myca-caption font-normal text-fg-secondary">(<?= (int) $wishlistCount ?>)</span>
+                <a href="<?= $escaper->escapeUrl($block->getUrl('wishlist')) ?>" class="ms-auto inline-flex items-center gap-1 myca-caption-strong text-accent-text hover:underline">
+                    <?= $escaper->escapeHtml(__('Tout voir')) ?><?= $icons->renderHtml('arrow-right', '', 14, 14, ['aria-hidden' => 'true']) ?>
+                </a>
+            </h2>
+            <?php if ($wishlistItems): ?>
+                <ul class="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                    <?php foreach ($wishlistItems as $wishItem): ?>
+                        <?php $product = $wishItem->getProduct(); ?>
+                        <li>
+                            <a href="<?= $escaper->escapeUrl($product->getProductUrl()) ?>" class="flex h-full flex-col gap-1 rounded-lg border border-line p-3 hover:shadow-card">
+                                <img src="<?= $escaper->escapeUrl($account->getImageUrl($product)) ?>" alt="" class="mx-auto h-20 w-auto object-contain" width="80" height="80" loading="lazy">
+                                <span class="myca-body-s-strong text-fg"><?= $escaper->escapeHtml($product->getName()) ?></span>
+                                <span class="myca-body-s-strong text-fg [--price-font-size:13px] [--price-font-weight:600]">
+                                    <?= /* @noEscape */ $block->getLayout()->getBlock('product.price.render.default')?->render('final_price', $product) ?>
+                                </span>
+                            </a>
+                        </li>
+                    <?php endforeach ?>
+                </ul>
+            <?php else: ?>
+                <p class="myca-body-s text-fg-secondary"><?= $escaper->escapeHtml(__('Ajoutez des articles à vos favoris avec le cœur des fiches produits.')) ?></p>
+            <?php endif ?>
+        </section>
+    </div>
+
+    <div class="grid gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+        <section class="myca-card p-4" aria-labelledby="myca-advantages">
+            <h2 id="myca-advantages" class="myca-card-title"><?= $icons->renderHtml('crown', 'text-gold-700', 18, 18, ['aria-hidden' => 'true']) ?><?= $escaper->escapeHtml(__('Mes avantages')) ?></h2>
+            <ul class="grid grid-cols-2 gap-3 md:grid-cols-4">
+                <?php foreach ($advantages as [$icon, $title, $text]): ?>
+                    <li class="flex flex-col items-center gap-1.5 rounded-lg border border-line px-2.5 py-3.5 text-center">
+                        <?= $icons->renderHtml($icon, 'text-icon-kpi', 26, 26, ['aria-hidden' => 'true']) ?>
+                        <span class="myca-body-s-strong text-fg"><?= $escaper->escapeHtml($title) ?></span>
+                        <span class="myca-caption text-fg-muted"><?= $escaper->escapeHtml($text) ?></span>
+                    </li>
+                <?php endforeach ?>
+            </ul>
+        </section>
+
+        <section class="myca-card flex flex-col gap-2 p-4" aria-labelledby="myca-profile">
+            <h2 id="myca-profile" class="myca-card-title"><?= $icons->renderHtml('user', '', 18, 18, ['aria-hidden' => 'true']) ?><?= $escaper->escapeHtml(__('Mon profil')) ?></h2>
+            <p class="myca-body-s-strong text-fg"><?= $escaper->escapeHtml($account->getCustomerName()) ?></p>
+            <p class="myca-caption text-fg-secondary"><?= $escaper->escapeHtml($account->getCustomerEmail()) ?></p>
+            <a href="<?= $escaper->escapeUrl($block->getUrl('customer/account/edit')) ?>" class="myca-btn myca-btn-outline-accent mt-2 w-full">
+                <?= $icons->renderHtml('edit', '', 16, 16, ['aria-hidden' => 'true']) ?>
+                <?= $escaper->escapeHtml(__('Modifier mon profil')) ?>
+            </a>
+        </section>
+    </div>
+
+    <p class="flex items-start gap-2 rounded-md bg-warning-bg px-3 py-2.5 myca-caption text-warning">
+        <?= $escaper->escapeHtml(__('*Point relais offert dès 100 € TTC de produits éligibles après remise, uniquement vers les destinations desservies.')) ?>
+    </p>
+</div>

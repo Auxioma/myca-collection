@@ -1,0 +1,58 @@
+<?php
+/**
+ * Suivi d'une commande en 4 étapes (Figma « Étape de suivi ») : pastille validée en vert, à venir en gris.
+ * Reçoit la commande dans la donnée « order ». Dates réelles uniquement.
+ */
+
+declare(strict_types=1);
+
+use Hyva\Theme\Model\ViewModelRegistry;
+use Hyva\Theme\ViewModel\SvgIcons;
+use Magento\Framework\Escaper;
+use Magento\Framework\View\Element\Template;
+use Magento\Sales\Model\Order;
+use Myca\Core\ViewModel\OrderProgress;
+
+/** @var Template $block */
+/** @var Escaper $escaper */
+/** @var ViewModelRegistry $viewModels */
+
+/** @var Order|null $order */
+$order = $block->getData('order');
+if (!$order) {
+    return;
+}
+$icons = $viewModels->require(SvgIcons::class);
+/** @var OrderProgress $progress */
+$progress = $viewModels->require(OrderProgress::class);
+$stepIcons = [
+    OrderProgress::STEP_VALIDATED => 'check',
+    OrderProgress::STEP_PREPARATION => 'check',
+    OrderProgress::STEP_SHIPPED => 'truck',
+    OrderProgress::STEP_DELIVERED => 'home',
+];
+$steps = $progress->getSteps($order);
+?>
+<ol class="flex items-start" aria-label="<?= $escaper->escapeHtmlAttr(__('Suivi de la commande %1', $order->getIncrementId())) ?>">
+    <?php $index = 0; foreach ($steps as $code => $step): ?>
+        <?php if ($index++ > 0): ?>
+            <li class="w-3 shrink-0 pt-4 sm:w-6" aria-hidden="true">
+                <span class="block h-[3px] rounded-[2px] <?= $step['done'] ? 'bg-green-600' : 'bg-gray-300' ?>"></span>
+            </li>
+        <?php endif ?>
+        <li class="flex min-w-0 flex-1 flex-col items-center gap-1 text-center">
+            <span class="flex size-8 items-center justify-center rounded-pill
+                <?= $step['done'] ? 'bg-green-600 text-white' : 'border border-line-strong bg-surface-subtle text-fg-secondary' ?>">
+                <?= $icons->renderHtml($step['done'] ? 'check' : $stepIcons[$code], '', 16, 16, ['aria-hidden' => 'true']) ?>
+            </span>
+            <span class="text-[11px] leading-[14px] font-semibold text-fg sm:text-xs sm:leading-4"><?= $escaper->escapeHtml($step['label']) ?></span>
+            <span class="myca-caption text-fg-muted">
+                <?php if ($step['date']): ?>
+                    <?= $escaper->escapeHtml($block->formatDate($step['date'], IntlDateFormatter::SHORT)) ?>
+                <?php else: ?>
+                    <span class="sr-only"><?= $escaper->escapeHtml($step['done'] ? __('terminée') : __('à venir')) ?></span>—
+                <?php endif ?>
+            </span>
+        </li>
+    <?php endforeach ?>
+</ol>

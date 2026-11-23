@@ -112,6 +112,11 @@
         @apply flex flex-wrap items-center gap-1 text-xs leading-4 text-fg-muted;
     }
 
+    /* Titre de carte (Figma « Titre de carte ») : icône, titre, complément, lien d'action */
+    .myca-card-title {
+        @apply mb-3 flex items-center gap-2 text-[15px] leading-5 font-semibold text-fg;
+    }
+
     /* Carte (surface blanche bordée) */
     .myca-card {
         @apply rounded-lg border border-line bg-surface;

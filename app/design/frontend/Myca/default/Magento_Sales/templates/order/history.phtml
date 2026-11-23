@@ -1,0 +1,181 @@
+<?php
+/**
+ * « Mes commandes » (M29) : indicateurs, filtres par statut, historique, détail de la commande choisie
+ * (articles, adresse, paiement, suivi, totaux, actions). Les retours / SAV arriveront avec Myca_Rma.
+ */
+
+declare(strict_types=1);
+
+use Hyva\Theme\Model\ViewModelRegistry;
+use Hyva\Theme\ViewModel\SvgIcons;
+use Magento\Framework\Escaper;
+use Magento\Sales\Block\Order\History;
+use Magento\Sales\Model\Order;
+use Myca\Core\ViewModel\AccountOverview;
+use Myca\Core\ViewModel\OrderProgress;
+
+/** @var History $block */
+/** @var Escaper $escaper */
+/** @var ViewModelRegistry $viewModels */
+
+$icons = $viewModels->require(SvgIcons::class);
+/** @var AccountOverview $account */
+$account = $viewModels->require(AccountOverview::class);
+/** @var OrderProgress $progress */
+$progress = $viewModels->require(OrderProgress::class);
+
+$orders = $account->getOrders();
+$filters = [
+    'toutes' => __('Toutes'),
+    'en-cours' => __('En cours'),
+    'preparation' => __('En préparation'),
+    'expediees' => __('Expédiées'),
+    'livrees' => __('Livrées'),
+    'annulees' => __('Annulées'),
+];
+$labelsByFilter = [
+    'preparation' => [(string) __('En préparation'), (string) __('En attente')],
+    'expediees' => [(string) __('Expédiée')],
+    'livrees' => [(string) __('Livrée')],
+    'annulees' => [(string) __('Annulée'), (string) __('Remboursée')],
+];
+$matches = static function (Order $order, string $filter) use ($progress, $labelsByFilter): bool {
+    return match ($filter) {
+        'toutes' => true,
+        'en-cours' => $progress->isInProgress($order),
+        default => in_array($progress->getStatus($order)['label'], $labelsByFilter[$filter] ?? [], true),
+    };
+};
+
+$current = (string) $block->getRequest()->getParam('statut', 'toutes');
+$current = isset($filters[$current]) ? $current : 'toutes';
+$visible = array_values(array_filter($orders, static fn (Order $order) => $matches($order, $current)));
+
+$selectedId = (int) $block->getRequest()->getParam('commande');
+$selected = null;
+foreach ($visible as $order) {
+    if ($selected === null || (int) $order->getId() === $selectedId) {
+        $selected = $order;
+    }
+    if ((int) $order->getId() === $selectedId) {
+        break;
+    }
+}
+
+$delivered = count(array_filter($orders, static fn (Order $order) => $matches($order, 'livrees')));
+$total = array_sum(array_map(
+    static fn (Order $order) => $order->getState() === Order::STATE_CANCELED ? 0.0 : (float) $order->getGrandTotal(),
+    $orders
+));
+$kpis = [
+    ['box', __('Total commandes'), (string) count($orders)],
+    ['clock', __('En cours'), (string) $account->countOrdersInProgress()],
+    ['truck', __('Livrées'), (string) $delivered],
+    ['percent', __('Montant total'), $orders ? strip_tags((string) $orders[0]->formatPrice($total)) : '—'],
+];
+?>
+<div class="flex flex-col gap-4">
+    <ul class="grid grid-cols-2 gap-3 lg:grid-cols-4" aria-label="<?= $escaper->escapeHtmlAttr(__('Indicateurs')) ?>">
+        <?php foreach ($kpis as [$icon, $label, $value]): ?>
+            <li class="myca-card flex items-center gap-3 p-4 shadow-card">
+                <?= $icons->renderHtml($icon, 'shrink-0 text-icon-kpi', 26, 26, ['aria-hidden' => 'true']) ?>
+                <span class="flex min-w-0 flex-col">
+                    <span class="myca-caption-strong text-fg-secondary"><?= $escaper->escapeHtml($label) ?></span>
+                    <span class="truncate text-lg leading-6 font-bold text-fg sm:text-[22px] sm:leading-7"><?= $escaper->escapeHtml($value) ?></span>
+                </span>
+            </li>
+        <?php endforeach ?>
+    </ul>
+
+    <nav aria-label="<?= $escaper->escapeHtmlAttr(__('Filtrer par statut')) ?>">
+        <ul class="flex flex-wrap gap-2">
+            <?php foreach ($filters as $code => $label): ?>
+                <?php $count = count(array_filter($orders, static fn (Order $order) => $matches($order, $code))); ?>
+                <li>
+                    <a
+                        href="<?= $escaper->escapeUrl($block->getUrl('sales/order/history', ['_query' => $code === 'toutes' ? [] : ['statut' => $code]])) ?>"
+                        class="myca-btn <?= $code === $current ? 'myca-btn-primary' : 'myca-btn-secondary' ?>"
+                        <?= $code === $current ? 'aria-current="page"' : '' ?>
+                    ><?= $escaper->escapeHtml($label) ?> (<?= (int) $count ?>)</a>
+                </li>
+            <?php endforeach ?>
+        </ul>
+    </nav>
+
+    <div class="grid gap-4 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] xl:items-start">
+        <section class="myca-card p-4" aria-labelledby="myca-orders-history">
+            <h2 id="myca-orders-history" class="myca-card-title"><?= $icons->renderHtml('file', '', 18, 18, ['aria-hidden' => 'true']) ?><?= $escaper->escapeHtml(__('Historique de mes commandes')) ?></h2>
+            <?php if ($visible): ?>
+                <?= $block->getChildBlock('orders.table')?->setData('orders', $visible)->setData('selected_order_id', $selected?->getId())
+                    ->setData('select_query', $current === 'toutes' ? [] : ['statut' => $current])->toHtml() ?>
+            <?php else: ?>
+                <p class="myca-body-s text-fg-secondary"><?= $escaper->escapeHtml(__('Aucune commande dans cette catégorie.')) ?></p>
+            <?php endif ?>
+        </section>
+
+        <?php if ($selected): ?>
+            <?php
+            $status = $progress->getStatus($selected);
+            $shippingAddress = $selected->getShippingAddress();
+            $invoice = $selected->getInvoiceCollection()->getFirstItem();
+            ?>
+            <section class="myca-card flex flex-col gap-4 p-4" aria-labelledby="myca-order-detail">
+                <h2 id="myca-order-detail" class="myca-card-title mb-0">
+                    <?= $icons->renderHtml('box', '', 18, 18, ['aria-hidden' => 'true']) ?>
+                    <?= $escaper->escapeHtml(__('Commande %1', $selected->getIncrementId())) ?>
+                    <span class="ms-auto myca-badge myca-badge-<?= $escaper->escapeHtmlAttr($status['tone']) ?>"><?= $escaper->escapeHtml($status['label']) ?></span>
+                </h2>
+
+                <div class="grid gap-3 sm:grid-cols-2">
+                    <ul class="flex flex-col gap-2">
+                        <?php foreach ($selected->getAllVisibleItems() as $item): ?>
+                            <li class="flex items-center gap-3">
+                                <img src="<?= $escaper->escapeUrl($account->getImageUrl($item->getProduct())) ?>" alt="" class="size-10 shrink-0 object-contain" width="40" height="40" loading="lazy">
+                                <span class="flex flex-col">
+                                    <span class="myca-body-s-strong text-fg"><?= $escaper->escapeHtml($item->getName()) ?></span>
+                                    <span class="myca-caption text-fg-secondary">
+                                        <?= $escaper->escapeHtml(__('× %1', (float) $item->getQtyOrdered())) ?> · <?= /* @noEscape */ $selected->formatPrice($item->getRowTotalInclTax()) ?>
+                                    </span>
+                                </span>
+                            </li>
+                        <?php endforeach ?>
+                    </ul>
+                    <dl class="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 myca-caption">
+                        <?php if ($shippingAddress): ?>
+                            <dt class="text-fg-secondary"><?= $escaper->escapeHtml(__('Livraison')) ?></dt>
+                            <dd class="text-right font-semibold text-fg">
+                                <?= $escaper->escapeHtml($shippingAddress->getName()) ?>,
+                                <?= $escaper->escapeHtml(implode(' ', $shippingAddress->getStreet())) ?>,
+                                <?= $escaper->escapeHtml($shippingAddress->getPostcode() . ' ' . $shippingAddress->getCity()) ?>
+                            </dd>
+                        <?php endif ?>
+                        <dt class="text-fg-secondary"><?= $escaper->escapeHtml(__('Paiement')) ?></dt>
+                        <dd class="text-right font-semibold text-fg"><?= $escaper->escapeHtml($selected->getPayment()?->getMethodInstance()->getTitle() ?? '') ?></dd>
+                    </dl>
+                </div>
+
+                <?= $block->getChildBlock('tracking')?->setData('order', $selected)->toHtml() ?>
+
+                <dl class="flex flex-col gap-1 myca-body-s">
+                    <div class="flex justify-between"><dt class="text-fg-secondary"><?= $escaper->escapeHtml(__('Sous-total')) ?></dt><dd class="font-semibold text-fg"><?= /* @noEscape */ $selected->formatPrice($selected->getSubtotalInclTax()) ?></dd></div>
+                    <div class="flex justify-between"><dt class="text-fg-secondary"><?= $escaper->escapeHtml($selected->getShippingDescription() ?: __('Livraison')) ?></dt><dd class="font-semibold text-fg"><?= /* @noEscape */ (float) $selected->getShippingInclTax() > 0 ? $selected->formatPrice($selected->getShippingInclTax()) : $escaper->escapeHtml(__('Offerte')) ?></dd></div>
+                    <div class="mt-1 flex justify-between rounded-md bg-gold-100 px-3 py-2"><dt class="font-semibold text-fg"><?= $escaper->escapeHtml(__('Total TTC')) ?></dt><dd class="font-bold text-fg"><?= /* @noEscape */ $selected->formatPrice($selected->getGrandTotal()) ?></dd></div>
+                </dl>
+
+                <div class="flex flex-wrap gap-2.5">
+                    <a href="<?= $escaper->escapeUrl($block->getUrl('sales/order/view', ['order_id' => $selected->getId()])) ?>" class="myca-btn myca-btn-primary">
+                        <?= $icons->renderHtml('truck', '', 16, 16, ['aria-hidden' => 'true']) ?><?= $escaper->escapeHtml(__('Détail et suivi')) ?>
+                    </a>
+                    <?php if ($invoice && $invoice->getId()): ?>
+                        <a href="<?= $escaper->escapeUrl($block->getUrl('sales/order/invoice', ['order_id' => $selected->getId()])) ?>" class="myca-btn myca-btn-secondary">
+                            <?= $icons->renderHtml('file', '', 16, 16, ['aria-hidden' => 'true']) ?><?= $escaper->escapeHtml(__('Voir la facture')) ?>
+                        </a>
+                    <?php endif ?>
+                    <a href="<?= $escaper->escapeUrl($block->getUrl('', ['_direct' => 'contact'])) ?>" class="myca-btn myca-btn-secondary">
+                        <?= $icons->renderHtml('headset', '', 16, 16, ['aria-hidden' => 'true']) ?><?= $escaper->escapeHtml(__('Contacter le support')) ?>
+                    </a>
+                </div>
+            </section>
+        <?php endif ?>
+    </div>
+</div>

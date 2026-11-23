@@ -1,0 +1,49 @@
+<?php
+/**
+ * Bandeau des pages de l'espace client (Figma « Bandeau/Client B2C ») : photo, titre serif, sous-titre, emblème.
+ * Titre et sous-titre viennent de la mise en page de chaque page (arguments « title » et « subtitle »).
+ */
+
+declare(strict_types=1);
+
+use Hyva\Theme\Model\ViewModelRegistry;
+use Hyva\Theme\ViewModel\SvgIcons;
+use Magento\Framework\Escaper;
+use Magento\Framework\View\Element\Template;
+
+/** @var Template $block */
+/** @var Escaper $escaper */
+/** @var ViewModelRegistry $viewModels */
+
+$icons = $viewModels->require(SvgIcons::class);
+$title = (string) ($block->getData('title') ?: __('Mon Espace Client'));
+$subtitle = (string) $block->getData('subtitle');
+?>
+<section class="mb-4 flex items-center gap-6 overflow-hidden rounded-lg bg-hero text-white md:h-[150px] md:pe-7">
+    <div class="relative hidden h-full w-[440px] shrink-0 md:block" aria-hidden="true">
+        <img
+            src="<?= $escaper->escapeUrl($block->getViewFileUrl('images/espace-client-bandeau.webp')) ?>"
+            alt=""
+            class="size-full object-cover"
+            width="440"
+            height="150"
+        >
+        <span class="absolute inset-y-0 right-0 w-[140px] bg-gradient-to-r from-transparent to-hero"></span>
+    </div>
+    <div class="flex flex-1 flex-col gap-1.5 p-5 md:p-0">
+        <h1 class="myca-section text-white"><?= $escaper->escapeHtml($title) ?></h1>
+        <?php if ($subtitle !== ''): ?>
+            <p class="myca-body-m"><?= $escaper->escapeHtml($subtitle) ?></p>
+        <?php endif ?>
+    </div>
+    <div class="hidden shrink-0 flex-col items-center lg:flex" aria-hidden="true">
+        <?= $icons->renderHtml('crown', 'text-gold-400', 30, 30) ?>
+        <span class="font-display text-[28px] leading-8 font-bold">MYCA®</span>
+        <span class="text-[8px] leading-[10px] font-semibold tracking-[0.28em]">L’ÉLÉGANCE SPORTIVE</span>
+        <span class="mt-1 flex">
+            <span class="h-[3px] w-6 bg-flag-blue"></span>
+            <span class="h-[3px] w-6 bg-white"></span>
+            <span class="h-[3px] w-6 bg-brand-red"></span>
+        </span>
+    </div>
+</section>

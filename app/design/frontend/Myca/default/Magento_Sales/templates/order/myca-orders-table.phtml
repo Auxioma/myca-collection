@@ -1,0 +1,79 @@
+<?php
+/**
+ * Tableau des commandes (M28, M29) : n°, date, articles, montant, statut, suivi.
+ * Mobile : une commande = une carte (jamais de défilement horizontal de la page).
+ * Reçoit les commandes dans la donnée « orders ».
+ */
+
+declare(strict_types=1);
+
+use Hyva\Theme\Model\ViewModelRegistry;
+use Hyva\Theme\ViewModel\SvgIcons;
+use Magento\Framework\Escaper;
+use Magento\Framework\View\Element\Template;
+use Magento\Sales\Model\Order;
+use Myca\Core\ViewModel\OrderProgress;
+
+/** @var Template $block */
+/** @var Escaper $escaper */
+/** @var ViewModelRegistry $viewModels */
+
+/** @var Order[] $orders */
+$orders = $block->getData('orders') ?: [];
+if (!$orders) {
+    return;
+}
+$icons = $viewModels->require(SvgIcons::class);
+/** @var OrderProgress $progress */
+$progress = $viewModels->require(OrderProgress::class);
+$selectedId = (int) $block->getData('selected_order_id');
+?>
+<table class="w-full myca-body-s text-fg">
+    <thead class="hidden md:table-header-group">
+        <tr class="bg-surface-subtle text-left">
+            <th scope="col" class="rounded-s-md px-2.5 py-2 myca-caption-strong text-fg-secondary"><?= $escaper->escapeHtml(__('N° commande')) ?></th>
+            <th scope="col" class="px-2.5 py-2 myca-caption-strong text-fg-secondary"><?= $escaper->escapeHtml(__('Date')) ?></th>
+            <th scope="col" class="hidden px-2.5 py-2 myca-caption-strong text-fg-secondary 2xl:table-cell"><?= $escaper->escapeHtml(__('Articles')) ?></th>
+            <th scope="col" class="px-2.5 py-2 text-right myca-caption-strong text-fg-secondary"><?= $escaper->escapeHtml(__('Montant')) ?></th>
+            <th scope="col" class="px-2.5 py-2 myca-caption-strong text-fg-secondary"><?= $escaper->escapeHtml(__('Statut')) ?></th>
+            <th scope="col" class="rounded-e-md px-2.5 py-2 myca-caption-strong text-fg-secondary"><span class="sr-only"><?= $escaper->escapeHtml(__('Suivi')) ?></span></th>
+        </tr>
+    </thead>
+    <tbody class="divide-y divide-line">
+        <?php foreach ($orders as $order): ?>
+            <?php
+            $status = $progress->getStatus($order);
+            $items = $order->getAllVisibleItems();
+            $first = $items ? reset($items) : null;
+            $articles = $first ? $first->getName() . (count($items) > 1 ? ' +' . (count($items) - 1) : '') : '';
+            // Dans « Mes commandes », le lien choisit la commande affichée dans le panneau de détail.
+            $selectQuery = $block->getData('select_query');
+            $viewUrl = is_array($selectQuery)
+                ? $block->getUrl('sales/order/history', ['_query' => $selectQuery + ['commande' => $order->getId()]])
+                : $block->getUrl('sales/order/view', ['order_id' => $order->getId()]);
+            $isSelected = $selectedId === (int) $order->getId();
+            ?>
+            <tr class="grid grid-cols-[1fr_auto] gap-x-3 gap-y-1 py-3 md:table-row md:py-0 <?= $isSelected ? 'bg-gold-100' : '' ?>">
+                <th scope="row" class="text-left font-semibold md:px-2.5 md:py-3"><?= $escaper->escapeHtml($order->getIncrementId()) ?></th>
+                <td class="text-right whitespace-nowrap text-fg-secondary md:px-2.5 md:py-3 md:text-left">
+                    <?= $escaper->escapeHtml($block->formatDate($order->getCreatedAt(), IntlDateFormatter::SHORT)) ?>
+                </td>
+                <td class="col-span-2 max-w-56 truncate text-fg-secondary md:hidden md:px-2.5 md:py-3 2xl:table-cell"><?= $escaper->escapeHtml($articles) ?></td>
+                <td class="font-semibold md:px-2.5 md:py-3 md:text-right"><?= /* @noEscape */ $order->formatPrice($order->getGrandTotal()) ?></td>
+                <td class="text-right md:px-2.5 md:py-3 md:text-left">
+                    <span class="myca-badge myca-badge-<?= $escaper->escapeHtmlAttr($status['tone']) ?>"><?= $escaper->escapeHtml($status['label']) ?></span>
+                </td>
+                <td class="text-right md:px-2.5 md:py-3 md:text-left">
+                    <a href="<?= $escaper->escapeUrl($viewUrl) ?>" class="inline-flex min-h-11 items-center gap-1 myca-body-s-strong text-accent-text hover:underline md:min-h-0">
+                        <?php if ($progress->isInProgress($order) && $order->hasShipments()): ?>
+                            <?= $icons->renderHtml('truck', '', 16, 16, ['aria-hidden' => 'true']) ?><?= $escaper->escapeHtml(__('Suivre')) ?>
+                        <?php else: ?>
+                            <?= $escaper->escapeHtml(__('Voir')) ?>
+                        <?php endif ?>
+                        <span class="sr-only"><?= $escaper->escapeHtml(__('la commande %1', $order->getIncrementId())) ?></span>
+                    </a>
+                </td>
+            </tr>
+        <?php endforeach ?>
+    </tbody>
+</table>

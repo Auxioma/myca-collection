@@ -1,0 +1,55 @@
+<?php
+/**
+ * Menu de l'espace client (Figma « Menu latéral/Client B2C ») : icône + libellé, rubrique active sur fond accent.
+ * Les liens restent ceux déclarés par les modules (mise en page customer_account) ; seule la présentation change.
+ */
+
+declare(strict_types=1);
+
+use Hyva\Theme\Model\ViewModelRegistry;
+use Hyva\Theme\ViewModel\SvgIcons;
+use Magento\Customer\Block\Account\Delimiter;
+use Magento\Customer\Block\Account\Navigation;
+use Magento\Framework\Escaper;
+use Magento\Framework\View\Element\Html\Link\Current;
+
+/** @var Navigation $block */
+/** @var Escaper $escaper */
+/** @var ViewModelRegistry $viewModels */
+
+$icons = $viewModels->require(SvgIcons::class);
+$iconByLink = [
+    'customer-account-navigation-account-link' => 'home',
+    'customer-account-navigation-orders-link' => 'cart',
+    'customer-account-navigation-wish-list-link' => 'heart',
+    'customer-account-navigation-product-reviews-link' => 'star',
+    'customer-account-navigation-account-edit-link' => 'user',
+    'customer-account-navigation-address-link' => 'map-pin',
+    'customer-account-navigation-my-credit-cards-link' => 'card',
+    'customer-account-navigation-newsletter-subscriptions-link' => 'settings',
+    'authorization-link-login' => 'logout',
+];
+?>
+<ul class="flex flex-col gap-0.5">
+    <?php foreach ($block->getLinks() as $link): ?>
+        <?php
+        if ($link instanceof Delimiter || !$link->getHref()) {
+            continue;
+        }
+        $isCurrent = $link instanceof Current && $link->isCurrent();
+        $icon = $iconByLink[$link->getNameInLayout()] ?? 'chevron-right';
+        ?>
+        <li>
+            <a
+                href="<?= $escaper->escapeUrl($link->getHref()) ?>"
+                class="flex min-h-11 items-center gap-2.5 rounded-md px-3 py-2 text-[13px] leading-[18px] lg:min-h-9
+                    focus-visible:outline-2 focus-visible:outline-accent
+                    <?= $isCurrent ? 'bg-nav-active text-on-nav-active font-semibold' : 'text-white hover:bg-white/10' ?>"
+                <?= $isCurrent ? 'aria-current="page"' : '' ?>
+            >
+                <?= $icons->renderHtml($icon, 'shrink-0', 18, 18, ['aria-hidden' => 'true']) ?>
+                <span class="truncate"><?= $escaper->escapeHtml(__($link->getLabel())) ?></span>
+            </a>
+        </li>
+    <?php endforeach ?>
+</ul>

@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<page xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:noNamespaceSchemaLocation="urn:magento:framework:View/Layout/etc/page_configuration.xsd">
+    <body>
+        <!-- Tableau de bord client M28 : remplace les blocs Magento (informations, adresses, commandes récentes). -->
+        <referenceBlock name="customer_account_dashboard_info" remove="true"/>
+        <referenceBlock name="customer_account_dashboard_address" remove="true"/>
+        <referenceBlock name="customer_account_dashboard_top" remove="true"/>
+        <referenceBlock name="myca.account.banner">
+            <arguments>
+                <argument name="title" xsi:type="string" translate="true">Bienvenue dans votre Espace Client MYCA</argument>
+                <argument name="subtitle" xsi:type="string" translate="true">Suivez vos commandes, gérez votre compte et découvrez nos nouvelles collections.</argument>
+            </arguments>
+        </referenceBlock>
+        <referenceContainer name="content">
+            <block name="myca.account.dashboard" template="Magento_Customer::account/dashboard/myca-dashboard.phtml" after="myca.account.banner" cacheable="false">
+                <block name="myca.account.dashboard.tracking" as="tracking" template="Magento_Sales::order/myca-tracking.phtml"/>
+                <block name="myca.account.dashboard.orders" as="orders.table" template="Magento_Sales::order/myca-orders-table.phtml"/>
+            </block>
+        </referenceContainer>
+    </body>
+</page>
