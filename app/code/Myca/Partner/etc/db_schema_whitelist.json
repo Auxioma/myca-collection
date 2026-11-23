@@ -1,0 +1,98 @@
+{
+    "myca_partner": {
+        "column": {
+            "partner_id": true,
+            "code": true,
+            "company_name": true,
+            "siret": true,
+            "vat_id": true,
+            "status": true,
+            "customer_group_id": true,
+            "sales_modes": true,
+            "description": true,
+            "logo": true,
+            "street": true,
+            "postcode": true,
+            "city": true,
+            "country_id": true,
+            "phone": true,
+            "email": true,
+            "opening_date": true,
+            "show_in_directory": true,
+            "notify_new_collections": true,
+            "notify_promotions": true,
+            "allow_contact": true,
+            "hide_contact_details": true,
+            "created_at": true,
+            "updated_at": true,
+            "approved_at": true,
+            "suspended_at": true
+        },
+        "index": {
+            "MYCA_PARTNER_STATUS": true
+        },
+        "constraint": {
+            "PRIMARY": true,
+            "MYCA_PARTNER_CODE": true,
+            "MYCA_PARTNER_CUSTOMER_GROUP_ID_CUSTOMER_GROUP_CUSTOMER_GROUP_ID": true
+        }
+    },
+    "myca_partner_user": {
+        "column": {
+            "partner_user_id": true,
+            "partner_id": true,
+            "customer_id": true,
+            "role": true,
+            "preferences": true,
+            "created_at": true
+        },
+        "constraint": {
+            "PRIMARY": true,
+            "MYCA_PARTNER_USER_CUSTOMER_ID": true,
+            "MYCA_PARTNER_USER_PARTNER_ID_MYCA_PARTNER_PARTNER_ID": true,
+            "MYCA_PARTNER_USER_CUSTOMER_ID_CUSTOMER_ENTITY_ENTITY_ID": true
+        }
+    },
+    "myca_partner_application": {
+        "column": {
+            "application_id": true,
+            "company_name": true,
+            "siret": true,
+            "vat_id": true,
+            "contact_name": true,
+            "email": true,
+            "phone": true,
+            "city": true,
+            "country_id": true,
+            "message": true,
+            "status": true,
+            "reviewed_by": true,
+            "reviewed_at": true,
+            "partner_id": true,
+            "created_at": true
+        },
+        "index": {
+            "MYCA_PARTNER_APPLICATION_STATUS": true
+        },
+        "constraint": {
+            "PRIMARY": true,
+            "MYCA_PARTNER_APPLICATION_REVIEWED_BY_ADMIN_USER_USER_ID": true,
+            "MYCA_PARTNER_APPLICATION_PARTNER_ID_MYCA_PARTNER_PARTNER_ID": true
+        }
+    },
+    "myca_partner_order": {
+        "column": {
+            "order_id": true,
+            "partner_id": true,
+            "created_at": true
+        },
+        "index": {
+            "MYCA_PARTNER_ORDER_PARTNER_ID": true
+        },
+        "constraint": {
+            "PRIMARY": true,
+            "MYCA_PARTNER_ORDER_ORDER_ID_SALES_ORDER_ENTITY_ID": true,
+            "MYCA_PARTNER_ORDER_PARTNER_ID_MYCA_PARTNER_PARTNER_ID": true
+        }
+    }
+}

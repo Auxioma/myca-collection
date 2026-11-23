@@ -367,6 +367,8 @@ return [
         'Myca_Core' => 1,
         'Myca_Catalog' => 1,
         'Myca_Content' => 1,
+        'Myca_Partner' => 1,
+        'Myca_Dropship' => 1,
         'Myca_Shipping' => 1,
         'PayPal_Braintree' => 1,
         'PayPal_BraintreeCustomerBalance' => 1,

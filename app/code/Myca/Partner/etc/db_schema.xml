@@ -1,0 +1,120 @@
+<?xml version="1.0"?>
+<!--
+    Partenaires B2B (boutiques), leurs comptes utilisateurs, les candidatures (P17) et le rattachement
+    des commandes. Le cloisonnement des données repose sur partner_id.
+-->
+<schema xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="urn:magento:framework:Setup/Declaration/Schema/etc/schema.xsd">
+    <table name="myca_partner" resource="default" engine="innodb" comment="MYCA - Partenaires B2B">
+        <column xsi:type="int" name="partner_id" unsigned="true" nullable="false" identity="true"/>
+        <column xsi:type="varchar" name="code" length="32" nullable="false" comment="N° partenaire (PART-000158)"/>
+        <column xsi:type="varchar" name="company_name" length="255" nullable="false"/>
+        <column xsi:type="varchar" name="siret" length="14" nullable="true"/>
+        <column xsi:type="varchar" name="vat_id" length="32" nullable="true"/>
+        <column xsi:type="varchar" name="status" length="16" nullable="false" default="pending"
+                comment="pending, active, suspended, rejected"/>
+        <column xsi:type="int" name="customer_group_id" unsigned="true" nullable="true"/>
+        <column xsi:type="varchar" name="sales_modes" length="64" nullable="false" default="dropship,stock"
+                comment="Modes de vente autorisés : dropship, stock"/>
+        <column xsi:type="text" name="description" nullable="true" comment="Présentation de la boutique"/>
+        <column xsi:type="varchar" name="logo" length="255" nullable="true" comment="Chemin relatif à pub/media"/>
+        <column xsi:type="varchar" name="street" length="255" nullable="true"/>
+        <column xsi:type="varchar" name="postcode" length="16" nullable="true"/>
+        <column xsi:type="varchar" name="city" length="128" nullable="true"/>
+        <column xsi:type="varchar" name="country_id" length="2" nullable="true"/>
+        <column xsi:type="varchar" name="phone" length="32" nullable="true"/>
+        <column xsi:type="varchar" name="email" length="255" nullable="true"/>
+        <column xsi:type="date" name="opening_date" nullable="true"/>
+        <column xsi:type="smallint" name="show_in_directory" unsigned="true" nullable="false" default="0"/>
+        <column xsi:type="smallint" name="notify_new_collections" unsigned="true" nullable="false" default="1"/>
+        <column xsi:type="smallint" name="notify_promotions" unsigned="true" nullable="false" default="1"/>
+        <column xsi:type="smallint" name="allow_contact" unsigned="true" nullable="false" default="1"/>
+        <column xsi:type="smallint" name="hide_contact_details" unsigned="true" nullable="false" default="0"/>
+        <column xsi:type="timestamp" name="created_at" nullable="false" default="CURRENT_TIMESTAMP"/>
+        <column xsi:type="timestamp" name="updated_at" nullable="false" default="CURRENT_TIMESTAMP" on_update="true"/>
+        <column xsi:type="timestamp" name="approved_at" nullable="true"/>
+        <column xsi:type="timestamp" name="suspended_at" nullable="true"/>
+        <constraint xsi:type="primary" referenceId="PRIMARY">
+            <column name="partner_id"/>
+        </constraint>
+        <constraint xsi:type="unique" referenceId="MYCA_PARTNER_CODE">
+            <column name="code"/>
+        </constraint>
+        <constraint xsi:type="foreign" referenceId="MYCA_PARTNER_CUSTOMER_GROUP_ID_CUSTOMER_GROUP_CUSTOMER_GROUP_ID"
+                    table="myca_partner" column="customer_group_id"
+                    referenceTable="customer_group" referenceColumn="customer_group_id" onDelete="SET NULL"/>
+        <index referenceId="MYCA_PARTNER_STATUS" indexType="btree">
+            <column name="status"/>
+        </index>
+    </table>
+
+    <table name="myca_partner_user" resource="default" engine="innodb" comment="MYCA - Comptes clients d'un partenaire">
+        <column xsi:type="int" name="partner_user_id" unsigned="true" nullable="false" identity="true"/>
+        <column xsi:type="int" name="partner_id" unsigned="true" nullable="false"/>
+        <column xsi:type="int" name="customer_id" unsigned="true" nullable="false"/>
+        <column xsi:type="varchar" name="role" length="16" nullable="false" default="owner" comment="owner, staff"/>
+        <column xsi:type="text" name="preferences" nullable="true" comment="Préférences de notification (JSON)"/>
+        <column xsi:type="timestamp" name="created_at" nullable="false" default="CURRENT_TIMESTAMP"/>
+        <constraint xsi:type="primary" referenceId="PRIMARY">
+            <column name="partner_user_id"/>
+        </constraint>
+        <constraint xsi:type="unique" referenceId="MYCA_PARTNER_USER_CUSTOMER_ID">
+            <column name="customer_id"/>
+        </constraint>
+        <constraint xsi:type="foreign" referenceId="MYCA_PARTNER_USER_PARTNER_ID_MYCA_PARTNER_PARTNER_ID"
+                    table="myca_partner_user" column="partner_id"
+                    referenceTable="myca_partner" referenceColumn="partner_id" onDelete="CASCADE"/>
+        <constraint xsi:type="foreign" referenceId="MYCA_PARTNER_USER_CUSTOMER_ID_CUSTOMER_ENTITY_ENTITY_ID"
+                    table="myca_partner_user" column="customer_id"
+                    referenceTable="customer_entity" referenceColumn="entity_id" onDelete="CASCADE"/>
+    </table>
+
+    <table name="myca_partner_application" resource="default" engine="innodb" comment="MYCA - Candidatures partenaires (P17)">
+        <column xsi:type="int" name="application_id" unsigned="true" nullable="false" identity="true"/>
+        <column xsi:type="varchar" name="company_name" length="255" nullable="false"/>
+        <column xsi:type="varchar" name="siret" length="14" nullable="true"/>
+        <column xsi:type="varchar" name="vat_id" length="32" nullable="true"/>
+        <column xsi:type="varchar" name="contact_name" length="255" nullable="false"/>
+        <column xsi:type="varchar" name="email" length="255" nullable="false"/>
+        <column xsi:type="varchar" name="phone" length="32" nullable="true"/>
+        <column xsi:type="varchar" name="city" length="128" nullable="true"/>
+        <column xsi:type="varchar" name="country_id" length="2" nullable="true"/>
+        <column xsi:type="text" name="message" nullable="true"/>
+        <column xsi:type="varchar" name="status" length="16" nullable="false" default="pending"
+                comment="pending, approved, rejected"/>
+        <column xsi:type="int" name="reviewed_by" unsigned="true" nullable="true" comment="Administrateur"/>
+        <column xsi:type="timestamp" name="reviewed_at" nullable="true"/>
+        <column xsi:type="int" name="partner_id" unsigned="true" nullable="true" comment="Partenaire créé"/>
+        <column xsi:type="timestamp" name="created_at" nullable="false" default="CURRENT_TIMESTAMP"/>
+        <constraint xsi:type="primary" referenceId="PRIMARY">
+            <column name="application_id"/>
+        </constraint>
+        <constraint xsi:type="foreign" referenceId="MYCA_PARTNER_APPLICATION_REVIEWED_BY_ADMIN_USER_USER_ID"
+                    table="myca_partner_application" column="reviewed_by"
+                    referenceTable="admin_user" referenceColumn="user_id" onDelete="SET NULL"/>
+        <constraint xsi:type="foreign" referenceId="MYCA_PARTNER_APPLICATION_PARTNER_ID_MYCA_PARTNER_PARTNER_ID"
+                    table="myca_partner_application" column="partner_id"
+                    referenceTable="myca_partner" referenceColumn="partner_id" onDelete="SET NULL"/>
+        <index referenceId="MYCA_PARTNER_APPLICATION_STATUS" indexType="btree">
+            <column name="status"/>
+        </index>
+    </table>
+
+    <table name="myca_partner_order" resource="default" engine="innodb" comment="MYCA - Commandes d'un partenaire">
+        <column xsi:type="int" name="order_id" unsigned="true" nullable="false"/>
+        <column xsi:type="int" name="partner_id" unsigned="true" nullable="false"/>
+        <column xsi:type="timestamp" name="created_at" nullable="false" default="CURRENT_TIMESTAMP"/>
+        <constraint xsi:type="primary" referenceId="PRIMARY">
+            <column name="order_id"/>
+        </constraint>
+        <constraint xsi:type="foreign" referenceId="MYCA_PARTNER_ORDER_ORDER_ID_SALES_ORDER_ENTITY_ID"
+                    table="myca_partner_order" column="order_id"
+                    referenceTable="sales_order" referenceColumn="entity_id" onDelete="CASCADE"/>
+        <constraint xsi:type="foreign" referenceId="MYCA_PARTNER_ORDER_PARTNER_ID_MYCA_PARTNER_PARTNER_ID"
+                    table="myca_partner_order" column="partner_id"
+                    referenceTable="myca_partner" referenceColumn="partner_id" onDelete="CASCADE"/>
+        <index referenceId="MYCA_PARTNER_ORDER_PARTNER_ID" indexType="btree">
+            <column name="partner_id"/>
+        </index>
+    </table>
+</schema>

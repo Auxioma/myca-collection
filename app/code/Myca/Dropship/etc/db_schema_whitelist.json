@@ -1,0 +1,22 @@
+{
+    "myca_dropship_order": {
+        "column": {
+            "order_id": true,
+            "partner_id": true,
+            "mode": true,
+            "ship_to_end_customer": true,
+            "packing_slip_hide_prices": true,
+            "declared_sale_amount": true,
+            "created_at": true,
+            "updated_at": true
+        },
+        "index": {
+            "MYCA_DROPSHIP_ORDER_PARTNER_ID_MODE": true
+        },
+        "constraint": {
+            "PRIMARY": true,
+            "MYCA_DROPSHIP_ORDER_ORDER_ID_SALES_ORDER_ENTITY_ID": true,
+            "MYCA_DROPSHIP_ORDER_PARTNER_ID_MYCA_PARTNER_PARTNER_ID": true
+        }
+    }
+}

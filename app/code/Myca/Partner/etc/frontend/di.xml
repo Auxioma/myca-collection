@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="urn:magento:framework:ObjectManager/etc/config.xsd">
+    <type name="Magento\Sales\Controller\AbstractController\OrderViewAuthorizationInterface">
+        <plugin name="myca_partner_allow_partner_order_view" type="Myca\Partner\Plugin\AllowPartnerOrderView"/>
+    </type>
+    <type name="Magento\Customer\Controller\Account\Index">
+        <plugin name="myca_partner_redirect_to_partner_space" type="Myca\Partner\Plugin\RedirectPartnerToPartnerSpace"/>
+    </type>
+</config>

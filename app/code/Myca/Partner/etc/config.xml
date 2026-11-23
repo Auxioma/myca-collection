@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Store:etc/config.xsd">
+    <default>
+        <myca_partner>
+            <contact>
+                <hours>Du lundi au vendredi, 9 h – 12 h / 14 h – 18 h (à confirmer)</hours>
+                <phone>04 28 29 62 10</phone>
+                <email>partenaires@myca.fr</email>
+            </contact>
+        </myca_partner>
+    </default>
+</config>

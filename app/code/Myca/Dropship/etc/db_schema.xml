@@ -1,0 +1,32 @@
+<?xml version="1.0"?>
+<!--
+    Mode de vente d'une commande partenaire. En dropshipping, MYCA expédie au client final au nom de la boutique
+    (bon de livraison sans prix) ; la boutique déclare son prix de vente, base de la marge estimée (M16, M21).
+-->
+<schema xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="urn:magento:framework:Setup/Declaration/Schema/etc/schema.xsd">
+    <table name="myca_dropship_order" resource="default" engine="innodb" comment="MYCA - Mode de vente des commandes partenaires">
+        <column xsi:type="int" name="order_id" unsigned="true" nullable="false"/>
+        <column xsi:type="int" name="partner_id" unsigned="true" nullable="false"/>
+        <column xsi:type="varchar" name="mode" length="16" nullable="false" default="dropship" comment="dropship, stock"/>
+        <column xsi:type="smallint" name="ship_to_end_customer" unsigned="true" nullable="false" default="1"/>
+        <column xsi:type="smallint" name="packing_slip_hide_prices" unsigned="true" nullable="false" default="1"/>
+        <column xsi:type="decimal" name="declared_sale_amount" scale="4" precision="20" unsigned="false" nullable="true"
+                comment="Prix de vente HT déclaré par la boutique à son client"/>
+        <column xsi:type="timestamp" name="created_at" nullable="false" default="CURRENT_TIMESTAMP"/>
+        <column xsi:type="timestamp" name="updated_at" nullable="false" default="CURRENT_TIMESTAMP" on_update="true"/>
+        <constraint xsi:type="primary" referenceId="PRIMARY">
+            <column name="order_id"/>
+        </constraint>
+        <constraint xsi:type="foreign" referenceId="MYCA_DROPSHIP_ORDER_ORDER_ID_SALES_ORDER_ENTITY_ID"
+                    table="myca_dropship_order" column="order_id"
+                    referenceTable="sales_order" referenceColumn="entity_id" onDelete="CASCADE"/>
+        <constraint xsi:type="foreign" referenceId="MYCA_DROPSHIP_ORDER_PARTNER_ID_MYCA_PARTNER_PARTNER_ID"
+                    table="myca_dropship_order" column="partner_id"
+                    referenceTable="myca_partner" referenceColumn="partner_id" onDelete="CASCADE"/>
+        <index referenceId="MYCA_DROPSHIP_ORDER_PARTNER_ID_MODE" indexType="btree">
+            <column name="partner_id"/>
+            <column name="mode"/>
+        </index>
+    </table>
+</schema>
