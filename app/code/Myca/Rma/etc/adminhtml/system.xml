@@ -1,0 +1,25 @@
+<?xml version="1.0"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Config:etc/system_file.xsd">
+    <system>
+        <section id="myca_rma" translate="label" sortOrder="50" showInDefault="1" showInWebsite="1" showInStore="1">
+            <label>Retours &amp; SAV</label>
+            <tab>myca</tab>
+            <resource>Myca_Rma::config</resource>
+            <group id="policy" translate="label comment" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1">
+                <label>Délais</label>
+                <comment>Le droit de rétractation légal (14 jours après la livraison) s’applique toujours. Les délais courent à partir du passage de la commande au statut « Livrée ».</comment>
+                <field id="commercial_30_days" translate="label comment" type="select" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1" canRestore="1">
+                    <label>Politique commerciale de 30 jours</label>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                    <comment>À n’activer qu’après validation du règlement commercial, des conditions et des coûts de retour (et mise à jour des CGV).</comment>
+                </field>
+                <field id="warranty_days" translate="label comment" type="text" sortOrder="20" showInDefault="1" showInWebsite="1" showInStore="1" canRestore="1">
+                    <label>Délai des demandes SAV (jours)</label>
+                    <validate>required-entry validate-digits validate-greater-than-zero</validate>
+                    <comment>Défaut ou non-conformité. 730 jours = garantie légale de conformité de 2 ans (à valider).</comment>
+                </field>
+            </group>
+        </section>
+    </system>
+</config>

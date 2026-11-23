@@ -43,6 +43,21 @@ class DropshipOrder
     }
 
     /**
+     * Mode de vente d'une commande, ou null s'il n'a pas été déclaré.
+     */
+    public function getMode(int $orderId): ?string
+    {
+        $connection = $this->resource->getConnection();
+        $mode = $connection->fetchOne(
+            $connection->select()
+                ->from($this->resource->getTableName('myca_dropship_order'), ['mode'])
+                ->where('order_id = ?', $orderId)
+        );
+
+        return is_string($mode) && $mode !== '' ? $mode : null;
+    }
+
+    /**
      * @return array<int, array{mode: string, declared_sale_amount: float|null}> indexé par order_id
      */
     public function getForPartner(int $partnerId): array

@@ -1,0 +1,12 @@
+<?xml version="1.0"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Store:etc/config.xsd">
+    <default>
+        <myca_rma>
+            <policy>
+                <commercial_30_days>0</commercial_30_days>
+                <warranty_days>730</warranty_days>
+            </policy>
+        </myca_rma>
+    </default>
+</config>

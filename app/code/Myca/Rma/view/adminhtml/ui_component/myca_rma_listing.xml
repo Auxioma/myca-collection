@@ -1,0 +1,108 @@
+<?xml version="1.0"?>
+<listing xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Ui:etc/ui_configuration.xsd">
+    <argument name="data" xsi:type="array">
+        <item name="js_config" xsi:type="array">
+            <item name="provider" xsi:type="string">myca_rma_listing.myca_rma_listing_data_source</item>
+        </item>
+    </argument>
+    <settings>
+        <spinner>myca_rma_columns</spinner>
+        <deps>
+            <dep>myca_rma_listing.myca_rma_listing_data_source</dep>
+        </deps>
+    </settings>
+    <dataSource name="myca_rma_listing_data_source" component="Magento_Ui/js/grid/provider">
+        <settings>
+            <storageConfig>
+                <param name="indexField" xsi:type="string">rma_id</param>
+            </storageConfig>
+            <updateUrl path="mui/index/render"/>
+        </settings>
+        <aclResource>Myca_Rma::rma</aclResource>
+        <dataProvider class="Magento\Framework\View\Element\UiComponent\DataProvider\DataProvider" name="myca_rma_listing_data_source">
+            <settings>
+                <requestFieldName>id</requestFieldName>
+                <primaryFieldName>rma_id</primaryFieldName>
+            </settings>
+        </dataProvider>
+    </dataSource>
+    <listingToolbar name="listing_top">
+        <settings>
+            <sticky>true</sticky>
+        </settings>
+        <bookmark name="bookmarks"/>
+        <columnsControls name="columns_controls"/>
+        <filters name="listing_filters"/>
+        <paging name="listing_paging"/>
+    </listingToolbar>
+    <columns name="myca_rma_columns">
+        <column name="increment_id" sortOrder="10">
+            <settings>
+                <filter>text</filter>
+                <label translate="true">N° demande</label>
+            </settings>
+        </column>
+        <column name="created_at" class="Magento\Ui\Component\Listing\Columns\Date" component="Magento_Ui/js/grid/columns/date" sortOrder="20">
+            <settings>
+                <filter>dateRange</filter>
+                <dataType>date</dataType>
+                <label translate="true">Date</label>
+                <sorting>desc</sorting>
+            </settings>
+        </column>
+        <column name="order_increment_id" sortOrder="30">
+            <settings>
+                <filter>text</filter>
+                <label translate="true">N° commande</label>
+            </settings>
+        </column>
+        <column name="origin" component="Magento_Ui/js/grid/columns/select" sortOrder="40">
+            <settings>
+                <options class="Myca\Rma\Model\Source\Origin"/>
+                <filter>select</filter>
+                <dataType>select</dataType>
+                <label translate="true">Origine</label>
+            </settings>
+        </column>
+        <column name="type" component="Magento_Ui/js/grid/columns/select" sortOrder="50">
+            <settings>
+                <options class="Myca\Rma\Model\Source\Type"/>
+                <filter>select</filter>
+                <dataType>select</dataType>
+                <label translate="true">Type</label>
+            </settings>
+        </column>
+        <column name="status" component="Magento_Ui/js/grid/columns/select" sortOrder="60">
+            <settings>
+                <options class="Myca\Rma\Model\Source\Status"/>
+                <filter>select</filter>
+                <dataType>select</dataType>
+                <label translate="true">Statut</label>
+            </settings>
+        </column>
+        <column name="customer_email" sortOrder="70">
+            <settings>
+                <filter>text</filter>
+                <label translate="true">E-mail du payeur</label>
+            </settings>
+        </column>
+        <column name="refunded_amount" class="Myca\Rma\Ui\Component\Listing\Column\RefundedAmount" sortOrder="80">
+            <settings>
+                <filter>textRange</filter>
+                <label translate="true">Remboursé / avoir</label>
+            </settings>
+        </column>
+        <column name="deadline_at" class="Magento\Ui\Component\Listing\Columns\Date" component="Magento_Ui/js/grid/columns/date" sortOrder="90">
+            <settings>
+                <dataType>date</dataType>
+                <label translate="true">Fin du délai</label>
+            </settings>
+        </column>
+        <actionsColumn name="actions" class="Myca\Rma\Ui\Component\Listing\Column\Actions" sortOrder="100">
+            <settings>
+                <indexField>rma_id</indexField>
+            </settings>
+        </actionsColumn>
+    </columns>
+</listing>

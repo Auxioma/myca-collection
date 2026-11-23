@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="urn:magento:framework:ObjectManager/etc/config.xsd">
+    <!-- Grille d'administration des demandes (ui_component myca_rma_listing). -->
+    <virtualType name="Myca\Rma\Model\ResourceModel\Rma\Grid\Collection"
+                 type="Magento\Framework\View\Element\UiComponent\DataProvider\SearchResult">
+        <arguments>
+            <argument name="mainTable" xsi:type="string">myca_rma</argument>
+            <argument name="resourceModel" xsi:type="string">Myca\Rma\Model\ResourceModel\Rma</argument>
+        </arguments>
+    </virtualType>
+    <type name="Magento\Framework\View\Element\UiComponent\DataProvider\CollectionFactory">
+        <arguments>
+            <argument name="collections" xsi:type="array">
+                <item name="myca_rma_listing_data_source" xsi:type="string">Myca\Rma\Model\ResourceModel\Rma\Grid\Collection</item>
+            </argument>
+        </arguments>
+    </type>
+</config>

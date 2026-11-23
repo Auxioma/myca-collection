@@ -1,0 +1,8 @@
+<?xml version="1.0"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Backend:etc/menu.xsd">
+    <menu>
+        <add id="Myca_Rma::rma" title="Retours &amp; SAV" translate="title" module="Myca_Rma" sortOrder="35"
+             parent="Magento_Sales::sales_operation" action="myca_rma/rma/index" resource="Myca_Rma::rma"/>
+    </menu>
+</config>

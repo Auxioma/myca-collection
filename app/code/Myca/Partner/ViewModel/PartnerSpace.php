@@ -34,8 +34,8 @@ use Myca\Partner\Model\ResourceModel\Partner as PartnerResource;
 class PartnerSpace implements ArgumentInterface
 {
     /**
-     * Rubriques livrées, dans l'ordre de la maquette. « Passer une commande » (M17), « Mes marges & ventes » (M21)
-     * et « Retours & SAV » (M23) apparaîtront avec le tunnel de commande et Myca_Rma.
+     * Rubriques livrées, dans l'ordre de la maquette. « Passer une commande » (M17) et « Mes marges & ventes » (M21)
+     * apparaîtront avec le tunnel de commande. « Retours & SAV » (M23) est servi par Myca_Rma.
      */
     private const NAVIGATION = [
         ['partenaire', 'partenaire_index_index', 'Tableau de bord', 'home'],
@@ -43,6 +43,7 @@ class PartnerSpace implements ArgumentInterface
         ['partenaire/commandes', 'partenaire_commandes_index', 'Mes commandes', 'layers'],
         ['partenaire/livraisons', 'partenaire_livraisons_index', 'Suivi des livraisons', 'truck'],
         ['partenaire/factures', 'partenaire_factures_index', 'Mes factures', 'file'],
+        ['partenaire/retours', 'partenaire_retours_index', 'Retours & SAV', 'refresh'],
         ['partenaire/clients', 'partenaire_clients_index', 'Mes clients', 'users'],
         ['partenaire/profil', 'partenaire_profil_index', 'Mon profil boutique', 'store'],
         ['partenaire/parametres', 'partenaire_parametres_index', 'Paramètres', 'settings'],
@@ -121,11 +122,19 @@ class PartnerSpace implements ArgumentInterface
                 'url' => $path === '__catalog__' ? $this->getCatalogUrl() : $this->url->getUrl($path),
                 'label' => (string) __($label),
                 'icon' => $icon,
-                'current' => $action !== '' && $current === $action,
+                'current' => $action !== '' && $this->sameSection($current, $action),
             ];
         }
 
         return $items;
+    }
+
+    /**
+     * Même rubrique : même route et même contrôleur (« partenaire_retours_demande » relève de « Retours & SAV »).
+     */
+    private function sameSection(string $current, string $action): bool
+    {
+        return substr($current, 0, (int) strrpos($current, '_')) === substr($action, 0, (int) strrpos($action, '_'));
     }
 
     public function getCustomerName(): string

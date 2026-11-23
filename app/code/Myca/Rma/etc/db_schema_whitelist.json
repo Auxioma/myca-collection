@@ -1,0 +1,78 @@
+{
+    "myca_rma": {
+        "column": {
+            "rma_id": true,
+            "increment_id": true,
+            "order_id": true,
+            "order_increment_id": true,
+            "origin": true,
+            "type": true,
+            "status": true,
+            "refund_party": true,
+            "customer_id": true,
+            "customer_email": true,
+            "partner_id": true,
+            "reason": true,
+            "comment": true,
+            "policy_days": true,
+            "deadline_at": true,
+            "creditmemo_id": true,
+            "refunded_amount": true,
+            "partner_refunded_customer": true,
+            "created_at": true,
+            "updated_at": true
+        },
+        "index": {
+            "MYCA_RMA_ORDER_ID": true,
+            "MYCA_RMA_PARTNER_ID_STATUS": true,
+            "MYCA_RMA_CUSTOMER_ID": true
+        },
+        "constraint": {
+            "PRIMARY": true,
+            "MYCA_RMA_INCREMENT_ID": true,
+            "MYCA_RMA_CREDITMEMO_ID": true,
+            "MYCA_RMA_ORDER_ID_SALES_ORDER_ENTITY_ID": true,
+            "MYCA_RMA_PARTNER_ID_MYCA_PARTNER_PARTNER_ID": true,
+            "MYCA_RMA_CUSTOMER_ID_CUSTOMER_ENTITY_ENTITY_ID": true
+        }
+    },
+    "myca_rma_item": {
+        "column": {
+            "rma_item_id": true,
+            "rma_id": true,
+            "order_item_id": true,
+            "sku": true,
+            "name": true,
+            "qty": true,
+            "exchange_wish": true,
+            "item_condition": true
+        },
+        "index": {
+            "MYCA_RMA_ITEM_ORDER_ITEM_ID": true
+        },
+        "constraint": {
+            "PRIMARY": true,
+            "MYCA_RMA_ITEM_RMA_ID_MYCA_RMA_RMA_ID": true,
+            "MYCA_RMA_ITEM_ORDER_ITEM_ID_SALES_ORDER_ITEM_ITEM_ID": true
+        }
+    },
+    "myca_rma_history": {
+        "column": {
+            "history_id": true,
+            "rma_id": true,
+            "status": true,
+            "author_type": true,
+            "author_name": true,
+            "message": true,
+            "is_visible": true,
+            "created_at": true
+        },
+        "index": {
+            "MYCA_RMA_HISTORY_RMA_ID": true
+        },
+        "constraint": {
+            "PRIMARY": true,
+            "MYCA_RMA_HISTORY_RMA_ID_MYCA_RMA_RMA_ID": true
+        }
+    }
+}

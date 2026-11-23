@@ -1,0 +1,207 @@
+<?php
+/**
+ * Fiche de traitement d'une demande (administration) : informations, articles, contrôle à réception, remboursement
+ * ou avoir, changement d'état et historique complet. Mise en forme native de l'administration Magento.
+ */
+
+declare(strict_types=1);
+
+use Magento\Backend\Block\Template;
+use Magento\Framework\Escaper;
+use Myca\Rma\ViewModel\Admin;
+
+/** @var Template $block */
+/** @var Escaper $escaper */
+
+/** @var Admin $viewModel */
+$viewModel = $block->getData('view_model');
+$rma = $viewModel->getRma();
+if ($rma === null) {
+    return;
+}
+$returns = $viewModel->getReturns();
+$order = $viewModel->getOrder($rma);
+$items = $returns->getItems($rma);
+$status = $returns->getStatus($rma);
+$statusOptions = $viewModel->getStatusOptions($rma);
+$processUrl = $viewModel->getProcessUrl();
+$formKey = $block->getFormKey();
+?>
+<p><a href="<?= $escaper->escapeUrl($viewModel->getBackUrl()) ?>">&larr; <?= $escaper->escapeHtml(__('Toutes les demandes')) ?></a></p>
+
+<section class="admin__page-section">
+    <div class="admin__page-section-title"><span class="title"><?= $escaper->escapeHtml(__('Demande %1', $rma->getIncrementId())) ?> — <?= $escaper->escapeHtml($status['label']) ?></span></div>
+    <div class="admin__page-section-content">
+        <div class="admin__page-section-item">
+            <table class="admin__table-secondary">
+                <tbody>
+                    <tr><th><?= $escaper->escapeHtml(__('Commande')) ?></th><td><a href="<?= $escaper->escapeUrl($viewModel->getOrderUrl($rma)) ?>"><?= $escaper->escapeHtml((string) $rma->getData('order_increment_id')) ?></a></td></tr>
+                    <tr><th><?= $escaper->escapeHtml(__('Origine')) ?></th><td><?= $escaper->escapeHtml($returns->getOriginLabel($rma->getOrigin())) ?></td></tr>
+                    <?php if ($viewModel->getPartnerName($rma) !== ''): ?>
+                        <tr><th><?= $escaper->escapeHtml(__('Boutique')) ?></th><td><?= $escaper->escapeHtml($viewModel->getPartnerName($rma)) ?></td></tr>
+                    <?php endif ?>
+                    <tr><th><?= $escaper->escapeHtml(__('Remboursement')) ?></th><td><?= $escaper->escapeHtml($viewModel->getRefundPartyLabel($rma)) ?></td></tr>
+                    <tr><th><?= $escaper->escapeHtml(__('Type')) ?></th><td><?= $escaper->escapeHtml($returns->getTypeLabel($rma)) ?></td></tr>
+                    <tr><th><?= $escaper->escapeHtml(__('Motif')) ?></th><td><?= $escaper->escapeHtml($returns->getReasonLabel($rma)) ?></td></tr>
+                    <?php if ($rma->getData('comment')): ?>
+                        <tr><th><?= $escaper->escapeHtml(__('Commentaire')) ?></th><td><?= /* @noEscape */ nl2br($escaper->escapeHtml((string) $rma->getData('comment'))) ?></td></tr>
+                    <?php endif ?>
+                </tbody>
+            </table>
+        </div>
+        <div class="admin__page-section-item">
+            <table class="admin__table-secondary">
+                <tbody>
+                    <tr><th><?= $escaper->escapeHtml(__('Payeur de la commande')) ?></th><td><?= $escaper->escapeHtml((string) $rma->getData('customer_email')) ?></td></tr>
+                    <tr><th><?= $escaper->escapeHtml(__('Créée le')) ?></th><td><?= $escaper->escapeHtml($block->formatDate((string) $rma->getData('created_at'), IntlDateFormatter::MEDIUM, true)) ?></td></tr>
+                    <tr><th><?= $escaper->escapeHtml(__('Délai appliqué')) ?></th><td><?= $escaper->escapeHtml(__('%1 jours après la livraison', (int) $rma->getData('policy_days'))) ?></td></tr>
+                    <tr><th><?= $escaper->escapeHtml(__('Fin du délai')) ?></th><td><?= $rma->getData('deadline_at') ? $escaper->escapeHtml($block->formatDate((string) $rma->getData('deadline_at'), IntlDateFormatter::MEDIUM)) : $escaper->escapeHtml(__('livraison non confirmée à la demande')) ?></td></tr>
+                    <?php if ($rma->getCreditmemoId()): ?>
+                        <tr><th><?= $escaper->escapeHtml(__('Avoir Magento')) ?></th><td><a href="<?= $escaper->escapeUrl($viewModel->getCreditmemoUrl($rma)) ?>"><?= $escaper->escapeHtml(__('Voir l’avoir')) ?></a> — <?= $order ? /* @noEscape */ $order->formatPrice((float) $rma->getData('refunded_amount')) : '' ?></td></tr>
+                    <?php endif ?>
+                    <?php if ($rma->getOrigin() === 'dropship'): ?>
+                        <tr><th><?= $escaper->escapeHtml(__('Client remboursé par la boutique')) ?></th><td><?= $escaper->escapeHtml((int) $rma->getData('partner_refunded_customer') ? __('Oui (déclaré)') : __('Non déclaré')) ?></td></tr>
+                    <?php endif ?>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+
+<section class="admin__page-section">
+    <div class="admin__page-section-title"><span class="title"><?= $escaper->escapeHtml(__('Articles')) ?></span></div>
+    <form method="post" action="<?= $escaper->escapeUrl($processUrl) ?>">
+        <input type="hidden" name="form_key" value="<?= $escaper->escapeHtmlAttr($formKey) ?>">
+        <input type="hidden" name="id" value="<?= (int) $rma->getId() ?>">
+        <input type="hidden" name="operation" value="inspect">
+        <table class="data-table admin__table-primary">
+            <thead>
+                <tr>
+                    <th><?= $escaper->escapeHtml(__('Article')) ?></th>
+                    <th><?= $escaper->escapeHtml(__('Référence')) ?></th>
+                    <th><?= $escaper->escapeHtml(__('Quantité')) ?></th>
+                    <th><?= $escaper->escapeHtml(__('Souhait d’échange')) ?></th>
+                    <th><?= $escaper->escapeHtml(__('Contrôle')) ?></th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php foreach ($items as $item): ?>
+                    <tr>
+                        <td><?= $escaper->escapeHtml((string) $item['name']) ?></td>
+                        <td><?= $escaper->escapeHtml((string) $item['sku']) ?></td>
+                        <td><?= (float) $item['qty'] ?></td>
+                        <td><?= $escaper->escapeHtml((string) $item['exchange_wish']) ?></td>
+                        <td>
+                            <?php if ($viewModel->canInspect($rma)): ?>
+                                <select name="condition[<?= (int) $item['rma_item_id'] ?>]" class="admin__control-select" required
+                                        aria-label="<?= $escaper->escapeHtmlAttr(__('État de %1', $item['name'])) ?>">
+                                    <option value=""><?= $escaper->escapeHtml(__('Choisir…')) ?></option>
+                                    <?php foreach ($viewModel->getConditionOptions() as $value => $label): ?>
+                                        <option value="<?= $escaper->escapeHtmlAttr($value) ?>"><?= $escaper->escapeHtml($label) ?></option>
+                                    <?php endforeach ?>
+                                </select>
+                            <?php else: ?>
+                                <?= $escaper->escapeHtml($returns->getConditionLabel($item['item_condition'] === null ? null : (string) $item['item_condition'])) ?>
+                            <?php endif ?>
+                        </td>
+                    </tr>
+                <?php endforeach ?>
+            </tbody>
+        </table>
+        <?php if ($viewModel->canInspect($rma)): ?>
+            <p><?= $escaper->escapeHtml(__('Un article revendable est remis en stock au remboursement ; les autres restent en quarantaine. Un article du stock d’une boutique ne revient jamais dans le stock central.')) ?></p>
+            <button type="submit" class="action-primary"><?= $escaper->escapeHtml(__('Enregistrer le contrôle')) ?></button>
+        <?php endif ?>
+    </form>
+</section>
+
+<section class="admin__page-section">
+    <div class="admin__page-section-title"><span class="title"><?= $escaper->escapeHtml(__('Traitement')) ?></span></div>
+    <div class="admin__page-section-content">
+        <div class="admin__page-section-item">
+            <?php if ($statusOptions): ?>
+                <form method="post" action="<?= $escaper->escapeUrl($processUrl) ?>">
+                    <input type="hidden" name="form_key" value="<?= $escaper->escapeHtmlAttr($formKey) ?>">
+                    <input type="hidden" name="id" value="<?= (int) $rma->getId() ?>">
+                    <input type="hidden" name="operation" value="status">
+                    <div class="admin__field">
+                        <label class="admin__field-label" for="myca-rma-status"><span><?= $escaper->escapeHtml(__('Nouvel état')) ?></span></label>
+                        <div class="admin__field-control">
+                            <select id="myca-rma-status" name="status" class="admin__control-select" required>
+                                <?php foreach ($statusOptions as $value => $label): ?>
+                                    <option value="<?= $escaper->escapeHtmlAttr($value) ?>"><?= $escaper->escapeHtml($label) ?></option>
+                                <?php endforeach ?>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="admin__field">
+                        <label class="admin__field-label" for="myca-rma-status-message"><span><?= $escaper->escapeHtml(__('Message au demandeur (instructions, motif de refus…)')) ?></span></label>
+                        <div class="admin__field-control">
+                            <textarea id="myca-rma-status-message" name="message" rows="3" class="admin__control-textarea"></textarea>
+                        </div>
+                    </div>
+                    <button type="submit" class="action-secondary"><?= $escaper->escapeHtml(__('Changer l’état')) ?></button>
+                </form>
+            <?php else: ?>
+                <p><?= $escaper->escapeHtml(__('Aucun changement d’état possible.')) ?></p>
+            <?php endif ?>
+        </div>
+        <div class="admin__page-section-item">
+            <?php if ($viewModel->canRefund($rma)): ?>
+                <form method="post" action="<?= $escaper->escapeUrl($processUrl) ?>">
+                    <input type="hidden" name="form_key" value="<?= $escaper->escapeHtmlAttr($formKey) ?>">
+                    <input type="hidden" name="id" value="<?= (int) $rma->getId() ?>">
+                    <input type="hidden" name="operation" value="refund">
+                    <p>
+                        <?= $escaper->escapeHtml($rma->getOrigin() === 'online'
+                            ? __('Crée l’avoir Magento des articles retournés et rembourse le payeur de la commande. Les frais de livraison ne sont remboursés que si toute la commande est retournée (rétractation).')
+                            : __('Crée l’avoir Magento des articles retournés au profit de la boutique (payeur de la commande MYCA).')) ?>
+                    </p>
+                    <button type="submit" class="action-primary"><?= $escaper->escapeHtml($rma->getOrigin() === 'online' ? __('Rembourser') : __('Émettre l’avoir')) ?></button>
+                </form>
+            <?php endif ?>
+        </div>
+    </div>
+</section>
+
+<section class="admin__page-section">
+    <div class="admin__page-section-title"><span class="title"><?= $escaper->escapeHtml(__('Historique')) ?></span></div>
+    <table class="data-table admin__table-primary">
+        <thead>
+            <tr>
+                <th><?= $escaper->escapeHtml(__('Date')) ?></th>
+                <th><?= $escaper->escapeHtml(__('État')) ?></th>
+                <th><?= $escaper->escapeHtml(__('Auteur')) ?></th>
+                <th><?= $escaper->escapeHtml(__('Message')) ?></th>
+                <th><?= $escaper->escapeHtml(__('Visible du demandeur')) ?></th>
+            </tr>
+        </thead>
+        <tbody>
+            <?php foreach ($viewModel->getHistory($rma) as $entry): ?>
+                <tr>
+                    <td><?= $escaper->escapeHtml($block->formatDate((string) $entry['created_at'], IntlDateFormatter::MEDIUM, true)) ?></td>
+                    <td><?= $escaper->escapeHtml($returns->getStatusLabel((string) $entry['status'])) ?></td>
+                    <td><?= $escaper->escapeHtml($returns->getAuthorLabel((string) $entry['author_type']) . ' — ' . $entry['author_name']) ?></td>
+                    <td><?= /* @noEscape */ nl2br($escaper->escapeHtml((string) $entry['message'])) ?></td>
+                    <td><?= $escaper->escapeHtml((int) $entry['is_visible'] ? __('Oui') : __('Non (note interne)')) ?></td>
+                </tr>
+            <?php endforeach ?>
+        </tbody>
+    </table>
+    <form method="post" action="<?= $escaper->escapeUrl($processUrl) ?>">
+        <input type="hidden" name="form_key" value="<?= $escaper->escapeHtmlAttr($formKey) ?>">
+        <input type="hidden" name="id" value="<?= (int) $rma->getId() ?>">
+        <input type="hidden" name="operation" value="message">
+        <div class="admin__field">
+            <label class="admin__field-label" for="myca-rma-message"><span><?= $escaper->escapeHtml(__('Ajouter un message')) ?></span></label>
+            <div class="admin__field-control">
+                <textarea id="myca-rma-message" name="message" rows="3" class="admin__control-textarea" required></textarea>
+            </div>
+        </div>
+        <div class="admin__field admin__field-option">
+            <input id="myca-rma-visible" type="checkbox" name="visible" value="1" class="admin__control-checkbox" checked>
+            <label for="myca-rma-visible" class="admin__field-label"><?= $escaper->escapeHtml(__('Visible du demandeur (décocher pour une note interne)')) ?></label>
+        </div>
+        <button type="submit" class="action-secondary"><?= $escaper->escapeHtml(__('Ajouter')) ?></button>
+    </form>
+</section>

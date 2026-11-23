@@ -1,0 +1,96 @@
+<?xml version="1.0"?>
+<!--
+    Demandes de retour, d'échange et de SAV. L'origine (achat MYCA en ligne, dropshipping, stock boutique) est figée
+    à la création : elle détermine qui rembourse le consommateur (refund_party) et si MYCA émet un avoir.
+-->
+<schema xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="urn:magento:framework:Setup/Declaration/Schema/etc/schema.xsd">
+    <table name="myca_rma" resource="default" engine="innodb" comment="MYCA - Demandes de retour et SAV">
+        <column xsi:type="int" name="rma_id" unsigned="true" nullable="false" identity="true"/>
+        <column xsi:type="varchar" name="increment_id" length="32" nullable="true" comment="SAV-AAAA-NNNN"/>
+        <column xsi:type="int" name="order_id" unsigned="true" nullable="false"/>
+        <column xsi:type="varchar" name="order_increment_id" length="50" nullable="false"/>
+        <column xsi:type="varchar" name="origin" length="16" nullable="false" comment="online, dropship, store"/>
+        <column xsi:type="varchar" name="type" length="16" nullable="false" comment="return, exchange, warranty"/>
+        <column xsi:type="varchar" name="status" length="32" nullable="false" default="created"/>
+        <column xsi:type="varchar" name="refund_party" length="16" nullable="false" comment="myca, partner, none"/>
+        <column xsi:type="int" name="customer_id" unsigned="true" nullable="true" comment="Auteur connecté (client ou utilisateur partenaire)"/>
+        <column xsi:type="varchar" name="customer_email" length="255" nullable="false"/>
+        <column xsi:type="int" name="partner_id" unsigned="true" nullable="true"/>
+        <column xsi:type="varchar" name="reason" length="64" nullable="false"/>
+        <column xsi:type="text" name="comment" nullable="true"/>
+        <column xsi:type="smallint" name="policy_days" unsigned="true" nullable="false" comment="Délai appliqué à la demande"/>
+        <column xsi:type="timestamp" name="deadline_at" nullable="true" comment="Fin du délai ; vide tant que la livraison n'est pas confirmée"/>
+        <column xsi:type="int" name="creditmemo_id" unsigned="true" nullable="true" comment="Remboursement ou avoir MYCA émis"/>
+        <column xsi:type="decimal" name="refunded_amount" scale="4" precision="20" unsigned="false" nullable="true"/>
+        <column xsi:type="smallint" name="partner_refunded_customer" unsigned="true" nullable="false" default="0"
+                comment="Dropshipping : la boutique déclare avoir remboursé son client"/>
+        <column xsi:type="timestamp" name="created_at" nullable="false" default="CURRENT_TIMESTAMP"/>
+        <column xsi:type="timestamp" name="updated_at" nullable="false" default="CURRENT_TIMESTAMP" on_update="true"/>
+        <constraint xsi:type="primary" referenceId="PRIMARY">
+            <column name="rma_id"/>
+        </constraint>
+        <constraint xsi:type="unique" referenceId="MYCA_RMA_INCREMENT_ID">
+            <column name="increment_id"/>
+        </constraint>
+        <constraint xsi:type="unique" referenceId="MYCA_RMA_CREDITMEMO_ID">
+            <column name="creditmemo_id"/>
+        </constraint>
+        <constraint xsi:type="foreign" referenceId="MYCA_RMA_ORDER_ID_SALES_ORDER_ENTITY_ID"
+                    table="myca_rma" column="order_id" referenceTable="sales_order" referenceColumn="entity_id" onDelete="CASCADE"/>
+        <constraint xsi:type="foreign" referenceId="MYCA_RMA_PARTNER_ID_MYCA_PARTNER_PARTNER_ID"
+                    table="myca_rma" column="partner_id" referenceTable="myca_partner" referenceColumn="partner_id" onDelete="SET NULL"/>
+        <constraint xsi:type="foreign" referenceId="MYCA_RMA_CUSTOMER_ID_CUSTOMER_ENTITY_ENTITY_ID"
+                    table="myca_rma" column="customer_id" referenceTable="customer_entity" referenceColumn="entity_id" onDelete="SET NULL"/>
+        <index referenceId="MYCA_RMA_ORDER_ID" indexType="btree">
+            <column name="order_id"/>
+        </index>
+        <index referenceId="MYCA_RMA_PARTNER_ID_STATUS" indexType="btree">
+            <column name="partner_id"/>
+            <column name="status"/>
+        </index>
+        <index referenceId="MYCA_RMA_CUSTOMER_ID" indexType="btree">
+            <column name="customer_id"/>
+        </index>
+    </table>
+
+    <table name="myca_rma_item" resource="default" engine="innodb" comment="MYCA - Articles d'une demande de retour">
+        <column xsi:type="int" name="rma_item_id" unsigned="true" nullable="false" identity="true"/>
+        <column xsi:type="int" name="rma_id" unsigned="true" nullable="false"/>
+        <column xsi:type="int" name="order_item_id" unsigned="true" nullable="false" comment="Ligne visible de la commande"/>
+        <column xsi:type="varchar" name="sku" length="64" nullable="false"/>
+        <column xsi:type="varchar" name="name" length="255" nullable="false"/>
+        <column xsi:type="decimal" name="qty" scale="4" precision="12" unsigned="true" nullable="false"/>
+        <column xsi:type="varchar" name="exchange_wish" length="255" nullable="true" comment="Taille ou coloris souhaité"/>
+        <column xsi:type="varchar" name="item_condition" length="16" nullable="true" comment="Contrôle : resellable, defective, scrap"/>
+        <constraint xsi:type="primary" referenceId="PRIMARY">
+            <column name="rma_item_id"/>
+        </constraint>
+        <constraint xsi:type="foreign" referenceId="MYCA_RMA_ITEM_RMA_ID_MYCA_RMA_RMA_ID"
+                    table="myca_rma_item" column="rma_id" referenceTable="myca_rma" referenceColumn="rma_id" onDelete="CASCADE"/>
+        <constraint xsi:type="foreign" referenceId="MYCA_RMA_ITEM_ORDER_ITEM_ID_SALES_ORDER_ITEM_ITEM_ID"
+                    table="myca_rma_item" column="order_item_id" referenceTable="sales_order_item" referenceColumn="item_id" onDelete="CASCADE"/>
+        <index referenceId="MYCA_RMA_ITEM_ORDER_ITEM_ID" indexType="btree">
+            <column name="order_item_id"/>
+        </index>
+    </table>
+
+    <table name="myca_rma_history" resource="default" engine="innodb" comment="MYCA - Historique non modifiable des demandes">
+        <column xsi:type="int" name="history_id" unsigned="true" nullable="false" identity="true"/>
+        <column xsi:type="int" name="rma_id" unsigned="true" nullable="false"/>
+        <column xsi:type="varchar" name="status" length="32" nullable="false"/>
+        <column xsi:type="varchar" name="author_type" length="16" nullable="false" comment="customer, partner, admin, system"/>
+        <column xsi:type="varchar" name="author_name" length="255" nullable="false"/>
+        <column xsi:type="text" name="message" nullable="true"/>
+        <column xsi:type="smallint" name="is_visible" unsigned="true" nullable="false" default="1" comment="Visible du demandeur"/>
+        <column xsi:type="timestamp" name="created_at" nullable="false" default="CURRENT_TIMESTAMP"/>
+        <constraint xsi:type="primary" referenceId="PRIMARY">
+            <column name="history_id"/>
+        </constraint>
+        <constraint xsi:type="foreign" referenceId="MYCA_RMA_HISTORY_RMA_ID_MYCA_RMA_RMA_ID"
+                    table="myca_rma_history" column="rma_id" referenceTable="myca_rma" referenceColumn="rma_id" onDelete="CASCADE"/>
+        <index referenceId="MYCA_RMA_HISTORY_RMA_ID" indexType="btree">
+            <column name="rma_id"/>
+        </index>
+    </table>
+</schema>
