@@ -1,0 +1,33 @@
+<?xml version="1.0"?>
+<!--
+    Cadre commun de l'espace partenaire (M16–M27) : en-tête, menu latéral, bandeau et pied de page « Partenaire B2B ».
+    La classe « account » reprend la mise en page de l'espace client (fond gris, menu de 268 px, 1600 px max).
+-->
+<page xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      layout="2columns-left"
+      xsi:noNamespaceSchemaLocation="urn:magento:framework:View/Layout/etc/page_configuration.xsd">
+    <body>
+        <attribute name="class" value="account"/>
+        <attribute name="class" value="myca-partner-space"/>
+        <referenceBlock name="header-content" template="Myca_Partner::html/header.phtml"/>
+        <referenceBlock name="footer-content" template="Myca_Partner::html/footer.phtml">
+            <block class="Magento\Theme\Block\Html\Header\Logo"
+                   name="myca.partner.footer.logo"
+                   template="Magento_Theme::html/header/logo.phtml"/>
+        </referenceBlock>
+        <referenceBlock name="page.main.title" display="false"/>
+        <referenceBlock name="breadcrumbs" remove="true"/>
+        <referenceContainer name="sidebar.additional" remove="true"/>
+        <referenceContainer name="sidebar.main">
+            <block name="myca.partner.nav" template="Myca_Partner::nav.phtml">
+                <block class="Magento\Theme\Block\Html\Header\Logo"
+                       name="myca.partner.nav.logo"
+                       template="Magento_Theme::html/header/logo.phtml"/>
+            </block>
+        </referenceContainer>
+        <referenceContainer name="content">
+            <!-- Données propres au partenaire connecté : jamais en cache de page. -->
+            <block name="myca.partner.banner" template="Myca_Partner::banner.phtml" before="-" cacheable="false"/>
+        </referenceContainer>
+    </body>
+</page>

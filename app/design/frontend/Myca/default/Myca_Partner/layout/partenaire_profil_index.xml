@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<page xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:noNamespaceSchemaLocation="urn:magento:framework:View/Layout/etc/page_configuration.xsd">
+    <update handle="myca_partner_space"/>
+    <body>
+        <referenceBlock name="myca.partner.banner">
+            <arguments>
+                <argument name="kicker" xsi:type="string" translate="true">MON PROFIL BOUTIQUE</argument>
+                <argument name="title" xsi:type="string" translate="true">Mon profil boutique MYCA</argument>
+                <argument name="subtitle" xsi:type="string" translate="true">Gérez les informations de votre boutique, vos coordonnées et vos préférences.</argument>
+            </arguments>
+        </referenceBlock>
+        <referenceContainer name="content">
+            <block name="myca.partner.page" template="Myca_Partner::profile.phtml" after="myca.partner.banner"/>
+        </referenceContainer>
+    </body>
+</page>

@@ -1,0 +1,297 @@
+<?php
+/**
+ * M16 — Tableau de bord partenaire : indicateurs, accès rapides, dernières commandes, fonctionnement en 4 étapes,
+ * performances sur 30 jours, top produits, modèles B2B et avantages. Toutes les valeurs viennent des commandes
+ * du partenaire connecté ; ventes et marges ne s'affichent que si la boutique a déclaré ses prix de vente.
+ */
+
+declare(strict_types=1);
+
+use Hyva\Theme\Model\ViewModelRegistry;
+use Hyva\Theme\ViewModel\SvgIcons;
+use Magento\Framework\Escaper;
+use Magento\Framework\View\Element\Template;
+use Magento\Sales\Model\Order;
+use Myca\Core\ViewModel\OrderProgress;
+use Myca\Dropship\ViewModel\PartnerSales;
+use Myca\Partner\ViewModel\PartnerSpace;
+
+/** @var Template $block */
+/** @var Escaper $escaper */
+/** @var ViewModelRegistry $viewModels */
+
+$icons = $viewModels->require(SvgIcons::class);
+/** @var PartnerSpace $space */
+$space = $viewModels->require(PartnerSpace::class);
+/** @var PartnerSales $sales */
+$sales = $viewModels->require(PartnerSales::class);
+/** @var OrderProgress $progress */
+$progress = $viewModels->require(OrderProgress::class);
+
+$orders = $space->getOrders();
+$inProgress = count(array_filter($orders, static fn (Order $order) => $progress->isInProgress($order)));
+$shipped = count(array_filter(
+    $orders,
+    static fn (Order $order) => $progress->getStatus($order)['label'] === (string) __('Expédiée')
+));
+$month = $sales->getMonth();
+$performance = $sales->getPerformance(30);
+
+$kpis = [
+    ['icon' => 'cart', 'label' => __('Commandes en cours'), 'value' => (string) $inProgress, 'detail' => __('à traiter'),
+        'url' => $block->getUrl('partenaire/commandes', ['_query' => ['statut' => 'en-cours']])],
+    ['icon' => 'truck', 'label' => __('Expéditions'), 'value' => (string) $shipped, 'detail' => __('en transit'),
+        'url' => $block->getUrl('partenaire/livraisons')],
+    ['icon' => 'chart', 'label' => __('Ventes du mois'), 'value' => $space->formatPrice($month['current']['sales']),
+        'detail' => $month['current']['sales'] === null ? __('aucune vente déclarée') : __('déclarées par la boutique'),
+        'variation' => $month['variation']['sales']],
+    ['icon' => 'coins', 'label' => __('Marge estimée'), 'value' => $space->formatPrice($month['current']['margin']),
+        'detail' => __('après prix MYCA et frais'), 'variation' => $month['variation']['margin']],
+];
+$shortcuts = [
+    ['book', __('Catalogue MYCA'), __('Collections et tarifs partenaires'), $space->getCatalogUrl()],
+    ['box', __('Suivi des livraisons'), __('Vos expéditions en temps réel'), $block->getUrl('partenaire/livraisons')],
+    ['headset', __('Support partenaire'), __('Notre équipe B2B vous répond'), $block->getUrl('', ['_direct' => 'contact'])],
+];
+$steps = [
+    ['store', __('Vous vendez et encaissez votre client'), '1', 'done'],
+    ['cart', __('Vous commandez sur MYCA au tarif partenaire'), '2', 'done'],
+    ['box', __('MYCA prépare et expédie au client final'), '3', 'current'],
+    ['home', __('Le client reçoit sa commande'), __('délai à valider'), 'next'],
+];
+$performanceRows = [
+    ['cart', __('Commandes'), (string) $performance['current']['orders'], $performance['variation']['orders']],
+    ['euro', __('Chiffre d’affaires (vente boutique)'), $space->formatPrice($performance['current']['sales']), $performance['variation']['sales']],
+    ['coins', __('Achats MYCA (tarif partenaire)'), $space->formatPrice($performance['current']['purchases']), null],
+    ['trend', __('Marge brute estimée'), $space->formatPrice($performance['current']['margin']), $performance['variation']['margin']],
+];
+$advantages = [
+    ['truck', __('Expédition rapide'), __('délai à valider')],
+    ['headset', __('Support partenaire'), __('dédié et réactif')],
+    ['coins', __('Tarifs'), __('professionnels')],
+    ['settings', __('Gestion'), __('des commandes simplifiée')],
+];
+$rankColors = ['bg-gold-400', 'bg-gray-300', 'bg-[#e8a86b]'];
+?>
+<div class="flex flex-col gap-4">
+    <?= $block->getLayout()->createBlock(Template::class)->setTemplate('Myca_Partner::partials/kpis.phtml')->setData('kpis', $kpis)->toHtml() ?>
+
+    <ul class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <li>
+            <a href="<?= $escaper->escapeUrl($space->getCatalogUrl()) ?>"
+               class="flex h-full items-center gap-2.5 rounded-lg border border-brand-red bg-brand-red px-5 py-6 text-white shadow-card hover:brightness-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-red">
+                <?= $icons->renderHtml('cart', 'shrink-0', 18, 18, ['aria-hidden' => 'true']) ?>
+                <span class="flex flex-1 flex-col">
+                    <span class="myca-body-s-strong"><?= $escaper->escapeHtml(__('Passer une commande client')) ?></span>
+                    <span class="myca-caption text-white/85"><?= $escaper->escapeHtml(__('Choisissez vos articles dans le catalogue, au tarif partenaire.')) ?></span>
+                </span>
+                <?= $icons->renderHtml('chevron-right', 'shrink-0', 16, 16, ['aria-hidden' => 'true']) ?>
+            </a>
+        </li>
+        <?php foreach ($shortcuts as [$icon, $title, $text, $url]): ?>
+            <li>
+                <a href="<?= $escaper->escapeUrl($url) ?>"
+                   class="myca-card flex h-full items-center gap-2.5 px-5 py-6 shadow-card hover:border-line-strong focus-visible:outline-2 focus-visible:outline-accent">
+                    <?= $icons->renderHtml($icon, 'shrink-0 text-accent-text', 18, 18, ['aria-hidden' => 'true']) ?>
+                    <span class="flex flex-1 flex-col">
+                        <span class="myca-body-s-strong text-fg"><?= $escaper->escapeHtml($title) ?></span>
+                        <span class="myca-caption text-fg-muted"><?= $escaper->escapeHtml($text) ?></span>
+                    </span>
+                    <?= $icons->renderHtml('chevron-right', 'shrink-0 text-fg-secondary', 16, 16, ['aria-hidden' => 'true']) ?>
+                </a>
+            </li>
+        <?php endforeach ?>
+    </ul>
+
+    <div class="grid gap-4 xl:grid-cols-[minmax(0,708fr)_minmax(0,560fr)]">
+        <section class="myca-card p-4 shadow-card" aria-labelledby="myca-partner-last-orders">
+            <h2 id="myca-partner-last-orders" class="myca-card-title">
+                <?= $icons->renderHtml('file', 'text-accent-text', 18, 18, ['aria-hidden' => 'true']) ?>
+                <?= $escaper->escapeHtml(__('Mes dernières commandes')) ?>
+                <a href="<?= $escaper->escapeUrl($block->getUrl('partenaire/commandes')) ?>"
+                   class="ms-auto inline-flex min-h-11 items-center gap-1 myca-caption-strong text-accent-text hover:underline md:min-h-0">
+                    <?= $escaper->escapeHtml(__('Voir toutes mes commandes')) ?><?= $icons->renderHtml('arrow-right', '', 14, 14, ['aria-hidden' => 'true']) ?>
+                </a>
+            </h2>
+            <?php if ($orders): ?>
+                <div class="relative md:overflow-x-auto">
+                <table class="w-full myca-body-s">
+                    <thead class="hidden md:table-header-group">
+                        <tr class="bg-surface-subtle text-left myca-caption-strong text-fg-secondary">
+                            <th scope="col" class="px-2.5 py-2"><?= $escaper->escapeHtml(__('N° commande')) ?></th>
+                            <th scope="col" class="px-2.5 py-2"><?= $escaper->escapeHtml(__('Client (destinataire)')) ?></th>
+                            <th scope="col" class="px-2.5 py-2"><?= $escaper->escapeHtml(__('Article(s)')) ?></th>
+                            <th scope="col" class="px-2.5 py-2 text-right"><?= $escaper->escapeHtml(__('Montant HT')) ?></th>
+                            <th scope="col" class="px-2.5 py-2"><?= $escaper->escapeHtml(__('Statut')) ?></th>
+                            <th scope="col" class="px-2.5 py-2"><span class="sr-only"><?= $escaper->escapeHtml(__('Détail')) ?></span></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach (array_slice($orders, 0, 3) as $order): ?>
+                            <?php
+                            $status = $progress->getStatus($order);
+                            $items = $order->getAllVisibleItems();
+                            $first = reset($items) ?: null;
+                            $detailUrl = $block->getUrl('partenaire/commandes', ['_query' => ['commande' => $order->getId()]]);
+                            ?>
+                            <tr class="grid grid-cols-[1fr_auto] gap-x-3 gap-y-1 border-b border-line py-3 md:table-row md:py-0">
+                                <td class="font-semibold whitespace-nowrap text-fg md:px-2.5 md:py-3.5"><?= $escaper->escapeHtml($order->getIncrementId()) ?></td>
+                                <td class="text-fg-secondary md:px-2.5 md:py-3.5 md:text-fg"><?= $escaper->escapeHtml($order->getShippingAddress()?->getName() ?? '') ?></td>
+                                <td class="col-span-2 md:px-2.5 md:py-2">
+                                    <?php if ($first): ?>
+                                        <span class="flex items-center gap-1.5">
+                                            <img src="<?= $escaper->escapeUrl($space->getProductImageUrl($first->getProduct())) ?>" alt="" class="size-7 shrink-0 rounded-sm object-contain" width="28" height="28" loading="lazy">
+                                            <span class="line-clamp-1 md:max-w-[140px]"><?= $escaper->escapeHtml($first->getName()) ?></span>
+                                        </span>
+                                    <?php endif ?>
+                                </td>
+                                <td class="font-semibold whitespace-nowrap text-fg md:px-2.5 md:py-3.5 md:text-right md:font-normal"><?= /* @noEscape */ $order->formatPrice($space->getAmountExclTax($order)) ?></td>
+                                <td class="md:px-2.5 md:py-3"><span class="myca-badge myca-badge-<?= $escaper->escapeHtmlAttr($status['tone']) ?>"><?= $escaper->escapeHtml($status['label']) ?></span></td>
+                                <td class="col-span-2 md:px-2.5 md:py-3">
+                                    <a href="<?= $escaper->escapeUrl($detailUrl) ?>" class="inline-flex min-h-11 items-center gap-1 text-accent-text md:min-h-0 md:text-fg-secondary"
+                                       aria-label="<?= $escaper->escapeHtmlAttr(__('Détail de la commande %1', $order->getIncrementId())) ?>">
+                                        <span class="myca-caption-strong md:sr-only"><?= $escaper->escapeHtml(__('Voir le détail')) ?></span>
+                                        <?= $icons->renderHtml('chevron-right', '', 16, 16, ['aria-hidden' => 'true']) ?>
+                                    </a>
+                                </td>
+                            </tr>
+                        <?php endforeach ?>
+                    </tbody>
+                </table>
+                </div>
+            <?php else: ?>
+                <p class="myca-body-s text-fg-secondary"><?= $escaper->escapeHtml(__('Aucune commande pour le moment.')) ?></p>
+            <?php endif ?>
+        </section>
+
+        <section class="myca-card p-4 shadow-card" aria-labelledby="myca-partner-steps">
+            <h2 id="myca-partner-steps" class="myca-card-title">
+                <?= $icons->renderHtml('target', 'text-accent-text', 18, 18, ['aria-hidden' => 'true']) ?>
+                <?= $escaper->escapeHtml(__('Fonctionnement en 4 étapes')) ?>
+            </h2>
+            <ol class="flex items-start">
+                <?php foreach ($steps as $index => [$icon, $label, $caption, $state]): ?>
+                    <?php if ($index > 0): ?>
+                        <li class="w-3 shrink-0 pt-3.5 sm:w-6" aria-hidden="true">
+                            <span class="block h-[3px] rounded-[2px] <?= $state === 'next' ? 'bg-gray-300' : 'bg-green-600' ?>"></span>
+                        </li>
+                    <?php endif ?>
+                    <li class="flex min-w-0 flex-1 flex-col items-center gap-1 text-center">
+                        <span class="flex size-8 items-center justify-center rounded-pill <?= match ($state) {
+                            'done' => 'bg-green-600 text-white',
+                            'current' => 'bg-accent text-on-accent',
+                            default => 'border border-line-strong bg-surface-subtle text-fg-secondary',
+                        } ?>">
+                            <?= $icons->renderHtml($icon, '', 16, 16, ['aria-hidden' => 'true']) ?>
+                        </span>
+                        <span class="text-[11px] leading-[14px] font-semibold text-fg sm:text-xs sm:leading-4"><?= $escaper->escapeHtml($label) ?></span>
+                        <span class="myca-caption text-fg-muted"><?= $escaper->escapeHtml($caption) ?></span>
+                    </li>
+                <?php endforeach ?>
+            </ol>
+        </section>
+    </div>
+
+    <div class="grid gap-4 lg:grid-cols-2 2xl:grid-cols-3">
+        <section class="myca-card p-4 shadow-card" aria-labelledby="myca-partner-performance">
+            <h2 id="myca-partner-performance" class="myca-card-title">
+                <?= $icons->renderHtml('chart', 'text-accent-text', 18, 18, ['aria-hidden' => 'true']) ?>
+                <?= $escaper->escapeHtml(__('Mes performances')) ?>
+                <span class="myca-caption font-normal text-fg-muted"><?= $escaper->escapeHtml(__('(30 derniers jours)')) ?></span>
+            </h2>
+            <dl class="flex flex-col">
+                <?php foreach ($performanceRows as $index => [$icon, $label, $value, $variation]): ?>
+                    <div class="flex items-center gap-2.5 px-1 py-2 <?= $index < 3 ? 'border-b border-line' : '' ?>">
+                        <?= $icons->renderHtml($icon, 'shrink-0 text-accent-text', 18, 18, ['aria-hidden' => 'true']) ?>
+                        <dt class="min-w-0 flex-1 myca-body-s text-fg"><?= $escaper->escapeHtml($label) ?></dt>
+                        <dd class="myca-body-s-strong whitespace-nowrap text-fg"><?= $escaper->escapeHtml($value) ?></dd>
+                        <?php if ($variation !== null): ?>
+                            <dd class="myca-badge <?= $variation >= 0 ? 'myca-badge-success' : 'myca-badge-danger' ?>"><?= $escaper->escapeHtml(sprintf('%+d %%', $variation)) ?></dd>
+                        <?php endif ?>
+                    </div>
+                <?php endforeach ?>
+            </dl>
+        </section>
+
+        <section class="myca-card p-4 shadow-card" aria-labelledby="myca-partner-top">
+            <h2 id="myca-partner-top" class="myca-card-title">
+                <?= $icons->renderHtml('trophy', 'text-accent-text', 18, 18, ['aria-hidden' => 'true']) ?>
+                <?= $escaper->escapeHtml(__('Top produits commandés')) ?>
+            </h2>
+            <?php $top = $space->getTopProducts(3); ?>
+            <?php if ($top): ?>
+                <ol class="flex flex-col">
+                    <?php foreach ($top as $index => $product): ?>
+                        <li class="flex items-center gap-2.5 px-1 py-2 <?= $index < count($top) - 1 ? 'border-b border-line' : '' ?>">
+                            <span class="flex size-[22px] shrink-0 items-center justify-center rounded-pill myca-caption-strong text-navy-950 <?= /* @noEscape */ $rankColors[$index] ?? 'bg-gray-300' ?>"><?= (int) ($index + 1) ?></span>
+                            <img src="<?= $escaper->escapeUrl($space->getProductImageUrl($product['product_id'])) ?>" alt="" class="size-8 shrink-0 rounded-sm object-contain" width="32" height="32" loading="lazy">
+                            <span class="min-w-0 flex-1 myca-body-s-strong text-fg"><?= $escaper->escapeHtml($product['name']) ?></span>
+                            <span class="myca-body-s whitespace-nowrap text-fg"><?= $escaper->escapeHtml(__('%1 commande(s)', $product['orders'])) ?></span>
+                        </li>
+                    <?php endforeach ?>
+                </ol>
+            <?php else: ?>
+                <p class="myca-body-s text-fg-secondary"><?= $escaper->escapeHtml(__('Aucune commande pour le moment.')) ?></p>
+            <?php endif ?>
+        </section>
+
+        <div class="flex items-center gap-3 overflow-hidden rounded-lg bg-surface-subtle p-4 lg:col-span-2 2xl:col-span-1">
+            <div class="flex min-w-0 flex-1 flex-col gap-2">
+                <p class="myca-section text-navy-900"><?= $escaper->escapeHtml(__('Nouvelles collections MYCA')) ?></p>
+                <a href="<?= $escaper->escapeUrl($space->getCatalogUrl()) ?>" class="myca-btn myca-btn-primary w-full">
+                    <?= $icons->renderHtml('arrow-right', '', 16, 16, ['aria-hidden' => 'true']) ?><?= $escaper->escapeHtml(__('Voir le catalogue')) ?>
+                </a>
+            </div>
+            <img src="<?= $escaper->escapeUrl($block->getViewFileUrl('images/b2b-nouvelles-collections.webp')) ?>" alt=""
+                 class="hidden h-[130px] w-[150px] shrink-0 rounded-md object-contain sm:block" width="150" height="130" loading="lazy">
+        </div>
+    </div>
+
+    <div class="grid gap-4 xl:grid-cols-[minmax(0,708fr)_minmax(0,560fr)]">
+        <section class="myca-card p-4 shadow-card" aria-labelledby="myca-partner-models">
+            <h2 id="myca-partner-models" class="myca-card-title">
+                <?= $icons->renderHtml('layers', 'text-accent-text', 18, 18, ['aria-hidden' => 'true']) ?>
+                <?= $escaper->escapeHtml(__('Nos 2 modèles B2B, selon votre stratégie')) ?>
+            </h2>
+            <ul class="grid gap-4 md:grid-cols-2">
+                <li class="flex items-center gap-2.5 rounded-lg bg-navy-900 p-4 text-white">
+                    <?= $icons->renderHtml('truck', 'shrink-0', 18, 18, ['aria-hidden' => 'true']) ?>
+                    <span class="flex flex-1 flex-col">
+                        <span class="myca-body-s-strong"><?= $escaper->escapeHtml(__('Dropshipping')) ?></span>
+                        <span class="myca-caption text-white/80"><?= $escaper->escapeHtml(__('Vous vendez et encaissez vos clients ; MYCA prépare et expédie au client final.')) ?></span>
+                    </span>
+                    <span class="myca-badge myca-badge-premium"><?= $escaper->escapeHtml(__('Modèle flexible')) ?></span>
+                </li>
+                <li class="flex items-center gap-2.5 rounded-lg border border-line p-4">
+                    <?= $icons->renderHtml('box', 'shrink-0 text-accent-text', 18, 18, ['aria-hidden' => 'true']) ?>
+                    <span class="flex flex-1 flex-col">
+                        <span class="myca-body-s-strong text-fg"><?= $escaper->escapeHtml(__('Achat de stock')) ?></span>
+                        <span class="myca-caption text-fg-muted"><?= $escaper->escapeHtml(__('Vous achetez au tarif professionnel et gérez votre propre stock.')) ?></span>
+                    </span>
+                    <span class="myca-badge myca-badge-premium"><?= $escaper->escapeHtml(__('Tarifs pro')) ?></span>
+                </li>
+            </ul>
+        </section>
+
+        <section class="myca-card p-4 shadow-card" aria-labelledby="myca-partner-advantages">
+            <h2 id="myca-partner-advantages" class="myca-card-title">
+                <?= $icons->renderHtml('award', 'text-accent-text', 18, 18, ['aria-hidden' => 'true']) ?>
+                <?= $escaper->escapeHtml(__('Les avantages MYCA B2B')) ?>
+            </h2>
+            <ul class="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                <?php foreach ($advantages as [$icon, $title, $text]): ?>
+                    <li class="flex flex-col items-center gap-1.5 rounded-lg border border-line px-2.5 py-4 text-center">
+                        <?= $icons->renderHtml($icon, 'text-accent-text', 26, 26, ['aria-hidden' => 'true']) ?>
+                        <span class="myca-body-s-strong text-fg"><?= $escaper->escapeHtml($title) ?></span>
+                        <span class="myca-caption text-fg-muted"><?= $escaper->escapeHtml($text) ?></span>
+                    </li>
+                <?php endforeach ?>
+            </ul>
+        </section>
+    </div>
+
+    <p class="flex items-start gap-2 rounded-md bg-info-bg px-3 py-2.5 myca-caption text-info">
+        <?= $icons->renderHtml('info', 'mt-px shrink-0', 16, 16, ['aria-hidden' => 'true']) ?>
+        <?= $escaper->escapeHtml(__('Marge estimée = prix de vente déclaré par la boutique − prix MYCA − frais ; ce n’est pas la marge MYCA. En dropshipping, la boutique reste le vendeur auprès de son client ; prix public seulement conseillé.')) ?>
+    </p>
+</div>

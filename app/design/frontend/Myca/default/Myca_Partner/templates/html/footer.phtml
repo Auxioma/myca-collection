@@ -1,0 +1,130 @@
+<?php
+/**
+ * Pied de page de l'espace partenaire (Figma « Pied de page/Partenaire B2B ») : logo, rubriques, Service
+ * Partenaire B2B (coordonnées configurables), réseaux, liens légaux, tricolore.
+ */
+
+declare(strict_types=1);
+
+use Hyva\Theme\Model\ViewModelRegistry;
+use Hyva\Theme\ViewModel\SvgIcons;
+use Magento\Framework\Escaper;
+use Magento\Framework\View\Element\Template;
+use Myca\Partner\ViewModel\PartnerSpace;
+
+/** @var Template $block */
+/** @var Escaper $escaper */
+/** @var ViewModelRegistry $viewModels */
+
+$icons = $viewModels->require(SvgIcons::class);
+/** @var PartnerSpace $space */
+$space = $viewModels->require(PartnerSpace::class);
+
+$columns = [
+    [__('Navigation partenaire'), [
+        [__('Tableau de bord'), $block->getUrl('partenaire')],
+        [__('Catalogue MYCA'), $space->getCatalogUrl()],
+        [__('Mes commandes'), $block->getUrl('partenaire/commandes')],
+        [__('Suivi des livraisons'), $block->getUrl('partenaire/livraisons')],
+    ]],
+    [__('Gestion & comptabilité'), [
+        [__('Mes factures'), $block->getUrl('partenaire/factures')],
+        [__('Mes clients'), $block->getUrl('partenaire/clients')],
+    ]],
+    [__('Mon compte'), [
+        [__('Mon profil boutique'), $block->getUrl('partenaire/profil')],
+        [__('Paramètres'), $block->getUrl('partenaire/parametres')],
+        [__('Contact B2B'), $block->getUrl('', ['_direct' => 'contact'])],
+    ]],
+];
+$socials = [
+    'facebook' => __('Facebook'),
+    'instagram' => __('Instagram'),
+    'linkedin' => __('LinkedIn'),
+    'youtube' => __('YouTube'),
+];
+$legalLinks = [
+    [__('CGV Partenaire'), 'cgv-partenaire'],
+    [__('CGU'), 'cgu'],
+    [__('Politique de confidentialité'), 'confidentialite'],
+    [__('Cookies'), 'cookies'],
+    [__('Mentions légales'), 'mentions-legales'],
+];
+$phone = $space->getContact('phone');
+$email = $space->getContact('email');
+?>
+<footer class="bg-shell text-white">
+    <div class="flex flex-col gap-6 px-4 py-6 md:flex-row md:flex-wrap md:gap-10 md:px-8">
+        <div class="flex flex-col gap-2.5">
+            <?= $block->getChildHtml('myca.partner.footer.logo') ?>
+            <p class="w-[200px] myca-caption"><?= $escaper->escapeHtml(__('Vêtements et accessoires sportswear au style raffiné.')) ?></p>
+        </div>
+
+        <?php foreach ($columns as [$title, $links]): ?>
+            <nav class="flex flex-col gap-1.5" aria-label="<?= $escaper->escapeHtmlAttr($title) ?>">
+                <h2 class="myca-body-s-strong"><?= $escaper->escapeHtml($title) ?></h2>
+                <ul class="flex flex-col gap-1.5">
+                    <?php foreach ($links as [$label, $url]): ?>
+                        <li>
+                            <a href="<?= $escaper->escapeUrl($url) ?>" class="flex items-center gap-1.5 py-1.5 myca-caption hover:underline md:py-0">
+                                <?= $icons->renderHtml('chevron-right', 'shrink-0', 12, 12, ['aria-hidden' => 'true']) ?>
+                                <?= $escaper->escapeHtml($label) ?>
+                            </a>
+                        </li>
+                    <?php endforeach ?>
+                </ul>
+            </nav>
+        <?php endforeach ?>
+
+        <div class="flex flex-col items-start gap-2">
+            <h2 class="flex items-center gap-2 myca-body-s-strong">
+                <?= $icons->renderHtml('headset', 'shrink-0', 18, 18, ['aria-hidden' => 'true']) ?>
+                <?= $escaper->escapeHtml(__('Service Partenaire B2B')) ?>
+            </h2>
+            <p class="w-[230px] myca-caption"><?= $escaper->escapeHtml($space->getContact('hours')) ?></p>
+            <?php if ($phone !== ''): ?>
+                <a href="tel:<?= $escaper->escapeHtmlAttr(preg_replace('/[^0-9+]/', '', $phone)) ?>"
+                   class="inline-flex min-h-11 items-center gap-2 rounded-pill bg-brand-red px-3.5 py-1.5 myca-body-s-strong md:min-h-0">
+                    <?= $icons->renderHtml('phone', 'shrink-0', 14, 14, ['aria-hidden' => 'true']) ?><?= $escaper->escapeHtml($phone) ?>
+                </a>
+            <?php endif ?>
+            <?php if ($email !== ''): ?>
+                <a href="mailto:<?= $escaper->escapeHtmlAttr($email) ?>"
+                   class="inline-flex min-h-11 items-center gap-2 rounded-pill border border-white px-3.5 py-1.5 myca-caption md:min-h-0">
+                    <?= $icons->renderHtml('mail', 'shrink-0', 14, 14, ['aria-hidden' => 'true']) ?><?= $escaper->escapeHtml($email) ?>
+                </a>
+            <?php endif ?>
+        </div>
+
+        <div class="flex flex-col gap-2.5">
+            <h2 class="myca-body-s-strong"><?= $escaper->escapeHtml(__('Suivez MYCA')) ?></h2>
+            <ul class="flex gap-1 md:gap-3">
+                <?php foreach ($socials as $icon => $label): ?>
+                    <li>
+                        <?php /* Liens des réseaux à fournir : rendus inactifs tant que l'URL n'est pas connue. */ ?>
+                        <span class="inline-flex size-11 items-center justify-center md:size-5" role="img" aria-label="<?= $escaper->escapeHtmlAttr($label) ?>">
+                            <?= $icons->renderHtml($icon, '', 20, 20, ['aria-hidden' => 'true']) ?>
+                        </span>
+                    </li>
+                <?php endforeach ?>
+            </ul>
+        </div>
+    </div>
+
+    <div class="flex flex-col gap-4 border-t border-white px-4 py-3 md:px-8 lg:flex-row lg:items-center lg:gap-6">
+        <div class="flex" aria-hidden="true">
+            <span class="h-2.5 w-10 bg-flag-blue"></span>
+            <span class="h-2.5 w-10 bg-white"></span>
+            <span class="h-2.5 w-10 bg-brand-red"></span>
+        </div>
+        <p class="myca-caption"><?= $escaper->escapeHtml(__('Espace Partenaire MYCA © %1', date('Y'))) ?></p>
+        <ul class="flex flex-wrap items-center gap-x-4 gap-y-1 text-[13px] leading-[18px]">
+            <?php foreach ($legalLinks as $index => [$label, $path]): ?>
+                <?php if ($index > 0): ?>
+                    <li class="text-xs" aria-hidden="true">|</li>
+                <?php endif ?>
+                <li><a class="block py-2 hover:underline lg:py-0" href="<?= $escaper->escapeUrl($block->getUrl('', ['_direct' => $path])) ?>"><?= $escaper->escapeHtml($label) ?></a></li>
+            <?php endforeach ?>
+        </ul>
+    </div>
+</footer>

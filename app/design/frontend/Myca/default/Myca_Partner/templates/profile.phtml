@@ -1,0 +1,182 @@
+<?php
+/**
+ * M25 — Mon profil boutique : informations générales, logo, coordonnées, présentation, informations commerciales
+ * et paramètres de la boutique. Modifiable par le titulaire du compte ; n° partenaire, statut, SIRET et TVA
+ * restent contrôlés par MYCA.
+ */
+
+declare(strict_types=1);
+
+use Hyva\Theme\Model\ViewModelRegistry;
+use Hyva\Theme\ViewModel\SvgIcons;
+use Magento\Framework\Escaper;
+use Magento\Framework\View\Element\Template;
+use Myca\Partner\Api\Data\PartnerInterface;
+use Myca\Partner\ViewModel\PartnerSpace;
+
+/** @var Template $block */
+/** @var Escaper $escaper */
+/** @var ViewModelRegistry $viewModels */
+
+$icons = $viewModels->require(SvgIcons::class);
+/** @var PartnerSpace $space */
+$space = $viewModels->require(PartnerSpace::class);
+$partner = $space->getPartner();
+if ($partner === null) {
+    return;
+}
+$canEdit = $space->isOwner();
+$readonly = $canEdit ? '' : 'disabled';
+$field = static fn (string $name) => $space->getField($name);
+$logoUrl = $space->getLogoUrl();
+$modes = $partner->getSalesModes();
+$switch = function (string $name, string $label) use ($block, $field, $canEdit): string {
+    return $block->getLayout()->createBlock(Template::class)->setTemplate('Myca_Partner::partials/switch.phtml')
+        ->setData(['name' => $name, 'label' => $label, 'checked' => $field($name) === '1', 'disabled' => !$canEdit])
+        ->toHtml();
+};
+$completion = ['company_name', 'description', 'street', 'postcode', 'city', 'country_id', 'phone', 'email', 'logo'];
+$filled = count(array_filter($completion, static fn (string $name) => $field($name) !== ''));
+$percent = (int) round($filled / count($completion) * 100);
+?>
+<form method="post" action="<?= $escaper->escapeUrl($block->getUrl('partenaire/profil/save')) ?>" class="flex flex-col gap-4">
+    <?= $block->getBlockHtml('formkey') ?>
+    <?php if (!$canEdit): ?>
+        <p class="flex items-start gap-2 rounded-md bg-info-bg px-3 py-2.5 myca-caption text-info">
+            <?= $icons->renderHtml('info', 'mt-px shrink-0', 16, 16, ['aria-hidden' => 'true']) ?>
+            <?= $escaper->escapeHtml(__('Seul le titulaire du compte peut modifier le profil de la boutique.')) ?>
+        </p>
+    <?php endif ?>
+
+    <div class="grid gap-4 xl:grid-cols-3">
+        <section class="myca-card flex flex-col gap-3 p-4 shadow-card" aria-labelledby="myca-profile-general">
+            <h2 id="myca-profile-general" class="myca-card-title mb-0"><?= $icons->renderHtml('store', 'text-accent-text', 18, 18, ['aria-hidden' => 'true']) ?><?= $escaper->escapeHtml(__('Informations de la boutique')) ?></h2>
+            <div>
+                <label for="myca-company-name" class="myca-field-label"><?= $escaper->escapeHtml(__('Nom de la boutique *')) ?></label>
+                <input id="myca-company-name" name="company_name" class="myca-field" required maxlength="255" value="<?= $escaper->escapeHtmlAttr($partner->getCompanyName()) ?>" <?= /* @noEscape */ $readonly ?>>
+            </div>
+            <div>
+                <label for="myca-partner-code" class="myca-field-label"><?= $escaper->escapeHtml(__('N° de partenaire MYCA')) ?></label>
+                <input id="myca-partner-code" class="myca-field" value="<?= $escaper->escapeHtmlAttr($partner->getCode()) ?>" disabled aria-describedby="myca-partner-code-help">
+                <p id="myca-partner-code-help" class="mt-1 myca-caption text-fg-muted"><?= $escaper->escapeHtml(__('Identifiant contrôlé par MYCA')) ?></p>
+            </div>
+            <dl class="flex flex-col gap-2 myca-body-s">
+                <div class="flex items-center justify-between"><dt class="text-fg-secondary"><?= $escaper->escapeHtml(__('Statut du compte')) ?></dt><dd class="myca-badge myca-badge-success"><?= $escaper->escapeHtml(__('Actif')) ?></dd></div>
+                <div class="flex items-center justify-between"><dt class="text-fg-secondary"><?= $escaper->escapeHtml(__('Type de partenariat')) ?></dt><dd class="myca-badge myca-badge-premium"><?= $escaper->escapeHtml(__('Partenaire B2B')) ?></dd></div>
+            </dl>
+            <fieldset class="flex flex-col gap-1.5">
+                <legend class="mb-1.5 myca-caption-strong text-fg"><?= $escaper->escapeHtml(__('Modes de vente (définis par MYCA)')) ?></legend>
+                <?php foreach ([PartnerInterface::MODE_DROPSHIP => __('Dropshipping (sans stock)'), PartnerInterface::MODE_STOCK => __('Achat de stock (tarif grossiste)')] as $code => $label): ?>
+                    <label class="flex items-center gap-2 myca-body-s text-fg">
+                        <input type="checkbox" class="size-4 rounded-sm accent-accent" disabled <?= in_array($code, $modes, true) ? 'checked' : '' ?>>
+                        <?= $escaper->escapeHtml($label) ?>
+                    </label>
+                <?php endforeach ?>
+            </fieldset>
+        </section>
+
+        <section class="myca-card flex flex-col gap-3 p-4 shadow-card" aria-labelledby="myca-profile-logo">
+            <h2 id="myca-profile-logo" class="myca-card-title mb-0"><?= $icons->renderHtml('file', 'text-accent-text', 18, 18, ['aria-hidden' => 'true']) ?><?= $escaper->escapeHtml(__('Logo & identité')) ?></h2>
+            <div class="flex items-center gap-4">
+                <span class="flex size-[120px] shrink-0 items-center justify-center overflow-hidden rounded-lg bg-surface-subtle text-fg-muted">
+                    <?php if ($logoUrl !== ''): ?>
+                        <img src="<?= $escaper->escapeUrl($logoUrl) ?>" alt="<?= $escaper->escapeHtmlAttr(__('Logo de %1', $partner->getCompanyName())) ?>" class="size-full object-cover" width="120" height="120">
+                    <?php else: ?>
+                        <?= $icons->renderHtml('store', '', 40, 40, ['aria-hidden' => 'true']) ?>
+                    <?php endif ?>
+                </span>
+                <p class="myca-caption text-fg-secondary"><?= $escaper->escapeHtml(__('Pour changer de logo ou de bannière, envoyez vos fichiers au Service Partenaire : l’équipe MYCA les valide avant publication.')) ?></p>
+            </div>
+        </section>
+
+        <section class="myca-card flex flex-col gap-3 p-4 shadow-card" aria-labelledby="myca-profile-address">
+            <h2 id="myca-profile-address" class="myca-card-title mb-0"><?= $icons->renderHtml('map-pin', 'text-accent-text', 18, 18, ['aria-hidden' => 'true']) ?><?= $escaper->escapeHtml(__('Coordonnées & localisation')) ?></h2>
+            <div class="grid gap-3 sm:grid-cols-2">
+                <div class="sm:col-span-2">
+                    <label for="myca-street" class="myca-field-label"><?= $escaper->escapeHtml(__('Adresse')) ?></label>
+                    <input id="myca-street" name="street" autocomplete="street-address" maxlength="255" class="myca-field" value="<?= $escaper->escapeHtmlAttr($field('street')) ?>" <?= /* @noEscape */ $readonly ?>>
+                </div>
+                <div>
+                    <label for="myca-postcode" class="myca-field-label"><?= $escaper->escapeHtml(__('Code postal')) ?></label>
+                    <input id="myca-postcode" name="postcode" autocomplete="postal-code" maxlength="16" class="myca-field" value="<?= $escaper->escapeHtmlAttr($field('postcode')) ?>" <?= /* @noEscape */ $readonly ?>>
+                </div>
+                <div>
+                    <label for="myca-city" class="myca-field-label"><?= $escaper->escapeHtml(__('Ville')) ?></label>
+                    <input id="myca-city" name="city" autocomplete="address-level2" maxlength="128" class="myca-field" value="<?= $escaper->escapeHtmlAttr($field('city')) ?>" <?= /* @noEscape */ $readonly ?>>
+                </div>
+                <div>
+                    <label for="myca-country" class="myca-field-label"><?= $escaper->escapeHtml(__('Pays')) ?></label>
+                    <select id="myca-country" name="country_id" class="myca-field" <?= /* @noEscape */ $readonly ?>>
+                        <option value=""><?= $escaper->escapeHtml(__('Choisir…')) ?></option>
+                        <?php foreach ($space->getCountryOptions() as $code => $name): ?>
+                            <option value="<?= $escaper->escapeHtmlAttr($code) ?>" <?= $code === $field('country_id') ? 'selected' : '' ?>><?= $escaper->escapeHtml($name) ?></option>
+                        <?php endforeach ?>
+                    </select>
+                </div>
+                <div>
+                    <label for="myca-phone" class="myca-field-label"><?= $escaper->escapeHtml(__('Téléphone')) ?></label>
+                    <input id="myca-phone" name="phone" type="tel" autocomplete="tel" maxlength="32" class="myca-field" value="<?= $escaper->escapeHtmlAttr($field('phone')) ?>" <?= /* @noEscape */ $readonly ?>>
+                </div>
+                <div class="sm:col-span-2">
+                    <label for="myca-email" class="myca-field-label"><?= $escaper->escapeHtml(__('E-mail de la boutique')) ?></label>
+                    <input id="myca-email" name="email" type="email" autocomplete="email" maxlength="255" class="myca-field" value="<?= $escaper->escapeHtmlAttr($field('email')) ?>" <?= /* @noEscape */ $readonly ?>>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <div class="grid gap-4 lg:grid-cols-2 2xl:grid-cols-3">
+        <section class="myca-card flex flex-col gap-3 p-4 shadow-card" aria-labelledby="myca-profile-presentation"
+                 x-data="{ length: <?= (int) mb_strlen($field('description')) ?> }">
+            <h2 id="myca-profile-presentation" class="myca-card-title mb-0"><?= $icons->renderHtml('file', 'text-accent-text', 18, 18, ['aria-hidden' => 'true']) ?><?= $escaper->escapeHtml(__('Présentation de la boutique')) ?></h2>
+            <label for="myca-description" class="sr-only"><?= $escaper->escapeHtml(__('Présentation de la boutique')) ?></label>
+            <textarea id="myca-description" name="description" rows="6" maxlength="500" class="myca-field" aria-describedby="myca-description-count"
+                      @input="length = $event.target.value.length" <?= /* @noEscape */ $readonly ?>><?= $escaper->escapeHtml($field('description')) ?></textarea>
+            <p id="myca-description-count" class="text-right myca-caption text-fg-muted"><span x-text="length"><?= (int) mb_strlen($field('description')) ?></span> / 500 <?= $escaper->escapeHtml(__('caractères')) ?></p>
+        </section>
+
+        <section class="myca-card flex flex-col gap-3 p-4 shadow-card" aria-labelledby="myca-profile-commercial">
+            <h2 id="myca-profile-commercial" class="myca-card-title mb-0"><?= $icons->renderHtml('cart', 'text-accent-text', 18, 18, ['aria-hidden' => 'true']) ?><?= $escaper->escapeHtml(__('Informations commerciales')) ?></h2>
+            <div class="grid gap-3 sm:grid-cols-2">
+                <div>
+                    <label for="myca-opening" class="myca-field-label"><?= $escaper->escapeHtml(__('Date d’ouverture')) ?></label>
+                    <input id="myca-opening" name="opening_date" type="date" class="myca-field" value="<?= $escaper->escapeHtmlAttr($field('opening_date')) ?>" <?= /* @noEscape */ $readonly ?>>
+                </div>
+                <div>
+                    <label for="myca-siret" class="myca-field-label"><?= $escaper->escapeHtml(__('SIRET / N° TVA')) ?></label>
+                    <input id="myca-siret" class="myca-field" value="<?= $escaper->escapeHtmlAttr(trim($field('siret') . ' / ' . $field('vat_id'), ' /')) ?>" disabled aria-describedby="myca-siret-help">
+                    <p id="myca-siret-help" class="mt-1 myca-caption text-fg-muted"><?= $escaper->escapeHtml(__('Vérifié par MYCA avant activation')) ?></p>
+                </div>
+            </div>
+            <label class="flex items-start gap-2 myca-body-s text-fg">
+                <input type="hidden" name="show_in_directory" value="0">
+                <input type="checkbox" name="show_in_directory" value="1" class="mt-0.5 size-4 rounded-sm accent-accent" <?= $field('show_in_directory') === '1' ? 'checked' : '' ?> <?= /* @noEscape */ $readonly ?>>
+                <?= $escaper->escapeHtml(__('Afficher ma boutique sur le site MYCA (annuaire des partenaires)')) ?>
+            </label>
+        </section>
+
+        <section class="myca-card flex flex-col p-4 shadow-card lg:col-span-2 2xl:col-span-1" aria-labelledby="myca-profile-settings">
+            <h2 id="myca-profile-settings" class="myca-card-title"><?= $icons->renderHtml('settings', 'text-accent-text', 18, 18, ['aria-hidden' => 'true']) ?><?= $escaper->escapeHtml(__('Paramètres de la boutique')) ?></h2>
+            <?= /* @noEscape */ $switch('notify_new_collections', (string) __('Recevoir les nouvelles collections')) ?>
+            <?= /* @noEscape */ $switch('notify_promotions', (string) __('Recevoir les promotions partenaires')) ?>
+            <?= /* @noEscape */ $switch('allow_contact', (string) __('Être contacté par l’équipe MYCA')) ?>
+            <?= /* @noEscape */ $switch('hide_contact_details', (string) __('Masquer mes coordonnées aux autres partenaires')) ?>
+        </section>
+    </div>
+
+    <div class="flex flex-col gap-3 md:flex-row md:items-center">
+        <div class="myca-card flex flex-1 items-center gap-4 px-4 py-3 shadow-card">
+            <span class="myca-body-s text-fg" id="myca-profile-completion"><?= $escaper->escapeHtml(__('Profil complété')) ?></span>
+            <span class="h-2 flex-1 overflow-hidden rounded-pill bg-gray-200" role="progressbar" aria-labelledby="myca-profile-completion"
+                  aria-valuemin="0" aria-valuemax="100" aria-valuenow="<?= (int) $percent ?>">
+                <span class="block h-full rounded-pill bg-green-600" style="width: <?= (int) $percent ?>%"></span>
+            </span>
+            <span class="myca-body-s-strong text-fg"><?= (int) $percent ?> %</span>
+        </div>
+        <?php if ($canEdit): ?>
+            <button type="submit" class="myca-btn myca-btn-primary md:min-h-11 md:px-5">
+                <?= $icons->renderHtml('check', '', 16, 16, ['aria-hidden' => 'true']) ?><?= $escaper->escapeHtml(__('Enregistrer les modifications')) ?>
+            </button>
+        <?php endif ?>
+    </div>
+</form>

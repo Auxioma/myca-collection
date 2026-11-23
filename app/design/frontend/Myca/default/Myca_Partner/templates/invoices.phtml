@@ -1,0 +1,222 @@
+<?php
+/**
+ * M22 — Mes factures : factures émises par MYCA à la boutique (achats au tarif partenaire), indicateurs,
+ * filtres réglées / en attente, détail de la facture choisie et impression.
+ */
+
+declare(strict_types=1);
+
+use Hyva\Theme\Model\ViewModelRegistry;
+use Hyva\Theme\ViewModel\SvgIcons;
+use Magento\Framework\Escaper;
+use Magento\Framework\View\Element\Template;
+use Magento\Sales\Model\Order\Invoice;
+use Myca\Partner\ViewModel\PartnerSpace;
+
+/** @var Template $block */
+/** @var Escaper $escaper */
+/** @var ViewModelRegistry $viewModels */
+
+$icons = $viewModels->require(SvgIcons::class);
+/** @var PartnerSpace $space */
+$space = $viewModels->require(PartnerSpace::class);
+$request = $block->getRequest();
+
+$invoices = array_values(array_filter(
+    $space->getInvoices(),
+    static fn (Invoice $invoice) => (int) $invoice->getState() !== Invoice::STATE_CANCELED
+));
+$isPaid = static fn (Invoice $invoice) => (int) $invoice->getState() === Invoice::STATE_PAID;
+$filters = ['toutes' => ['file', __('Toutes les factures')], 'reglees' => ['check-circle', __('Réglées')], 'attente' => ['clock', __('En attente')]];
+$status = (string) $request->getParam('statut', 'toutes');
+$status = isset($filters[$status]) ? $status : 'toutes';
+$query = trim((string) $request->getParam('q'));
+$matches = static function (Invoice $invoice, string $filter) use ($isPaid, $query): bool {
+    if (($filter === 'reglees' && !$isPaid($invoice)) || ($filter === 'attente' && $isPaid($invoice))) {
+        return false;
+    }
+
+    return $query === ''
+        || mb_stripos($invoice->getIncrementId() . ' ' . $invoice->getOrder()->getIncrementId(), $query) !== false;
+};
+$visible = array_values(array_filter($invoices, static fn (Invoice $invoice) => $matches($invoice, $status)));
+$selectedId = (int) $request->getParam('facture');
+$selected = $visible[0] ?? null;
+foreach ($visible as $invoice) {
+    if ((int) $invoice->getId() === $selectedId) {
+        $selected = $invoice;
+    }
+}
+
+$exclTax = static fn (Invoice $invoice) => (float) $invoice->getGrandTotal() - (float) $invoice->getTaxAmount();
+$sum = static fn (array $list, callable $amount) => array_sum(array_map($amount, $list));
+$paid = array_filter($invoices, $isPaid);
+$open = array_filter($invoices, static fn (Invoice $invoice) => !$isPaid($invoice));
+$kpis = [
+    ['icon' => 'file', 'label' => __('Total facturé (HT)'), 'value' => $space->formatPrice($sum($invoices, $exclTax))],
+    ['icon' => 'check-circle', 'label' => __('Total réglé (TTC)'), 'value' => $space->formatPrice($sum($paid, static fn (Invoice $i) => (float) $i->getGrandTotal()))],
+    ['icon' => 'clock', 'label' => __('En attente (TTC)'), 'value' => $space->formatPrice($sum($open, static fn (Invoice $i) => (float) $i->getGrandTotal()))],
+    ['icon' => 'layers', 'label' => __('Nombre de factures'), 'value' => (string) count($invoices)],
+];
+$baseQuery = array_filter(['q' => $query, 'statut' => $status === 'toutes' ? null : $status]);
+?>
+<div class="flex flex-col gap-4">
+    <?= $block->getLayout()->createBlock(Template::class)->setTemplate('Myca_Partner::partials/kpis.phtml')->setData('kpis', $kpis)->toHtml() ?>
+
+    <nav aria-label="<?= $escaper->escapeHtmlAttr(__('Filtrer les factures')) ?>">
+        <ul class="flex flex-wrap gap-2">
+            <?php foreach ($filters as $code => [$icon, $label]): ?>
+                <li>
+                    <a href="<?= $escaper->escapeUrl($block->getUrl('partenaire/factures', ['_query' => array_filter(['q' => $query, 'statut' => $code === 'toutes' ? null : $code])])) ?>"
+                       class="myca-btn <?= $code === $status ? 'myca-btn-primary' : 'myca-btn-secondary' ?>" <?= $code === $status ? 'aria-current="page"' : '' ?>>
+                        <?= $icons->renderHtml($icon, '', 16, 16, ['aria-hidden' => 'true']) ?><?= $escaper->escapeHtml($label) ?>
+                        (<?= (int) count(array_filter($invoices, static fn (Invoice $invoice) => $matches($invoice, $code))) ?>)
+                    </a>
+                </li>
+            <?php endforeach ?>
+        </ul>
+    </nav>
+
+    <form method="get" action="<?= $escaper->escapeUrl($block->getUrl('partenaire/factures')) ?>" class="grid gap-3 md:grid-cols-[minmax(0,1fr)_auto_auto]">
+        <?php if ($status !== 'toutes'): ?>
+            <input type="hidden" name="statut" value="<?= $escaper->escapeHtmlAttr($status) ?>">
+        <?php endif ?>
+        <label for="myca-invoices-q" class="sr-only"><?= $escaper->escapeHtml(__('Rechercher une facture')) ?></label>
+        <input id="myca-invoices-q" type="search" name="q" value="<?= $escaper->escapeHtmlAttr($query) ?>" class="myca-field"
+               placeholder="<?= $escaper->escapeHtmlAttr(__('Rechercher une facture (n° facture, n° commande)')) ?>">
+        <button type="submit" class="myca-btn myca-btn-dark"><?= $icons->renderHtml('search', '', 16, 16, ['aria-hidden' => 'true']) ?><?= $escaper->escapeHtml(__('Rechercher')) ?></button>
+        <a href="<?= $escaper->escapeUrl($block->getUrl('partenaire/factures')) ?>" class="myca-btn myca-btn-secondary"><?= $icons->renderHtml('refresh', '', 16, 16, ['aria-hidden' => 'true']) ?><?= $escaper->escapeHtml(__('Réinitialiser')) ?></a>
+    </form>
+
+    <section class="myca-card p-4 shadow-card" aria-labelledby="myca-partner-invoices">
+        <h2 id="myca-partner-invoices" class="sr-only"><?= $escaper->escapeHtml(__('Factures')) ?></h2>
+        <?php if ($visible): ?>
+            <div class="relative md:overflow-x-auto">
+                <table class="w-full myca-body-s">
+                    <thead class="hidden md:table-header-group">
+                        <tr class="bg-surface-subtle text-left myca-caption-strong text-fg-secondary">
+                            <th scope="col" class="px-2.5 py-2"><?= $escaper->escapeHtml(__('N° facture')) ?></th>
+                            <th scope="col" class="px-2.5 py-2"><?= $escaper->escapeHtml(__('Date')) ?></th>
+                            <th scope="col" class="px-2.5 py-2"><?= $escaper->escapeHtml(__('N° commande')) ?></th>
+                            <th scope="col" class="px-2.5 py-2 text-right"><?= $escaper->escapeHtml(__('Montant HT')) ?></th>
+                            <th scope="col" class="px-2.5 py-2 text-right"><?= $escaper->escapeHtml(__('TVA')) ?></th>
+                            <th scope="col" class="px-2.5 py-2 text-right"><?= $escaper->escapeHtml(__('Montant TTC')) ?></th>
+                            <th scope="col" class="px-2.5 py-2"><?= $escaper->escapeHtml(__('Statut')) ?></th>
+                            <th scope="col" class="px-2.5 py-2"><span class="sr-only"><?= $escaper->escapeHtml(__('Actions')) ?></span></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($visible as $invoice): ?>
+                            <?php $order = $invoice->getOrder(); $isSelected = $selected && $selected->getId() === $invoice->getId(); ?>
+                            <tr class="grid grid-cols-[1fr_auto] gap-x-3 gap-y-1 border-b border-line py-3 md:table-row md:py-0 <?= $isSelected ? 'md:bg-red-50' : '' ?>">
+                                <td class="font-semibold whitespace-nowrap text-accent-text md:px-2.5 md:py-3"><?= $escaper->escapeHtml($invoice->getIncrementId()) ?></td>
+                                <td class="whitespace-nowrap text-fg-secondary md:px-2.5 md:py-3 md:text-fg"><?= $escaper->escapeHtml($block->formatDate($invoice->getCreatedAt(), IntlDateFormatter::MEDIUM)) ?></td>
+                                <td class="whitespace-nowrap text-fg-secondary md:px-2.5 md:py-3 md:text-fg"><?= $escaper->escapeHtml(__('Commande %1', $order->getIncrementId())) ?></td>
+                                <td class="hidden whitespace-nowrap text-right text-fg md:table-cell md:px-2.5 md:py-3"><?= /* @noEscape */ $order->formatPrice($exclTax($invoice)) ?></td>
+                                <td class="hidden whitespace-nowrap text-right text-fg md:table-cell md:px-2.5 md:py-3"><?= /* @noEscape */ $order->formatPrice($invoice->getTaxAmount()) ?></td>
+                                <td class="font-semibold whitespace-nowrap text-fg md:px-2.5 md:py-3 md:text-right md:font-normal"><?= /* @noEscape */ $order->formatPrice($invoice->getGrandTotal()) ?></td>
+                                <td class="md:px-2.5 md:py-3">
+                                    <span class="myca-badge <?= $isPaid($invoice) ? 'myca-badge-success' : 'myca-badge-warning' ?>"><?= $escaper->escapeHtml($isPaid($invoice) ? __('Réglée') : __('En attente')) ?></span>
+                                </td>
+                                <td class="col-span-2 md:px-2.5 md:py-2">
+                                    <span class="flex items-center gap-1">
+                                        <a href="<?= $escaper->escapeUrl($block->getUrl('partenaire/factures', ['_query' => $baseQuery + ['facture' => $invoice->getId()]])) ?>"
+                                           class="inline-flex size-11 items-center justify-center rounded-md text-fg-secondary hover:bg-surface-subtle hover:text-fg md:size-8"
+                                           aria-label="<?= $escaper->escapeHtmlAttr(__('Détail de la facture %1', $invoice->getIncrementId())) ?>">
+                                            <?= $icons->renderHtml('eye', '', 16, 16, ['aria-hidden' => 'true']) ?>
+                                        </a>
+                                        <a href="<?= $escaper->escapeUrl($block->getUrl('sales/order/printInvoice', ['invoice_id' => $invoice->getId()])) ?>"
+                                           class="inline-flex size-11 items-center justify-center rounded-md text-fg-secondary hover:bg-surface-subtle hover:text-fg md:size-8"
+                                           aria-label="<?= $escaper->escapeHtmlAttr(__('Imprimer la facture %1', $invoice->getIncrementId())) ?>">
+                                            <?= $icons->renderHtml('download', '', 16, 16, ['aria-hidden' => 'true']) ?>
+                                        </a>
+                                    </span>
+                                </td>
+                            </tr>
+                        <?php endforeach ?>
+                    </tbody>
+                </table>
+            </div>
+        <?php else: ?>
+            <p class="myca-body-s text-fg-secondary"><?= $escaper->escapeHtml(__('Aucune facture ne correspond à ces critères.')) ?></p>
+        <?php endif ?>
+    </section>
+
+    <?php if ($selected): ?>
+        <?php $order = $selected->getOrder(); ?>
+        <div class="grid gap-4 xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+            <section class="myca-card p-4 shadow-card" aria-labelledby="myca-invoice-detail">
+                <h2 id="myca-invoice-detail" class="myca-card-title">
+                    <?= $icons->renderHtml('file', 'text-accent-text', 18, 18, ['aria-hidden' => 'true']) ?>
+                    <?= $escaper->escapeHtml(__('Détail de la facture : %1', $selected->getIncrementId())) ?>
+                    <span class="ms-auto myca-badge <?= $isPaid($selected) ? 'myca-badge-success' : 'myca-badge-warning' ?>"><?= $escaper->escapeHtml($isPaid($selected) ? __('Réglée') : __('En attente')) ?></span>
+                </h2>
+                <div class="grid gap-4 md:grid-cols-[minmax(0,1fr)_240px]">
+                    <div class="relative md:overflow-x-auto">
+                        <table class="w-full myca-body-s">
+                            <thead>
+                                <tr class="bg-surface-subtle text-left myca-caption-strong text-fg-secondary">
+                                    <th scope="col" class="px-2.5 py-2"><?= $escaper->escapeHtml(__('Article')) ?></th>
+                                    <th scope="col" class="px-2.5 py-2 text-right"><?= $escaper->escapeHtml(__('Qté')) ?></th>
+                                    <th scope="col" class="px-2.5 py-2 text-right"><?= $escaper->escapeHtml(__('PU HT')) ?></th>
+                                    <th scope="col" class="px-2.5 py-2 text-right"><?= $escaper->escapeHtml(__('Total HT')) ?></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php foreach ($selected->getAllItems() as $item): ?>
+                                    <?php if ($item->getOrderItem()?->getParentItemId()) { continue; } ?>
+                                    <tr class="border-b border-line">
+                                        <td class="px-2.5 py-2 text-fg"><?= $escaper->escapeHtml($item->getName()) ?></td>
+                                        <td class="px-2.5 py-2 text-right text-fg"><?= (float) $item->getQty() ?></td>
+                                        <td class="px-2.5 py-2 text-right whitespace-nowrap text-fg"><?= /* @noEscape */ $order->formatPrice($item->getPrice()) ?></td>
+                                        <td class="px-2.5 py-2 text-right whitespace-nowrap text-fg"><?= /* @noEscape */ $order->formatPrice($item->getRowTotal()) ?></td>
+                                    </tr>
+                                <?php endforeach ?>
+                            </tbody>
+                        </table>
+                    </div>
+                    <dl class="flex flex-col gap-1.5 myca-body-s">
+                        <div class="flex justify-between gap-3"><dt class="text-fg-secondary"><?= $escaper->escapeHtml(__('N° commande')) ?></dt><dd class="font-semibold text-fg"><?= $escaper->escapeHtml($order->getIncrementId()) ?></dd></div>
+                        <div class="flex justify-between gap-3"><dt class="text-fg-secondary"><?= $escaper->escapeHtml(__('Date de facture')) ?></dt><dd class="font-semibold text-fg"><?= $escaper->escapeHtml($block->formatDate($selected->getCreatedAt(), IntlDateFormatter::MEDIUM)) ?></dd></div>
+                        <div class="flex justify-between gap-3"><dt class="text-fg-secondary"><?= $escaper->escapeHtml(__('Livraison HT')) ?></dt><dd class="font-semibold text-fg"><?= /* @noEscape */ $order->formatPrice($selected->getShippingAmount()) ?></dd></div>
+                        <div class="flex justify-between gap-3"><dt class="text-fg-secondary"><?= $escaper->escapeHtml(__('Total HT')) ?></dt><dd class="font-semibold text-fg"><?= /* @noEscape */ $order->formatPrice($exclTax($selected)) ?></dd></div>
+                        <div class="flex justify-between gap-3"><dt class="text-fg-secondary"><?= $escaper->escapeHtml(__('TVA')) ?></dt><dd class="font-semibold text-fg"><?= /* @noEscape */ $order->formatPrice($selected->getTaxAmount()) ?></dd></div>
+                        <div class="mt-1 flex justify-between gap-3 rounded-md bg-gold-100 px-3 py-2"><dt class="font-semibold text-fg"><?= $escaper->escapeHtml(__('Total TTC')) ?></dt><dd class="font-bold text-fg"><?= /* @noEscape */ $order->formatPrice($selected->getGrandTotal()) ?></dd></div>
+                    </dl>
+                </div>
+            </section>
+
+            <section class="myca-card p-4 shadow-card" aria-labelledby="myca-invoice-actions">
+                <h2 id="myca-invoice-actions" class="myca-card-title">
+                    <?= $icons->renderHtml('zap', 'text-accent-text', 18, 18, ['aria-hidden' => 'true']) ?>
+                    <?= $escaper->escapeHtml(__('Actions rapides')) ?>
+                </h2>
+                <ul class="flex flex-col gap-2.5">
+                    <li>
+                        <a href="<?= $escaper->escapeUrl($block->getUrl('sales/order/printInvoice', ['invoice_id' => $selected->getId()])) ?>" class="myca-btn myca-btn-primary w-full justify-between text-left whitespace-normal">
+                            <span class="flex items-center gap-2"><?= $icons->renderHtml('download', '', 16, 16, ['aria-hidden' => 'true']) ?><?= $escaper->escapeHtml(__('Imprimer la facture')) ?></span>
+                            <?= $icons->renderHtml('chevron-right', '', 16, 16, ['aria-hidden' => 'true']) ?>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="<?= $escaper->escapeUrl($block->getUrl('partenaire/commandes', ['_query' => ['commande' => $order->getId()]])) ?>" class="myca-btn myca-btn-secondary w-full justify-between text-left whitespace-normal">
+                            <span class="flex items-center gap-2"><?= $icons->renderHtml('layers', 'text-accent-text', 16, 16, ['aria-hidden' => 'true']) ?><?= $escaper->escapeHtml(__('Voir la commande')) ?></span>
+                            <?= $icons->renderHtml('chevron-right', '', 16, 16, ['aria-hidden' => 'true']) ?>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="<?= $escaper->escapeUrl($block->getUrl('', ['_direct' => 'contact'])) ?>" class="myca-btn myca-btn-secondary w-full justify-between text-left whitespace-normal">
+                            <span class="flex items-center gap-2"><?= $icons->renderHtml('headset', 'text-accent-text', 16, 16, ['aria-hidden' => 'true']) ?><?= $escaper->escapeHtml(__('Une question sur cette facture')) ?></span>
+                            <?= $icons->renderHtml('chevron-right', '', 16, 16, ['aria-hidden' => 'true']) ?>
+                        </a>
+                    </li>
+                </ul>
+            </section>
+        </div>
+    <?php endif ?>
+
+    <p class="flex items-start gap-2 rounded-md bg-warning-bg px-3 py-2.5 myca-caption text-warning">
+        <?= $icons->renderHtml('alert', 'mt-px shrink-0', 16, 16, ['aria-hidden' => 'true']) ?>
+        <?= $escaper->escapeHtml(__('Ces documents sont émis par MYCA à votre boutique (achats au tarif partenaire). Ils ne remplacent pas les factures que votre boutique émet à ses propres clients en dropshipping.')) ?>
+    </p>
+</div>

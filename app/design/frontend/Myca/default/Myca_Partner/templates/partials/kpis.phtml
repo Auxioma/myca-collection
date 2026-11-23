@@ -1,0 +1,55 @@
+<?php
+/**
+ * Rangée de cartes KPI (Figma « Carte KPI ») : icône, libellé, valeur, détail, variation, lien facultatif.
+ * Données : « kpis » = liste de tableaux {icon, label, value, detail?, variation?, url?}.
+ */
+
+declare(strict_types=1);
+
+use Hyva\Theme\Model\ViewModelRegistry;
+use Hyva\Theme\ViewModel\SvgIcons;
+use Magento\Framework\Escaper;
+use Magento\Framework\View\Element\Template;
+
+/** @var Template $block */
+/** @var Escaper $escaper */
+/** @var ViewModelRegistry $viewModels */
+
+$icons = $viewModels->require(SvgIcons::class);
+/** @var array<int, array<string, mixed>> $kpis */
+$kpis = (array) $block->getData('kpis');
+$columns = [3 => 'lg:grid-cols-3', 4 => 'lg:grid-cols-4', 5 => 'lg:grid-cols-5', 6 => 'lg:grid-cols-3 2xl:grid-cols-6'][count($kpis)] ?? 'lg:grid-cols-4';
+?>
+<ul class="grid grid-cols-2 gap-3 <?= /* @noEscape */ $columns ?>" aria-label="<?= $escaper->escapeHtmlAttr(__('Indicateurs')) ?>">
+    <?php foreach ($kpis as $kpi): ?>
+        <?php
+        $url = (string) ($kpi['url'] ?? '');
+        $variation = $kpi['variation'] ?? null;
+        $tag = $url !== '' ? 'a' : 'div';
+        ?>
+        <li>
+            <<?= /* @noEscape */ $tag ?>
+                <?= $url !== '' ? 'href="' . $escaper->escapeUrl($url) . '"' : '' ?>
+                class="myca-card flex h-full items-center gap-3 p-3.5 shadow-card <?= $url !== '' ? 'hover:border-line-strong focus-visible:outline-2 focus-visible:outline-accent' : '' ?>"
+            >
+                <?= $icons->renderHtml((string) $kpi['icon'], 'hidden shrink-0 text-icon-kpi sm:block', 28, 28, ['aria-hidden' => 'true']) ?>
+                <span class="flex min-w-0 flex-1 flex-col items-start gap-0.5">
+                    <span class="myca-caption-strong text-fg-secondary"><?= $escaper->escapeHtml((string) $kpi['label']) ?></span>
+                    <span class="max-w-full truncate text-lg leading-6 font-bold text-fg sm:text-[22px] sm:leading-7"><?= $escaper->escapeHtml((string) $kpi['value']) ?></span>
+                    <?php if (!empty($kpi['detail'])): ?>
+                        <span class="myca-caption text-fg-muted"><?= $escaper->escapeHtml((string) $kpi['detail']) ?></span>
+                    <?php endif ?>
+                    <?php if ($variation !== null): ?>
+                        <span class="myca-badge <?= (int) $variation >= 0 ? 'myca-badge-success' : 'myca-badge-danger' ?> px-2 py-0.5">
+                            <?= $escaper->escapeHtml(sprintf('%+d %%', (int) $variation)) ?>
+                            <span class="sr-only"><?= $escaper->escapeHtml(__('par rapport à la période précédente')) ?></span>
+                        </span>
+                    <?php endif ?>
+                </span>
+                <?php if ($url !== ''): ?>
+                    <?= $icons->renderHtml('chevron-right', 'shrink-0 text-fg-secondary', 16, 16, ['aria-hidden' => 'true']) ?>
+                <?php endif ?>
+            </<?= /* @noEscape */ $tag ?>>
+        </li>
+    <?php endforeach ?>
+</ul>

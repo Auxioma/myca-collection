@@ -1,0 +1,72 @@
+<?php
+/**
+ * Menu latéral partenaire (Figma « Menu latéral/Partenaire B2B ») : identité de la boutique, rubriques (active en
+ * rouge), logo MYCA. Mobile : menu déroulant au-dessus du contenu.
+ */
+
+declare(strict_types=1);
+
+use Hyva\Theme\Model\ViewModelRegistry;
+use Hyva\Theme\ViewModel\SvgIcons;
+use Magento\Framework\Escaper;
+use Magento\Framework\View\Element\Template;
+use Myca\Partner\ViewModel\PartnerSpace;
+
+/** @var Template $block */
+/** @var Escaper $escaper */
+/** @var ViewModelRegistry $viewModels */
+
+$icons = $viewModels->require(SvgIcons::class);
+/** @var PartnerSpace $space */
+$space = $viewModels->require(PartnerSpace::class);
+$partner = $space->getPartner();
+$logoUrl = $space->getLogoUrl();
+?>
+<nav
+    class="flex flex-col rounded-lg bg-sidebar px-3 py-3 text-white lg:min-h-full lg:py-4"
+    aria-label="<?= $escaper->escapeHtmlAttr(__('Espace partenaire')) ?>"
+    x-data="{ open: false }"
+>
+    <button
+        type="button"
+        class="flex min-h-11 w-full items-center gap-2.5 text-left lg:pointer-events-none"
+        @click="open = !open"
+        :aria-expanded="open"
+        aria-controls="myca-partner-links"
+    >
+        <span class="flex size-11 shrink-0 items-center justify-center overflow-hidden rounded-pill border-2 border-gold-500 bg-white text-navy-900 lg:size-14">
+            <?php if ($logoUrl !== ''): ?>
+                <img src="<?= $escaper->escapeUrl($logoUrl) ?>" alt="" class="size-full object-cover" width="56" height="56">
+            <?php else: ?>
+                <?= $icons->renderHtml('store', '', 24, 24, ['aria-hidden' => 'true']) ?>
+            <?php endif ?>
+        </span>
+        <span class="flex min-w-0 flex-1 flex-col items-start gap-1.5">
+            <span class="myca-body-s-strong"><?= $escaper->escapeHtml($partner?->getCompanyName() ?? '') ?></span>
+            <span class="rounded-pill bg-gold-500 px-2.5 py-[3px] myca-caption-strong text-navy-950"><?= $escaper->escapeHtml(__('Partenaire MYCA')) ?></span>
+        </span>
+        <?= $icons->renderHtml('chevron-down', 'shrink-0 transition-transform lg:hidden', 18, 18, [
+            'aria-hidden' => 'true',
+            ':class' => "open && 'rotate-180'",
+        ]) ?>
+    </button>
+    <ul id="myca-partner-links" class="mt-3 hidden flex-col gap-0.5 lg:flex" :class="open && 'flex!'">
+        <?php foreach ($space->getNavigation() as $item): ?>
+            <li>
+                <a
+                    href="<?= $escaper->escapeUrl($item['url']) ?>"
+                    class="flex min-h-11 items-center gap-2.5 rounded-md px-3 py-2 text-[13px] leading-[18px] lg:min-h-9
+                        focus-visible:outline-2 focus-visible:outline-white
+                        <?= $item['current'] ? 'bg-nav-active text-on-nav-active' : 'text-white hover:bg-white/10' ?>"
+                    <?= $item['current'] ? 'aria-current="page"' : '' ?>
+                >
+                    <?= $icons->renderHtml($item['icon'], 'shrink-0', 18, 18, ['aria-hidden' => 'true']) ?>
+                    <span class="truncate"><?= $escaper->escapeHtml($item['label']) ?></span>
+                </a>
+            </li>
+        <?php endforeach ?>
+    </ul>
+    <div class="mt-auto hidden justify-center pt-10 lg:flex" aria-hidden="true">
+        <?= $block->getChildHtml('myca.partner.nav.logo') ?>
+    </div>
+</nav>

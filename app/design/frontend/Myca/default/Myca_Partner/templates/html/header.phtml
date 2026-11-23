@@ -1,0 +1,93 @@
+<?php
+/**
+ * En-tête de l'espace partenaire (Figma « En-tête/Partenaire B2B ») : logo, « Espace Partenaire B2B », recherche,
+ * aide, compte boutique (nom, n° partenaire). Notifications et messagerie : avec le module de support (à planifier).
+ */
+
+declare(strict_types=1);
+
+use Hyva\Theme\Model\ViewModelRegistry;
+use Hyva\Theme\ViewModel\SvgIcons;
+use Magento\Framework\Escaper;
+use Magento\Framework\View\Element\Template;
+use Myca\Partner\ViewModel\PartnerSpace;
+
+/** @var Template $block */
+/** @var Escaper $escaper */
+/** @var ViewModelRegistry $viewModels */
+
+$icons = $viewModels->require(SvgIcons::class);
+/** @var PartnerSpace $space */
+$space = $viewModels->require(PartnerSpace::class);
+$partner = $space->getPartner();
+$logoUrl = $space->getLogoUrl();
+?>
+<header id="header" class="bg-shell text-white">
+    <div class="flex items-center gap-3 px-2 py-2 md:gap-5 md:px-6 md:py-3">
+        <?= $block->getChildHtml('logo') ?>
+        <span class="hidden h-7 w-px bg-white md:block" aria-hidden="true"></span>
+        <p class="hidden font-display text-[22px] leading-7 font-bold whitespace-nowrap 2xl:block"><?= $escaper->escapeHtml(__('Espace Partenaire B2B')) ?></p>
+
+        <form
+            action="<?= $escaper->escapeUrl($block->getUrl('catalogsearch/result')) ?>"
+            method="get"
+            role="search"
+            class="ms-auto hidden h-9 w-full max-w-[420px] items-center gap-2.5 rounded-pill border border-white/35 bg-white/10 px-4 md:flex 2xl:ms-0"
+        >
+            <?= $icons->renderHtml('search', 'shrink-0', 16, 16, ['aria-hidden' => 'true']) ?>
+            <label for="myca-partner-search" class="sr-only"><?= $escaper->escapeHtml(__('Rechercher un article, une référence')) ?></label>
+            <input
+                id="myca-partner-search"
+                type="search"
+                name="q"
+                class="w-full border-0 bg-transparent p-0 text-[13px] leading-[18px] text-white placeholder:text-white/80 focus:ring-0"
+                placeholder="<?= $escaper->escapeHtmlAttr(__('Rechercher un article, une référence…')) ?>"
+            >
+        </form>
+
+        <a
+            href="<?= $escaper->escapeUrl($block->getUrl('', ['_direct' => 'contact'])) ?>"
+            class="ms-auto inline-flex size-11 items-center justify-center rounded-md hover:bg-white/10 md:ms-0 md:size-8 2xl:ms-auto"
+            aria-label="<?= $escaper->escapeHtmlAttr(__('Aide et contact')) ?>"
+        >
+            <?= $icons->renderHtml('help', '', 22, 22, ['aria-hidden' => 'true']) ?>
+        </a>
+        <span class="hidden h-7 w-px bg-white md:block" aria-hidden="true"></span>
+
+        <div class="relative" x-data="{ open: false }" @keydown.escape="open = false" @click.outside="open = false">
+            <button
+                type="button"
+                class="flex min-h-11 items-center gap-2.5 rounded-md px-1 text-left hover:bg-white/10"
+                @click="open = !open"
+                :aria-expanded="open"
+                aria-haspopup="true"
+            >
+                <span class="flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-pill border-[1.5px] border-white bg-white text-shell">
+                    <?php if ($logoUrl !== ''): ?>
+                        <img src="<?= $escaper->escapeUrl($logoUrl) ?>" alt="" class="size-full object-cover" width="36" height="36">
+                    <?php else: ?>
+                        <?= $icons->renderHtml('store', '', 18, 18, ['aria-hidden' => 'true']) ?>
+                    <?php endif ?>
+                </span>
+                <span class="hidden flex-col whitespace-nowrap md:flex">
+                    <span class="myca-body-s-strong"><?= $escaper->escapeHtml($partner?->getCompanyName() ?? '') ?></span>
+                    <span class="myca-caption opacity-85"><?= $escaper->escapeHtml(__('N° %1', $partner?->getCode() ?? '')) ?></span>
+                </span>
+                <span class="sr-only md:hidden"><?= $escaper->escapeHtml(__('Mon compte')) ?></span>
+                <?= $icons->renderHtml('chevron-down', 'hidden md:block', 16, 16, ['aria-hidden' => 'true']) ?>
+            </button>
+            <ul
+                class="absolute right-0 z-30 mt-2 w-60 rounded-md border border-line bg-surface py-2 text-fg shadow-card"
+                x-show="open"
+                x-transition
+                x-cloak
+            >
+                <li class="px-4 pt-1 pb-2 myca-caption text-fg-secondary"><?= $escaper->escapeHtml($space->getCustomerName()) ?></li>
+                <li><a class="block px-4 py-2.5 myca-body-s hover:bg-surface-subtle" href="<?= $escaper->escapeUrl($block->getUrl('partenaire/profil')) ?>"><?= $escaper->escapeHtml(__('Mon profil boutique')) ?></a></li>
+                <li><a class="block px-4 py-2.5 myca-body-s hover:bg-surface-subtle" href="<?= $escaper->escapeUrl($block->getUrl('customer/account/edit')) ?>"><?= $escaper->escapeHtml(__('Mon compte utilisateur')) ?></a></li>
+                <li><a class="block px-4 py-2.5 myca-body-s hover:bg-surface-subtle" href="<?= $escaper->escapeUrl($block->getBaseUrl()) ?>"><?= $escaper->escapeHtml(__('Retour à la boutique')) ?></a></li>
+                <li><a class="block px-4 py-2.5 myca-body-s hover:bg-surface-subtle" href="<?= $escaper->escapeUrl($block->getUrl('customer/account/logout')) ?>"><?= $escaper->escapeHtml(__('Se déconnecter')) ?></a></li>
+            </ul>
+        </div>
+    </div>
+</header>

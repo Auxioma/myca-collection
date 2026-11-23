@@ -1,0 +1,232 @@
+<?php
+/**
+ * M24 — Mes clients : clients finaux livrés en dropshipping (destinataires des commandes de la boutique),
+ * indicateurs, segments, fiche client, historique et statistiques. Données strictement limitées à la boutique.
+ */
+
+declare(strict_types=1);
+
+use Hyva\Theme\Model\ViewModelRegistry;
+use Hyva\Theme\ViewModel\SvgIcons;
+use Magento\Framework\Escaper;
+use Magento\Framework\View\Element\Template;
+use Myca\Core\ViewModel\OrderProgress;
+use Myca\Dropship\ViewModel\PartnerSales;
+use Myca\Partner\ViewModel\PartnerSpace;
+
+/** @var Template $block */
+/** @var Escaper $escaper */
+/** @var ViewModelRegistry $viewModels */
+
+$icons = $viewModels->require(SvgIcons::class);
+/** @var PartnerSpace $space */
+$space = $viewModels->require(PartnerSpace::class);
+/** @var PartnerSales $sales */
+$sales = $viewModels->require(PartnerSales::class);
+/** @var OrderProgress $progress */
+$progress = $viewModels->require(OrderProgress::class);
+$request = $block->getRequest();
+
+$customers = $sales->getEndCustomers();
+$isLoyal = static fn (array $customer) => count($customer['orders']) >= 2;
+$isActive = static fn (array $customer) => strtotime($customer['last']) >= strtotime('-90 days');
+$isNew = static function (array $customer): bool {
+    $first = end($customer['orders']);
+
+    return $first && strtotime((string) $first->getCreatedAt()) >= strtotime('-30 days');
+};
+$filters = [
+    'tous' => ['users', __('Tous les clients')],
+    'fideles' => ['award', __('Clients fidèles')],
+    'nouveaux' => ['user-plus', __('Nouveaux')],
+    'inactifs' => ['clock', __('Inactifs')],
+];
+$segment = (string) $request->getParam('segment', 'tous');
+$segment = isset($filters[$segment]) ? $segment : 'tous';
+$query = trim((string) $request->getParam('q'));
+$matches = static function (array $customer, string $filter) use ($isLoyal, $isNew, $isActive, $query): bool {
+    $inSegment = match ($filter) {
+        'fideles' => $isLoyal($customer),
+        'nouveaux' => $isNew($customer),
+        'inactifs' => !$isActive($customer),
+        default => true,
+    };
+
+    return $inSegment && ($query === ''
+        || mb_stripos($customer['name'] . ' ' . $customer['email'] . ' ' . $customer['city'], $query) !== false);
+};
+$visible = array_values(array_filter($customers, static fn (array $customer) => $matches($customer, $segment)));
+$selectedId = (string) $request->getParam('client');
+$selected = $visible[0] ?? null;
+foreach ($visible as $customer) {
+    if ($customer['id'] === $selectedId) {
+        $selected = $customer;
+    }
+}
+
+$declared = array_filter(array_column($customers, 'sales'), static fn ($value) => $value !== null);
+$declaredOrders = array_sum(array_map(static fn (array $customer) => $customer['sales'] === null ? 0 : count($customer['orders']), $customers));
+$kpis = [
+    ['icon' => 'users', 'label' => __('Clients total'), 'value' => (string) count($customers)],
+    ['icon' => 'award', 'label' => __('Clients fidèles'), 'value' => (string) count(array_filter($customers, $isLoyal)), 'detail' => __('2 commandes ou plus')],
+    ['icon' => 'cart', 'label' => __('Clients actifs'), 'value' => (string) count(array_filter($customers, $isActive)), 'detail' => __('90 derniers jours')],
+    ['icon' => 'euro', 'label' => __('Panier moyen'), 'value' => $declaredOrders ? $space->formatPrice(array_sum($declared) / $declaredOrders) : '—', 'detail' => __('prix de vente déclarés')],
+];
+$baseQuery = array_filter(['q' => $query, 'segment' => $segment === 'tous' ? null : $segment]);
+?>
+<div class="flex flex-col gap-4">
+    <?= $block->getLayout()->createBlock(Template::class)->setTemplate('Myca_Partner::partials/kpis.phtml')->setData('kpis', $kpis)->toHtml() ?>
+
+    <nav aria-label="<?= $escaper->escapeHtmlAttr(__('Segments de clients')) ?>">
+        <ul class="flex flex-wrap gap-2">
+            <?php foreach ($filters as $code => [$icon, $label]): ?>
+                <li>
+                    <a href="<?= $escaper->escapeUrl($block->getUrl('partenaire/clients', ['_query' => array_filter(['q' => $query, 'segment' => $code === 'tous' ? null : $code])])) ?>"
+                       class="myca-btn <?= $code === $segment ? 'myca-btn-primary' : 'myca-btn-secondary' ?>" <?= $code === $segment ? 'aria-current="page"' : '' ?>>
+                        <?= $icons->renderHtml($icon, '', 16, 16, ['aria-hidden' => 'true']) ?><?= $escaper->escapeHtml($label) ?>
+                        (<?= (int) count(array_filter($customers, static fn (array $customer) => $matches($customer, $code))) ?>)
+                    </a>
+                </li>
+            <?php endforeach ?>
+        </ul>
+    </nav>
+
+    <form method="get" action="<?= $escaper->escapeUrl($block->getUrl('partenaire/clients')) ?>" class="grid gap-3 md:grid-cols-[minmax(0,1fr)_auto_auto]">
+        <?php if ($segment !== 'tous'): ?>
+            <input type="hidden" name="segment" value="<?= $escaper->escapeHtmlAttr($segment) ?>">
+        <?php endif ?>
+        <label for="myca-customers-q" class="sr-only"><?= $escaper->escapeHtml(__('Rechercher un client')) ?></label>
+        <input id="myca-customers-q" type="search" name="q" value="<?= $escaper->escapeHtmlAttr($query) ?>" class="myca-field"
+               placeholder="<?= $escaper->escapeHtmlAttr(__('Rechercher un client (nom, e-mail, ville…)')) ?>">
+        <button type="submit" class="myca-btn myca-btn-dark"><?= $icons->renderHtml('search', '', 16, 16, ['aria-hidden' => 'true']) ?><?= $escaper->escapeHtml(__('Rechercher')) ?></button>
+        <a href="<?= $escaper->escapeUrl($block->getUrl('partenaire/clients')) ?>" class="myca-btn myca-btn-secondary"><?= $icons->renderHtml('refresh', '', 16, 16, ['aria-hidden' => 'true']) ?><?= $escaper->escapeHtml(__('Réinitialiser')) ?></a>
+    </form>
+
+    <section class="myca-card p-4 shadow-card" aria-labelledby="myca-partner-customers">
+        <h2 id="myca-partner-customers" class="sr-only"><?= $escaper->escapeHtml(__('Clients')) ?></h2>
+        <?php if ($visible): ?>
+            <div class="relative md:overflow-x-auto">
+                <table class="w-full myca-body-s">
+                    <thead class="hidden md:table-header-group">
+                        <tr class="bg-surface-subtle text-left myca-caption-strong text-fg-secondary">
+                            <th scope="col" class="px-2.5 py-2"><?= $escaper->escapeHtml(__('Client')) ?></th>
+                            <th scope="col" class="px-2.5 py-2"><?= $escaper->escapeHtml(__('Contact')) ?></th>
+                            <th scope="col" class="px-2.5 py-2"><?= $escaper->escapeHtml(__('Ville / pays')) ?></th>
+                            <th scope="col" class="px-2.5 py-2 text-right"><?= $escaper->escapeHtml(__('Commandes')) ?></th>
+                            <th scope="col" class="px-2.5 py-2 text-right"><?= $escaper->escapeHtml(__('CA déclaré')) ?></th>
+                            <th scope="col" class="px-2.5 py-2"><?= $escaper->escapeHtml(__('Dernière commande')) ?></th>
+                            <th scope="col" class="px-2.5 py-2"><?= $escaper->escapeHtml(__('Statut')) ?></th>
+                            <th scope="col" class="px-2.5 py-2"><span class="sr-only"><?= $escaper->escapeHtml(__('Fiche')) ?></span></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($visible as $customer): ?>
+                            <?php $isSelected = $selected && $selected['id'] === $customer['id']; ?>
+                            <tr class="grid grid-cols-[1fr_auto] gap-x-3 gap-y-1 border-b border-line py-3 md:table-row md:py-0 <?= $isSelected ? 'md:bg-red-50' : '' ?>">
+                                <td class="md:px-2.5 md:py-2.5">
+                                    <span class="flex items-center gap-2.5">
+                                        <span class="flex size-8 shrink-0 items-center justify-center rounded-pill bg-red-50 myca-caption-strong text-accent-text" aria-hidden="true"><?= $escaper->escapeHtml($space->initials($customer['name'])) ?></span>
+                                        <span class="font-semibold text-fg"><?= $escaper->escapeHtml($customer['name']) ?></span>
+                                    </span>
+                                </td>
+                                <td class="col-span-2 text-fg-secondary md:px-2.5 md:py-2.5 md:text-fg"><?= $escaper->escapeHtml($customer['email']) ?></td>
+                                <td class="text-fg-secondary md:px-2.5 md:py-2.5 md:text-fg"><?= $escaper->escapeHtml($customer['city'] . ' (' . $customer['country'] . ')') ?></td>
+                                <td class="text-fg-secondary md:px-2.5 md:py-2.5 md:text-right md:text-fg"><?= $escaper->escapeHtml(__('%1 cde(s)', count($customer['orders']))) ?></td>
+                                <td class="font-semibold whitespace-nowrap text-fg md:px-2.5 md:py-2.5 md:text-right md:font-normal"><?= $escaper->escapeHtml($space->formatPrice($customer['sales'])) ?></td>
+                                <td class="whitespace-nowrap text-fg-secondary md:px-2.5 md:py-2.5 md:text-fg"><?= $escaper->escapeHtml($block->formatDate($customer['last'], IntlDateFormatter::MEDIUM)) ?></td>
+                                <td class="md:px-2.5 md:py-2.5">
+                                    <?php if ($isLoyal($customer)): ?>
+                                        <span class="myca-badge myca-badge-premium"><?= $escaper->escapeHtml(__('Fidèle')) ?></span>
+                                    <?php elseif ($isActive($customer)): ?>
+                                        <span class="myca-badge myca-badge-success"><?= $escaper->escapeHtml(__('Actif')) ?></span>
+                                    <?php else: ?>
+                                        <span class="myca-badge myca-badge-neutral"><?= $escaper->escapeHtml(__('Inactif')) ?></span>
+                                    <?php endif ?>
+                                </td>
+                                <td class="col-span-2 md:px-2.5 md:py-2">
+                                    <a href="<?= $escaper->escapeUrl($block->getUrl('partenaire/clients', ['_query' => $baseQuery + ['client' => $customer['id']]])) ?>"
+                                       class="inline-flex size-11 items-center justify-center rounded-md text-fg-secondary hover:bg-surface-subtle hover:text-fg md:size-8"
+                                       aria-label="<?= $escaper->escapeHtmlAttr(__('Fiche client : %1', $customer['name'])) ?>">
+                                        <?= $icons->renderHtml('eye', '', 16, 16, ['aria-hidden' => 'true']) ?>
+                                    </a>
+                                </td>
+                            </tr>
+                        <?php endforeach ?>
+                    </tbody>
+                </table>
+            </div>
+        <?php else: ?>
+            <p class="myca-body-s text-fg-secondary"><?= $escaper->escapeHtml(__('Aucun client ne correspond à ces critères. Les clients apparaissent dès votre première commande en dropshipping.')) ?></p>
+        <?php endif ?>
+    </section>
+
+    <?php if ($selected): ?>
+        <?php
+        $orderCount = count($selected['orders']);
+        $stats = [
+            ['cart', __('Commandes'), (string) $orderCount],
+            ['euro', __('Chiffre d’affaires déclaré'), $space->formatPrice($selected['sales'])],
+            ['trend', __('Panier moyen'), $selected['sales'] === null ? '—' : $space->formatPrice($selected['sales'] / $orderCount)],
+        ];
+        ?>
+        <div class="grid gap-4 xl:grid-cols-3">
+            <section class="myca-card p-4 shadow-card" aria-labelledby="myca-customer-card">
+                <h2 id="myca-customer-card" class="myca-card-title">
+                    <?= $icons->renderHtml('user', 'text-accent-text', 18, 18, ['aria-hidden' => 'true']) ?>
+                    <?= $escaper->escapeHtml(__('Fiche client : %1', $selected['name'])) ?>
+                </h2>
+                <div class="flex items-start gap-3">
+                    <span class="flex size-11 shrink-0 items-center justify-center rounded-pill bg-red-50 myca-body-s-strong text-accent-text" aria-hidden="true"><?= $escaper->escapeHtml($space->initials($selected['name'])) ?></span>
+                    <div class="flex min-w-0 flex-col gap-0.5 myca-caption text-fg-secondary">
+                        <span class="myca-h3 text-fg"><?= $escaper->escapeHtml($selected['name']) ?></span>
+                        <span class="break-all"><?= $escaper->escapeHtml($selected['email']) ?></span>
+                        <?php if ($selected['phone'] !== ''): ?><span><?= $escaper->escapeHtml($selected['phone']) ?></span><?php endif ?>
+                        <span><?= $escaper->escapeHtml($selected['city'] . ' – ' . $selected['country']) ?></span>
+                    </div>
+                    <?php if ($isLoyal($selected)): ?>
+                        <span class="ms-auto myca-badge myca-badge-premium"><?= $escaper->escapeHtml(__('Client fidèle')) ?></span>
+                    <?php endif ?>
+                </div>
+            </section>
+
+            <section class="myca-card p-4 shadow-card" aria-labelledby="myca-customer-orders">
+                <h2 id="myca-customer-orders" class="myca-card-title">
+                    <?= $icons->renderHtml('cart', 'text-accent-text', 18, 18, ['aria-hidden' => 'true']) ?>
+                    <?= $escaper->escapeHtml(__('Historique des commandes')) ?>
+                    <span class="myca-caption font-normal text-fg-muted">(<?= (int) $orderCount ?>)</span>
+                </h2>
+                <ul class="flex flex-col">
+                    <?php foreach (array_slice($selected['orders'], 0, 5) as $order): ?>
+                        <?php $orderStatus = $progress->getStatus($order); ?>
+                        <li class="flex items-center gap-2 border-b border-line py-2 myca-body-s">
+                            <a class="font-semibold text-fg hover:underline" href="<?= $escaper->escapeUrl($block->getUrl('partenaire/commandes', ['_query' => ['commande' => $order->getId()]])) ?>"><?= $escaper->escapeHtml($order->getIncrementId()) ?></a>
+                            <span class="text-fg-secondary"><?= $escaper->escapeHtml($block->formatDate($order->getCreatedAt(), IntlDateFormatter::SHORT)) ?></span>
+                            <span class="ms-auto myca-badge myca-badge-<?= $escaper->escapeHtmlAttr($orderStatus['tone']) ?>"><?= $escaper->escapeHtml($orderStatus['label']) ?></span>
+                        </li>
+                    <?php endforeach ?>
+                </ul>
+            </section>
+
+            <section class="myca-card p-4 shadow-card" aria-labelledby="myca-customer-stats">
+                <h2 id="myca-customer-stats" class="myca-card-title">
+                    <?= $icons->renderHtml('chart', 'text-accent-text', 18, 18, ['aria-hidden' => 'true']) ?>
+                    <?= $escaper->escapeHtml(__('Statistiques du client')) ?>
+                </h2>
+                <dl class="flex flex-col">
+                    <?php foreach ($stats as $index => [$icon, $label, $value]): ?>
+                        <div class="flex items-center gap-2.5 px-1 py-2 <?= $index < count($stats) - 1 ? 'border-b border-line' : '' ?>">
+                            <?= $icons->renderHtml($icon, 'shrink-0 text-accent-text', 18, 18, ['aria-hidden' => 'true']) ?>
+                            <dt class="flex-1 myca-body-s text-fg"><?= $escaper->escapeHtml($label) ?></dt>
+                            <dd class="myca-body-s-strong text-fg"><?= $escaper->escapeHtml($value) ?></dd>
+                        </div>
+                    <?php endforeach ?>
+                </dl>
+            </section>
+        </div>
+    <?php endif ?>
+
+    <p class="flex items-start gap-2 rounded-md bg-warning-bg px-3 py-2.5 myca-caption text-warning">
+        <?= $icons->renderHtml('alert', 'mt-px shrink-0', 16, 16, ['aria-hidden' => 'true']) ?>
+        <?= $escaper->escapeHtml(__('Données clients exclusivement liées à votre boutique (aucune visibilité entre boutiques). Elles proviennent des adresses de livraison de vos commandes en dropshipping.')) ?>
+    </p>
+</div>

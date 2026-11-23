@@ -1,0 +1,320 @@
+<?php
+/**
+ * M19 — Mes commandes (partenaire) : indicateurs, filtres par statut, recherche et période, tableau des commandes
+ * de la boutique (tous ses utilisateurs), détail de la commande choisie, suivi et actions rapides.
+ */
+
+declare(strict_types=1);
+
+use Hyva\Theme\Model\ViewModelRegistry;
+use Hyva\Theme\ViewModel\SvgIcons;
+use Magento\Framework\Escaper;
+use Magento\Framework\View\Element\Template;
+use Magento\Sales\Model\Order;
+use Myca\Core\ViewModel\OrderProgress;
+use Myca\Dropship\ViewModel\PartnerSales;
+use Myca\Partner\ViewModel\PartnerSpace;
+
+/** @var Template $block */
+/** @var Escaper $escaper */
+/** @var ViewModelRegistry $viewModels */
+
+$icons = $viewModels->require(SvgIcons::class);
+/** @var PartnerSpace $space */
+$space = $viewModels->require(PartnerSpace::class);
+/** @var PartnerSales $sales */
+$sales = $viewModels->require(PartnerSales::class);
+/** @var OrderProgress $progress */
+$progress = $viewModels->require(OrderProgress::class);
+$request = $block->getRequest();
+
+$orders = $space->getOrders();
+$filters = [
+    'toutes' => ['layers', __('Toutes')],
+    'preparation' => ['box', __('En préparation')],
+    'expediees' => ['truck', __('En transit')],
+    'livrees' => ['check-circle', __('Livrées')],
+    'annulees' => ['refresh', __('Annulées')],
+];
+$labelsByFilter = [
+    'preparation' => [(string) __('En préparation'), (string) __('En attente')],
+    'expediees' => [(string) __('Expédiée')],
+    'livrees' => [(string) __('Livrée')],
+    'annulees' => [(string) __('Annulée'), (string) __('Remboursée')],
+];
+$matchesStatus = static function (Order $order, string $filter) use ($progress, $labelsByFilter): bool {
+    return match ($filter) {
+        'toutes' => true,
+        'en-cours' => $progress->isInProgress($order),
+        default => in_array($progress->getStatus($order)['label'], $labelsByFilter[$filter] ?? [], true),
+    };
+};
+$periods = ['30' => __('30 derniers jours'), '90' => __('3 derniers mois'), '365' => __('12 derniers mois'), 'tout' => __('Toute la période')];
+
+$status = (string) $request->getParam('statut', 'toutes');
+$status = isset($filters[$status]) || $status === 'en-cours' ? $status : 'toutes';
+$period = (string) $request->getParam('periode', 'tout');
+$period = isset($periods[$period]) ? $period : 'tout';
+$query = trim((string) $request->getParam('q'));
+
+$since = $period === 'tout' ? 0 : strtotime('-' . (int) $period . ' days');
+$matchesSearch = static function (Order $order) use ($query): bool {
+    if ($query === '') {
+        return true;
+    }
+    $haystack = [$order->getIncrementId(), $order->getShippingAddress()?->getName() ?? ''];
+    foreach ($order->getAllVisibleItems() as $item) {
+        $haystack[] = $item->getName();
+        $haystack[] = $item->getSku();
+    }
+
+    return mb_stripos(implode(' ', $haystack), $query) !== false;
+};
+$inScope = array_values(array_filter(
+    $orders,
+    static fn (Order $order) => strtotime((string) $order->getCreatedAt()) >= $since && $matchesSearch($order)
+));
+$visible = array_values(array_filter($inScope, static fn (Order $order) => $matchesStatus($order, $status)));
+$selected = $space->pickOrder($visible);
+$baseQuery = array_filter(['q' => $query, 'periode' => $period === 'tout' ? null : $period]);
+
+$count = static fn (string $filter) => count(array_filter($orders, static fn (Order $order) => $matchesStatus($order, $filter)));
+$kpis = [
+    ['icon' => 'cart', 'label' => __('Total commandes'), 'value' => (string) count($orders)],
+    ['icon' => 'box', 'label' => __('En préparation'), 'value' => (string) $count('preparation')],
+    ['icon' => 'truck', 'label' => __('En transit'), 'value' => (string) $count('expediees')],
+    ['icon' => 'check-circle', 'label' => __('Livrées'), 'value' => (string) $count('livrees')],
+];
+$modeLabels = ['dropship' => __('Dropshipping'), 'stock' => __('Achat de stock')];
+?>
+<div class="flex flex-col gap-4">
+    <?= $block->getLayout()->createBlock(Template::class)->setTemplate('Myca_Partner::partials/kpis.phtml')->setData('kpis', $kpis)->toHtml() ?>
+
+    <nav aria-label="<?= $escaper->escapeHtmlAttr(__('Filtrer par statut')) ?>">
+        <ul class="flex flex-wrap gap-2">
+            <?php foreach ($filters as $code => [$icon, $label]): ?>
+                <?php $n = count(array_filter($inScope, static fn (Order $order) => $matchesStatus($order, $code))); ?>
+                <li>
+                    <a href="<?= $escaper->escapeUrl($block->getUrl('partenaire/commandes', ['_query' => $baseQuery + ($code === 'toutes' ? [] : ['statut' => $code])])) ?>"
+                       class="myca-btn <?= $code === $status ? 'myca-btn-primary' : 'myca-btn-secondary' ?>"
+                       <?= $code === $status ? 'aria-current="page"' : '' ?>>
+                        <?= $icons->renderHtml($icon, '', 16, 16, ['aria-hidden' => 'true']) ?><?= $escaper->escapeHtml($label) ?> (<?= (int) $n ?>)
+                    </a>
+                </li>
+            <?php endforeach ?>
+        </ul>
+    </nav>
+
+    <form method="get" action="<?= $escaper->escapeUrl($block->getUrl('partenaire/commandes')) ?>"
+          class="grid gap-3 md:grid-cols-[minmax(0,1fr)_200px_auto_auto] md:items-end">
+        <?php if ($status !== 'toutes'): ?>
+            <input type="hidden" name="statut" value="<?= $escaper->escapeHtmlAttr($status) ?>">
+        <?php endif ?>
+        <div>
+            <label for="myca-orders-q" class="sr-only"><?= $escaper->escapeHtml(__('Rechercher une commande')) ?></label>
+            <input id="myca-orders-q" type="search" name="q" value="<?= $escaper->escapeHtmlAttr($query) ?>" class="myca-field"
+                   placeholder="<?= $escaper->escapeHtmlAttr(__('Rechercher une commande (n°, référence, modèle, destinataire…)')) ?>">
+        </div>
+        <div>
+            <label for="myca-orders-period" class="myca-field-label"><?= $escaper->escapeHtml(__('Période')) ?></label>
+            <select id="myca-orders-period" name="periode" class="myca-field">
+                <?php foreach ($periods as $code => $label): ?>
+                    <option value="<?= $escaper->escapeHtmlAttr($code) ?>" <?= $code === $period ? 'selected' : '' ?>><?= $escaper->escapeHtml($label) ?></option>
+                <?php endforeach ?>
+            </select>
+        </div>
+        <button type="submit" class="myca-btn myca-btn-dark"><?= $icons->renderHtml('search', '', 16, 16, ['aria-hidden' => 'true']) ?><?= $escaper->escapeHtml(__('Rechercher')) ?></button>
+        <a href="<?= $escaper->escapeUrl($block->getUrl('partenaire/commandes')) ?>" class="myca-btn myca-btn-secondary">
+            <?= $icons->renderHtml('refresh', '', 16, 16, ['aria-hidden' => 'true']) ?><?= $escaper->escapeHtml(__('Réinitialiser')) ?>
+        </a>
+    </form>
+
+    <section class="myca-card p-4 shadow-card" aria-labelledby="myca-partner-orders">
+        <h2 id="myca-partner-orders" class="sr-only"><?= $escaper->escapeHtml(__('Commandes')) ?></h2>
+        <?php if ($visible): ?>
+            <div class="relative md:overflow-x-auto">
+                <table class="w-full myca-body-s">
+                    <thead class="hidden md:table-header-group">
+                        <tr class="bg-surface-subtle text-left myca-caption-strong text-fg-secondary">
+                            <th scope="col" class="px-2.5 py-2"><?= $escaper->escapeHtml(__('N° commande')) ?></th>
+                            <th scope="col" class="px-2.5 py-2"><?= $escaper->escapeHtml(__('Date')) ?></th>
+                            <th scope="col" class="px-2.5 py-2"><?= $escaper->escapeHtml(__('Destinataire')) ?></th>
+                            <th scope="col" class="px-2.5 py-2"><?= $escaper->escapeHtml(__('Mode')) ?></th>
+                            <th scope="col" class="px-2.5 py-2"><?= $escaper->escapeHtml(__('Produits')) ?></th>
+                            <th scope="col" class="px-2.5 py-2 text-right"><?= $escaper->escapeHtml(__('Quantité')) ?></th>
+                            <th scope="col" class="px-2.5 py-2 text-right"><?= $escaper->escapeHtml(__('Montant HT')) ?></th>
+                            <th scope="col" class="px-2.5 py-2"><?= $escaper->escapeHtml(__('Statut')) ?></th>
+                            <th scope="col" class="px-2.5 py-2"><?= $escaper->escapeHtml(__('Expédition')) ?></th>
+                            <th scope="col" class="px-2.5 py-2"><span class="sr-only"><?= $escaper->escapeHtml(__('Actions')) ?></span></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($visible as $order): ?>
+                            <?php
+                            $isSelected = $selected && $order->getId() === $selected->getId();
+                            $orderStatus = $progress->getStatus($order);
+                            $items = $order->getAllVisibleItems();
+                            $first = reset($items) ?: null;
+                            $qty = array_sum(array_map(static fn ($item) => (float) $item->getQtyOrdered(), $items));
+                            $tracks = $order->getTracksCollection()->getItems();
+                            $track = reset($tracks) ?: null;
+                            $mode = $sales->getMode($order);
+                            $invoice = $order->getInvoiceCollection()->getFirstItem();
+                            ?>
+                            <tr class="grid grid-cols-[1fr_auto] gap-x-3 gap-y-1 border-b border-line py-3 md:table-row md:py-0 <?= $isSelected ? 'md:bg-red-50' : '' ?>">
+                                <td class="font-semibold whitespace-nowrap text-fg md:px-2.5 md:py-3"><?= $escaper->escapeHtml($order->getIncrementId()) ?></td>
+                                <td class="whitespace-nowrap text-fg-secondary md:px-2.5 md:py-3 md:text-fg"><?= $escaper->escapeHtml($block->formatDate($order->getCreatedAt(), IntlDateFormatter::MEDIUM)) ?></td>
+                                <td class="text-fg md:px-2.5 md:py-3"><?= $escaper->escapeHtml($order->getShippingAddress()?->getName() ?? '') ?></td>
+                                <td class="md:px-2.5 md:py-3">
+                                    <?php if ($mode): ?>
+                                        <span class="myca-badge <?= $mode === 'dropship' ? 'myca-badge-info' : 'myca-badge-premium' ?>"><?= $escaper->escapeHtml($modeLabels[$mode] ?? $mode) ?></span>
+                                    <?php endif ?>
+                                </td>
+                                <td class="col-span-2 md:px-2.5 md:py-3">
+                                    <?php if ($first): ?>
+                                        <?= $escaper->escapeHtml($first->getName()) ?><?= count($items) > 1 ? $escaper->escapeHtml(' +' . (count($items) - 1)) : '' ?>
+                                    <?php endif ?>
+                                </td>
+                                <td class="text-fg-secondary md:px-2.5 md:py-3 md:text-right md:text-fg"><?= $escaper->escapeHtml(__('%1 pcs', (float) $qty)) ?></td>
+                                <td class="font-semibold whitespace-nowrap text-fg md:px-2.5 md:py-3 md:text-right md:font-normal"><?= /* @noEscape */ $order->formatPrice($space->getAmountExclTax($order)) ?></td>
+                                <td class="md:px-2.5 md:py-3"><span class="myca-badge myca-badge-<?= $escaper->escapeHtmlAttr($orderStatus['tone']) ?>"><?= $escaper->escapeHtml($orderStatus['label']) ?></span></td>
+                                <td class="whitespace-nowrap text-fg-secondary md:px-2.5 md:py-3 md:text-fg">
+                                    <?= $track ? $escaper->escapeHtml($track->getTitle() . ' – ' . $track->getTrackNumber()) : '—' ?>
+                                </td>
+                                <td class="col-span-2 md:px-2.5 md:py-2">
+                                    <span class="flex items-center gap-1">
+                                        <a href="<?= $escaper->escapeUrl($block->getUrl('partenaire/commandes', ['_query' => $baseQuery + array_filter(['statut' => $status === 'toutes' ? null : $status, 'commande' => $order->getId()])])) ?>"
+                                           class="inline-flex size-11 items-center justify-center rounded-md text-fg-secondary hover:bg-surface-subtle hover:text-fg md:size-8"
+                                           aria-label="<?= $escaper->escapeHtmlAttr(__('Afficher le détail de la commande %1', $order->getIncrementId())) ?>">
+                                            <?= $icons->renderHtml('eye', '', 16, 16, ['aria-hidden' => 'true']) ?>
+                                        </a>
+                                        <?php if ($invoice && $invoice->getId()): ?>
+                                            <a href="<?= $escaper->escapeUrl($block->getUrl('sales/order/invoice', ['order_id' => $order->getId()])) ?>"
+                                               class="inline-flex size-11 items-center justify-center rounded-md text-fg-secondary hover:bg-surface-subtle hover:text-fg md:size-8"
+                                               aria-label="<?= $escaper->escapeHtmlAttr(__('Facture de la commande %1', $order->getIncrementId())) ?>">
+                                                <?= $icons->renderHtml('file', '', 16, 16, ['aria-hidden' => 'true']) ?>
+                                            </a>
+                                        <?php endif ?>
+                                        <a href="<?= $escaper->escapeUrl($block->getUrl('sales/order/print', ['order_id' => $order->getId()])) ?>"
+                                           class="inline-flex size-11 items-center justify-center rounded-md text-fg-secondary hover:bg-surface-subtle hover:text-fg md:size-8"
+                                           aria-label="<?= $escaper->escapeHtmlAttr(__('Imprimer le bon de commande %1', $order->getIncrementId())) ?>">
+                                            <?= $icons->renderHtml('download', '', 16, 16, ['aria-hidden' => 'true']) ?>
+                                        </a>
+                                    </span>
+                                </td>
+                            </tr>
+                        <?php endforeach ?>
+                    </tbody>
+                </table>
+            </div>
+        <?php else: ?>
+            <p class="myca-body-s text-fg-secondary"><?= $escaper->escapeHtml(__('Aucune commande ne correspond à ces critères.')) ?></p>
+        <?php endif ?>
+    </section>
+
+    <?php if ($selected): ?>
+        <?php
+        $items = $selected->getAllVisibleItems();
+        $first = reset($items) ?: null;
+        $amountExclTax = $space->getAmountExclTax($selected);
+        $declared = $sales->getDeclaredAmount($selected);
+        $invoice = $selected->getInvoiceCollection()->getFirstItem();
+        $address = $selected->getShippingAddress();
+        ?>
+        <div class="grid gap-4 xl:grid-cols-[minmax(0,570fr)_minmax(0,260fr)_minmax(0,262fr)]">
+            <section class="myca-card p-4 shadow-card" aria-labelledby="myca-order-detail">
+                <h2 id="myca-order-detail" class="myca-card-title">
+                    <?= $icons->renderHtml('cart', 'text-accent-text', 18, 18, ['aria-hidden' => 'true']) ?>
+                    <?= $escaper->escapeHtml(__('Détail de la commande : %1', $selected->getIncrementId())) ?>
+                </h2>
+                <div class="grid gap-4 md:grid-cols-[150px_minmax(0,1fr)_minmax(0,220px)]">
+                    <?php if ($first): ?>
+                        <img src="<?= $escaper->escapeUrl($space->getProductImageUrl($first->getProduct())) ?>" alt=""
+                             class="hidden size-[150px] object-contain md:block" width="150" height="150" loading="lazy">
+                    <?php endif ?>
+                    <div class="flex flex-col gap-3">
+                        <table class="w-full myca-body-s">
+                            <thead>
+                                <tr class="bg-surface-subtle text-left myca-caption-strong text-fg-secondary">
+                                    <th scope="col" class="px-2.5 py-2"><?= $escaper->escapeHtml(__('Article')) ?></th>
+                                    <th scope="col" class="px-2.5 py-2 text-right"><?= $escaper->escapeHtml(__('Qté')) ?></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php foreach ($items as $item): ?>
+                                    <tr class="border-b border-line">
+                                        <td class="px-2.5 py-2 text-fg"><?= $escaper->escapeHtml($item->getName()) ?><span class="block myca-caption text-fg-muted"><?= $escaper->escapeHtml(__('Réf. %1', $item->getSku())) ?></span></td>
+                                        <td class="px-2.5 py-2 text-right text-fg"><?= (float) $item->getQtyOrdered() ?></td>
+                                    </tr>
+                                <?php endforeach ?>
+                            </tbody>
+                        </table>
+                        <?php if ($address): ?>
+                            <p class="myca-caption text-fg-secondary">
+                                <span class="font-semibold text-fg"><?= $escaper->escapeHtml(__('Livraison :')) ?></span>
+                                <?= $escaper->escapeHtml($address->getName() . ', ' . implode(' ', $address->getStreet()) . ', ' . $address->getPostcode() . ' ' . $address->getCity()) ?>
+                            </p>
+                        <?php endif ?>
+                    </div>
+                    <dl class="flex flex-col gap-1.5 myca-body-s">
+                        <div class="flex justify-between gap-3"><dt class="text-fg-secondary"><?= $escaper->escapeHtml(__('Sous-total HT')) ?></dt><dd class="font-semibold text-fg"><?= /* @noEscape */ $selected->formatPrice($selected->getSubtotal()) ?></dd></div>
+                        <?php if ((float) $selected->getDiscountAmount() !== 0.0): ?>
+                            <div class="flex justify-between gap-3"><dt class="text-fg-secondary"><?= $escaper->escapeHtml(__('Remise partenaire')) ?></dt><dd class="font-semibold text-success"><?= /* @noEscape */ $selected->formatPrice($selected->getDiscountAmount()) ?></dd></div>
+                        <?php endif ?>
+                        <div class="flex justify-between gap-3"><dt class="text-fg-secondary"><?= $escaper->escapeHtml(__('Livraison HT')) ?></dt><dd class="font-semibold text-fg"><?= /* @noEscape */ $selected->formatPrice($selected->getShippingAmount()) ?></dd></div>
+                        <div class="flex justify-between gap-3"><dt class="text-fg-secondary"><?= $escaper->escapeHtml(__('Total HT')) ?></dt><dd class="font-semibold text-fg"><?= /* @noEscape */ $selected->formatPrice($amountExclTax) ?></dd></div>
+                        <div class="flex justify-between gap-3"><dt class="text-fg-secondary"><?= $escaper->escapeHtml(__('TVA')) ?></dt><dd class="font-semibold text-fg"><?= /* @noEscape */ $selected->formatPrice($selected->getTaxAmount()) ?></dd></div>
+                        <div class="mt-1 flex justify-between gap-3 rounded-md bg-gold-100 px-3 py-2"><dt class="font-semibold text-fg"><?= $escaper->escapeHtml(__('Total TTC')) ?></dt><dd class="font-bold text-fg"><?= /* @noEscape */ $selected->formatPrice($selected->getGrandTotal()) ?></dd></div>
+                        <?php if ($declared !== null): ?>
+                            <div class="mt-2 flex justify-between gap-3 border-t border-line pt-2"><dt class="text-fg-secondary"><?= $escaper->escapeHtml(__('Prix de vente déclaré HT')) ?></dt><dd class="font-semibold text-fg"><?= /* @noEscape */ $selected->formatPrice($declared) ?></dd></div>
+                            <div class="flex justify-between gap-3"><dt class="text-fg-secondary"><?= $escaper->escapeHtml(__('Marge estimée')) ?></dt><dd class="font-semibold <?= $declared - $amountExclTax >= 0 ? 'text-success' : 'text-danger' ?>"><?= /* @noEscape */ $selected->formatPrice($declared - $amountExclTax) ?></dd></div>
+                        <?php endif ?>
+                    </dl>
+                </div>
+            </section>
+
+            <section class="myca-card p-4 shadow-card" aria-labelledby="myca-order-tracking">
+                <h2 id="myca-order-tracking" class="myca-card-title">
+                    <?= $icons->renderHtml('truck', 'text-accent-text', 18, 18, ['aria-hidden' => 'true']) ?>
+                    <?= $escaper->escapeHtml(__('Suivi de la commande')) ?>
+                </h2>
+                <?= $block->getLayout()->createBlock(Template::class)->setTemplate('Magento_Sales::order/myca-tracking.phtml')->setData('order', $selected)->toHtml() ?>
+            </section>
+
+            <section class="myca-card p-4 shadow-card" aria-labelledby="myca-order-actions">
+                <h2 id="myca-order-actions" class="myca-card-title">
+                    <?= $icons->renderHtml('zap', 'text-accent-text', 18, 18, ['aria-hidden' => 'true']) ?>
+                    <?= $escaper->escapeHtml(__('Actions rapides')) ?>
+                </h2>
+                <ul class="flex flex-col gap-2.5">
+                    <li>
+                        <a href="<?= $escaper->escapeUrl($block->getUrl('partenaire/livraisons', ['_query' => ['commande' => $selected->getId()]])) ?>" class="myca-btn myca-btn-primary w-full justify-between text-left whitespace-normal">
+                            <span class="flex items-center gap-2"><?= $icons->renderHtml('map-pin', '', 16, 16, ['aria-hidden' => 'true']) ?><?= $escaper->escapeHtml(__('Suivre la livraison')) ?></span>
+                            <?= $icons->renderHtml('chevron-right', '', 16, 16, ['aria-hidden' => 'true']) ?>
+                        </a>
+                    </li>
+                    <?php if ($invoice && $invoice->getId()): ?>
+                        <li>
+                            <a href="<?= $escaper->escapeUrl($block->getUrl('sales/order/invoice', ['order_id' => $selected->getId()])) ?>" class="myca-btn myca-btn-secondary w-full justify-between text-left whitespace-normal">
+                                <span class="flex items-center gap-2"><?= $icons->renderHtml('file', 'text-accent-text', 16, 16, ['aria-hidden' => 'true']) ?><?= $escaper->escapeHtml(__('Voir la facture')) ?></span>
+                                <?= $icons->renderHtml('chevron-right', '', 16, 16, ['aria-hidden' => 'true']) ?>
+                            </a>
+                        </li>
+                    <?php endif ?>
+                    <li>
+                        <a href="<?= $escaper->escapeUrl($block->getUrl('sales/order/print', ['order_id' => $selected->getId()])) ?>" class="myca-btn myca-btn-secondary w-full justify-between text-left whitespace-normal">
+                            <span class="flex items-center gap-2"><?= $icons->renderHtml('download', 'text-accent-text', 16, 16, ['aria-hidden' => 'true']) ?><?= $escaper->escapeHtml(__('Imprimer le bon de commande')) ?></span>
+                            <?= $icons->renderHtml('chevron-right', '', 16, 16, ['aria-hidden' => 'true']) ?>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="<?= $escaper->escapeUrl($block->getUrl('', ['_direct' => 'contact'])) ?>" class="myca-btn myca-btn-secondary w-full justify-between text-left whitespace-normal">
+                            <span class="flex items-center gap-2"><?= $icons->renderHtml('headset', 'text-accent-text', 16, 16, ['aria-hidden' => 'true']) ?><?= $escaper->escapeHtml(__('Contacter le support')) ?></span>
+                            <?= $icons->renderHtml('chevron-right', '', 16, 16, ['aria-hidden' => 'true']) ?>
+                        </a>
+                    </li>
+                </ul>
+            </section>
+        </div>
+    <?php endif ?>
+</div>

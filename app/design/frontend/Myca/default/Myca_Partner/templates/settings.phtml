@@ -1,0 +1,109 @@
+<?php
+/**
+ * M26 — Paramètres de mon espace : paramètres généraux (lecture), sécurité et accès (liens Magento),
+ * notifications de l'utilisateur connecté (enregistrées) et équipe de la boutique.
+ * Vente & catalogue, livraison, paiement et intégrations : à définir avec MYCA (non affichés).
+ */
+
+declare(strict_types=1);
+
+use Hyva\Theme\Model\ViewModelRegistry;
+use Hyva\Theme\ViewModel\SvgIcons;
+use Magento\Framework\Escaper;
+use Magento\Framework\View\Element\Template;
+use Myca\Partner\ViewModel\PartnerSpace;
+
+/** @var Template $block */
+/** @var Escaper $escaper */
+/** @var ViewModelRegistry $viewModels */
+
+$icons = $viewModels->require(SvgIcons::class);
+/** @var PartnerSpace $space */
+$space = $viewModels->require(PartnerSpace::class);
+$partner = $space->getPartner();
+if ($partner === null) {
+    return;
+}
+$roles = ['owner' => __('Titulaire'), 'staff' => __('Collaborateur')];
+$security = [
+    ['key', __('Modifier mon mot de passe'), $block->getUrl('customer/account/edit', ['changepass' => 1])],
+    ['user', __('Modifier mes informations de connexion'), $block->getUrl('customer/account/edit')],
+    ['logout', __('Me déconnecter'), $block->getUrl('customer/account/logout')],
+];
+?>
+<div class="flex flex-col gap-4">
+    <div class="grid gap-4 xl:grid-cols-3">
+        <section class="myca-card flex flex-col gap-3 p-4 shadow-card" aria-labelledby="myca-settings-general">
+            <h2 id="myca-settings-general" class="myca-card-title mb-0"><?= $icons->renderHtml('settings', 'text-accent-text', 18, 18, ['aria-hidden' => 'true']) ?><?= $escaper->escapeHtml(__('Paramètres généraux')) ?></h2>
+            <dl class="flex flex-col gap-3 myca-body-s">
+                <?php foreach ([
+                    [__('Nom de la boutique'), $partner->getCompanyName()],
+                    [__('N° de partenaire'), $partner->getCode()],
+                    [__('Langue de l’interface'), __('Français')],
+                    [__('Devise'), __('Euro (€)')],
+                ] as [$label, $value]): ?>
+                    <div>
+                        <dt class="myca-field-label"><?= $escaper->escapeHtml($label) ?></dt>
+                        <dd class="rounded-md border border-line bg-surface-subtle px-3 py-2 text-fg"><?= $escaper->escapeHtml($value) ?></dd>
+                    </div>
+                <?php endforeach ?>
+            </dl>
+            <a href="<?= $escaper->escapeUrl($block->getUrl('partenaire/profil')) ?>" class="myca-btn myca-btn-secondary self-start">
+                <?= $icons->renderHtml('edit', '', 16, 16, ['aria-hidden' => 'true']) ?><?= $escaper->escapeHtml(__('Modifier le profil boutique')) ?>
+            </a>
+        </section>
+
+        <section class="myca-card flex flex-col p-4 shadow-card" aria-labelledby="myca-settings-security">
+            <h2 id="myca-settings-security" class="myca-card-title"><?= $icons->renderHtml('lock', 'text-accent-text', 18, 18, ['aria-hidden' => 'true']) ?><?= $escaper->escapeHtml(__('Sécurité & accès')) ?></h2>
+            <ul class="flex flex-col">
+                <?php foreach ($security as [$icon, $label, $url]): ?>
+                    <li class="border-b border-line last:border-b-0">
+                        <a href="<?= $escaper->escapeUrl($url) ?>" class="flex min-h-11 items-center gap-2.5 py-2 myca-body-s text-fg hover:text-accent-text">
+                            <?= $icons->renderHtml($icon, 'shrink-0 text-accent-text', 18, 18, ['aria-hidden' => 'true']) ?>
+                            <span class="flex-1"><?= $escaper->escapeHtml($label) ?></span>
+                            <?= $icons->renderHtml('chevron-right', 'shrink-0 text-fg-secondary', 16, 16, ['aria-hidden' => 'true']) ?>
+                        </a>
+                    </li>
+                <?php endforeach ?>
+            </ul>
+        </section>
+
+        <form method="post" action="<?= $escaper->escapeUrl($block->getUrl('partenaire/parametres/save')) ?>"
+              class="myca-card flex flex-col p-4 shadow-card" aria-labelledby="myca-settings-notifications">
+            <?= $block->getBlockHtml('formkey') ?>
+            <h2 id="myca-settings-notifications" class="myca-card-title"><?= $icons->renderHtml('bell', 'text-accent-text', 18, 18, ['aria-hidden' => 'true']) ?><?= $escaper->escapeHtml(__('Notifications')) ?></h2>
+            <?php foreach ($space->getNotificationPreferences() as $code => $preference): ?>
+                <?= $block->getLayout()->createBlock(Template::class)->setTemplate('Myca_Partner::partials/switch.phtml')
+                    ->setData(['name' => 'notifications[' . $code . ']', 'label' => $preference['label'], 'checked' => $preference['enabled']])
+                    ->toHtml() ?>
+            <?php endforeach ?>
+            <button type="submit" class="myca-btn myca-btn-primary mt-3 self-stretch">
+                <?= $icons->renderHtml('check', '', 16, 16, ['aria-hidden' => 'true']) ?><?= $escaper->escapeHtml(__('Enregistrer les paramètres')) ?>
+            </button>
+        </form>
+    </div>
+
+    <section class="myca-card p-4 shadow-card" aria-labelledby="myca-settings-team">
+        <h2 id="myca-settings-team" class="myca-card-title"><?= $icons->renderHtml('users', 'text-accent-text', 18, 18, ['aria-hidden' => 'true']) ?><?= $escaper->escapeHtml(__('Équipe & accès')) ?></h2>
+        <ul class="grid gap-2 md:grid-cols-2 2xl:grid-cols-3">
+            <?php foreach ($space->getUsers() as $user): ?>
+                <?php $name = $user['firstname'] . ' ' . $user['lastname']; ?>
+                <li class="flex items-center gap-3 rounded-md border border-line p-3">
+                    <span class="flex size-9 shrink-0 items-center justify-center rounded-pill bg-red-50 myca-caption-strong text-accent-text" aria-hidden="true"><?= $escaper->escapeHtml($space->initials($name)) ?></span>
+                    <span class="flex min-w-0 flex-1 flex-col">
+                        <span class="myca-body-s-strong text-fg"><?= $escaper->escapeHtml($name) ?></span>
+                        <span class="truncate myca-caption text-fg-secondary"><?= $escaper->escapeHtml($user['email']) ?></span>
+                    </span>
+                    <span class="myca-badge myca-badge-neutral"><?= $escaper->escapeHtml($roles[$user['role']] ?? $user['role']) ?></span>
+                    <span class="myca-badge myca-badge-success"><?= $escaper->escapeHtml(__('Actif')) ?></span>
+                </li>
+            <?php endforeach ?>
+        </ul>
+        <p class="mt-3 myca-caption text-fg-muted"><?= $escaper->escapeHtml(__('Pour ajouter ou retirer un utilisateur, contactez le Service Partenaire.')) ?></p>
+    </section>
+
+    <p class="flex items-start gap-2 rounded-md bg-info-bg px-3 py-2.5 myca-caption text-info">
+        <?= $icons->renderHtml('info', 'mt-px shrink-0', 16, 16, ['aria-hidden' => 'true']) ?>
+        <?= $escaper->escapeHtml(__('Les prix conseillés ne sont jamais imposés à la boutique. Toute modification sensible du compte passe par le Service Partenaire.')) ?>
+    </p>
+</div>

@@ -1,0 +1,47 @@
+<?php
+/**
+ * Bandeau des écrans partenaires (Figma « Bandeau/Partenaire B2B ») : surtitre or, titre serif italique,
+ * description, photo de campagne avec traits rouges, emblème « MYCA® Collections Sportswear ».
+ * Textes fournis par la mise en page de chaque écran (arguments kicker, title, subtitle).
+ */
+
+declare(strict_types=1);
+
+use Hyva\Theme\Model\ViewModelRegistry;
+use Hyva\Theme\ViewModel\SvgIcons;
+use Magento\Framework\Escaper;
+use Magento\Framework\View\Element\Template;
+
+/** @var Template $block */
+/** @var Escaper $escaper */
+/** @var ViewModelRegistry $viewModels */
+
+$icons = $viewModels->require(SvgIcons::class);
+?>
+<section class="mb-4 flex items-stretch gap-4 overflow-hidden rounded-lg bg-hero text-white md:min-h-[132px] md:pe-5">
+    <div class="flex min-w-0 flex-1 flex-col justify-center gap-0.5 p-5 md:py-4 md:ps-8 md:pe-0">
+        <p class="myca-overline text-gold-400"><?= $escaper->escapeHtml((string) $block->getData('kicker')) ?></p>
+        <h1 class="myca-hero text-white"><?= $escaper->escapeHtml((string) $block->getData('title')) ?></h1>
+        <p class="myca-body-m"><?= $escaper->escapeHtml((string) $block->getData('subtitle')) ?></p>
+    </div>
+    <div class="relative hidden w-[300px] shrink-0 overflow-hidden lg:block 2xl:w-[520px]" aria-hidden="true">
+        <img
+            src="<?= $escaper->escapeUrl($block->getViewFileUrl('images/espace-partenaire-bandeau.webp')) ?>"
+            alt=""
+            class="absolute inset-0 size-full object-cover"
+            width="520"
+            height="132"
+        >
+        <span class="absolute inset-y-0 left-0 w-40 bg-gradient-to-r from-hero to-transparent"></span>
+        <img src="<?= $escaper->escapeUrl($block->getViewFileUrl('images/bandeau-b2b-trait-plein.svg')) ?>" alt=""
+             class="absolute top-0 right-0 h-full w-[50px]" width="50" height="132">
+        <img src="<?= $escaper->escapeUrl($block->getViewFileUrl('images/bandeau-b2b-trait-oblique.svg')) ?>" alt=""
+             class="absolute top-0 right-[14px] h-full w-[66px]" width="66" height="132">
+    </div>
+    <div class="hidden h-[118px] w-[150px] shrink-0 flex-col items-center justify-center gap-0.5 self-center rounded-pill border-2 border-gold-500 xl:flex" aria-hidden="true">
+        <?= $icons->renderHtml('crown', 'text-gold-400', 18, 18) ?>
+        <span class="font-display text-2xl leading-[26px] font-bold">MYCA®</span>
+        <span class="text-[9px] leading-[11px] font-semibold tracking-[0.2em] text-gold-400">COLLECTIONS</span>
+        <span class="text-[9px] leading-[11px] font-semibold tracking-[0.2em] text-gold-400">SPORTSWEAR</span>
+    </div>
+</section>

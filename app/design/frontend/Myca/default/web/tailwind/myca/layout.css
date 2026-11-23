@@ -91,6 +91,11 @@
     margin-block: --spacing(4);
 }
 
+/* Les colonnes héritent du conteneur du site (1200 px) : les espaces client et partenaire occupent toute la largeur. */
+.account .columns {
+    max-width: none;
+}
+
 .account {
     background-color: var(--myca-surface-page);
 }

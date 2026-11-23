@@ -1,0 +1,252 @@
+<?php
+/**
+ * M20 — Suivi des livraisons : indicateurs, filtres, expéditions de la boutique (n° de suivi, transporteur,
+ * destination), détail de l'expédition choisie, étapes réelles et actions. Pas de carte ni de pourcentage
+ * d'acheminement : ils dépendent de l'API des transporteurs (aucune donnée inventée).
+ */
+
+declare(strict_types=1);
+
+use Hyva\Theme\Model\ViewModelRegistry;
+use Hyva\Theme\ViewModel\SvgIcons;
+use Magento\Framework\Escaper;
+use Magento\Framework\View\Element\Template;
+use Magento\Sales\Model\Order;
+use Magento\Sales\Model\Order\Shipment;
+use Myca\Core\ViewModel\OrderProgress;
+use Myca\Partner\ViewModel\PartnerSpace;
+
+/** @var Template $block */
+/** @var Escaper $escaper */
+/** @var ViewModelRegistry $viewModels */
+
+$icons = $viewModels->require(SvgIcons::class);
+/** @var PartnerSpace $space */
+$space = $viewModels->require(PartnerSpace::class);
+/** @var OrderProgress $progress */
+$progress = $viewModels->require(OrderProgress::class);
+$request = $block->getRequest();
+
+$ordersById = [];
+foreach ($space->getOrders() as $order) {
+    $ordersById[(int) $order->getId()] = $order;
+}
+$isDelivered = static fn (Order $order) => $progress->getStatus($order)['label'] === (string) __('Livrée');
+$rows = [];
+foreach ($space->getShipments() as $shipment) {
+    $order = $ordersById[(int) $shipment->getOrderId()] ?? null;
+    if ($order === null) {
+        continue;
+    }
+    $tracks = $shipment->getAllTracks();
+    $rows[] = ['shipment' => $shipment, 'order' => $order, 'track' => reset($tracks) ?: null, 'delivered' => $isDelivered($order)];
+}
+
+$filters = ['toutes' => ['truck', __('Toutes les livraisons')], 'transit' => ['truck', __('En transit')], 'livrees' => ['check-circle', __('Livrées')]];
+$status = (string) $request->getParam('statut', 'toutes');
+$status = isset($filters[$status]) ? $status : 'toutes';
+$query = trim((string) $request->getParam('q'));
+$matches = static function (array $row, string $filter) use ($query): bool {
+    if (($filter === 'transit' && $row['delivered']) || ($filter === 'livrees' && !$row['delivered'])) {
+        return false;
+    }
+    if ($query === '') {
+        return true;
+    }
+    $haystack = implode(' ', [
+        $row['order']->getIncrementId(),
+        $row['track']?->getTrackNumber() ?? '',
+        $row['order']->getShippingAddress()?->getName() ?? '',
+        $row['order']->getShippingAddress()?->getCity() ?? '',
+    ]);
+
+    return mb_stripos($haystack, $query) !== false;
+};
+$visible = array_values(array_filter($rows, static fn (array $row) => $matches($row, $status)));
+$selectedOrderId = (int) $request->getParam('commande');
+$selected = $visible[0] ?? null;
+foreach ($visible as $row) {
+    if ((int) $row['order']->getId() === $selectedOrderId) {
+        $selected = $row;
+        break;
+    }
+}
+
+$delays = array_map(
+    static fn (array $row) => (strtotime((string) $row['shipment']->getCreatedAt()) - strtotime((string) $row['order']->getCreatedAt())) / 86400,
+    $rows
+);
+$preparing = count(array_filter($space->getOrders(), static fn (Order $order) => in_array(
+    $progress->getStatus($order)['label'],
+    [(string) __('En préparation'), (string) __('En attente')],
+    true
+)));
+$kpis = [
+    ['icon' => 'truck', 'label' => __('Livraisons en cours'), 'value' => (string) count(array_filter($rows, static fn ($row) => !$row['delivered']))],
+    ['icon' => 'check-circle', 'label' => __('Livrées'), 'value' => (string) count(array_filter($rows, static fn ($row) => $row['delivered']))],
+    ['icon' => 'box', 'label' => __('En préparation'), 'value' => (string) $preparing],
+    ['icon' => 'clock', 'label' => __('Délai moyen d’expédition'),
+        'value' => $delays ? __('%1 jours', number_format(array_sum($delays) / count($delays), 1, ',', ' ')) : '—', 'detail' => __('mesuré')],
+];
+$baseQuery = array_filter(['q' => $query, 'statut' => $status === 'toutes' ? null : $status]);
+?>
+<div class="flex flex-col gap-4">
+    <?= $block->getLayout()->createBlock(Template::class)->setTemplate('Myca_Partner::partials/kpis.phtml')->setData('kpis', $kpis)->toHtml() ?>
+
+    <nav aria-label="<?= $escaper->escapeHtmlAttr(__('Filtrer les livraisons')) ?>">
+        <ul class="flex flex-wrap gap-2">
+            <?php foreach ($filters as $code => [$icon, $label]): ?>
+                <li>
+                    <a href="<?= $escaper->escapeUrl($block->getUrl('partenaire/livraisons', ['_query' => array_filter(['q' => $query, 'statut' => $code === 'toutes' ? null : $code])])) ?>"
+                       class="myca-btn <?= $code === $status ? 'myca-btn-primary' : 'myca-btn-secondary' ?>" <?= $code === $status ? 'aria-current="page"' : '' ?>>
+                        <?= $icons->renderHtml($icon, '', 16, 16, ['aria-hidden' => 'true']) ?><?= $escaper->escapeHtml($label) ?>
+                        (<?= (int) count(array_filter($rows, static fn (array $row) => $matches($row, $code))) ?>)
+                    </a>
+                </li>
+            <?php endforeach ?>
+        </ul>
+    </nav>
+
+    <form method="get" action="<?= $escaper->escapeUrl($block->getUrl('partenaire/livraisons')) ?>" class="grid gap-3 md:grid-cols-[minmax(0,1fr)_auto_auto]">
+        <?php if ($status !== 'toutes'): ?>
+            <input type="hidden" name="statut" value="<?= $escaper->escapeHtmlAttr($status) ?>">
+        <?php endif ?>
+        <label for="myca-shipments-q" class="sr-only"><?= $escaper->escapeHtml(__('Rechercher une livraison')) ?></label>
+        <input id="myca-shipments-q" type="search" name="q" value="<?= $escaper->escapeHtmlAttr($query) ?>" class="myca-field"
+               placeholder="<?= $escaper->escapeHtmlAttr(__('Rechercher (n° commande, n° suivi, client, ville…)')) ?>">
+        <button type="submit" class="myca-btn myca-btn-dark"><?= $icons->renderHtml('search', '', 16, 16, ['aria-hidden' => 'true']) ?><?= $escaper->escapeHtml(__('Rechercher')) ?></button>
+        <a href="<?= $escaper->escapeUrl($block->getUrl('partenaire/livraisons')) ?>" class="myca-btn myca-btn-secondary"><?= $icons->renderHtml('refresh', '', 16, 16, ['aria-hidden' => 'true']) ?><?= $escaper->escapeHtml(__('Réinitialiser')) ?></a>
+    </form>
+
+    <section class="myca-card p-4 shadow-card" aria-labelledby="myca-partner-shipments">
+        <h2 id="myca-partner-shipments" class="sr-only"><?= $escaper->escapeHtml(__('Expéditions')) ?></h2>
+        <?php if ($visible): ?>
+            <div class="relative md:overflow-x-auto">
+                <table class="w-full myca-body-s">
+                    <thead class="hidden md:table-header-group">
+                        <tr class="bg-surface-subtle text-left myca-caption-strong text-fg-secondary">
+                            <th scope="col" class="px-2.5 py-2"><?= $escaper->escapeHtml(__('N° commande')) ?></th>
+                            <th scope="col" class="px-2.5 py-2"><?= $escaper->escapeHtml(__('N° suivi')) ?></th>
+                            <th scope="col" class="px-2.5 py-2"><?= $escaper->escapeHtml(__('Transporteur')) ?></th>
+                            <th scope="col" class="px-2.5 py-2"><?= $escaper->escapeHtml(__('Destination')) ?></th>
+                            <th scope="col" class="px-2.5 py-2"><?= $escaper->escapeHtml(__('Expédition')) ?></th>
+                            <th scope="col" class="px-2.5 py-2"><?= $escaper->escapeHtml(__('Statut')) ?></th>
+                            <th scope="col" class="px-2.5 py-2"><span class="sr-only"><?= $escaper->escapeHtml(__('Détail')) ?></span></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($visible as $row): ?>
+                            <?php
+                            /** @var Order $order */
+                            $order = $row['order'];
+                            /** @var Shipment $shipment */
+                            $shipment = $row['shipment'];
+                            $address = $order->getShippingAddress();
+                            $isSelected = $selected && $selected['shipment']->getId() === $shipment->getId();
+                            ?>
+                            <tr class="grid grid-cols-[1fr_auto] gap-x-3 gap-y-1 border-b border-line py-3 md:table-row md:py-0 <?= $isSelected ? 'md:bg-red-50' : '' ?>">
+                                <td class="font-semibold whitespace-nowrap text-fg md:px-2.5 md:py-3"><?= $escaper->escapeHtml($order->getIncrementId()) ?></td>
+                                <td class="whitespace-nowrap text-fg md:px-2.5 md:py-3"><?= $escaper->escapeHtml($row['track']?->getTrackNumber() ?? '—') ?></td>
+                                <td class="text-fg-secondary md:px-2.5 md:py-3 md:text-fg">
+                                    <span class="flex items-center gap-1.5"><?= $icons->renderHtml('box', 'shrink-0', 14, 14, ['aria-hidden' => 'true']) ?><?= $escaper->escapeHtml($row['track']?->getTitle() ?? __('Non communiqué')) ?></span>
+                                </td>
+                                <td class="text-fg-secondary md:px-2.5 md:py-3 md:text-fg"><?= $escaper->escapeHtml($address ? $address->getCity() . ' (' . $address->getCountryId() . ')' : '—') ?></td>
+                                <td class="whitespace-nowrap text-fg-secondary md:px-2.5 md:py-3 md:text-fg"><?= $escaper->escapeHtml($block->formatDate($shipment->getCreatedAt(), IntlDateFormatter::MEDIUM)) ?></td>
+                                <td class="md:px-2.5 md:py-3">
+                                    <span class="myca-badge <?= $row['delivered'] ? 'myca-badge-success' : 'myca-badge-info' ?>"><?= $escaper->escapeHtml($row['delivered'] ? __('Livrée') : __('En transit')) ?></span>
+                                </td>
+                                <td class="col-span-2 md:px-2.5 md:py-2">
+                                    <a href="<?= $escaper->escapeUrl($block->getUrl('partenaire/livraisons', ['_query' => $baseQuery + ['commande' => $order->getId()]])) ?>"
+                                       class="inline-flex size-11 items-center justify-center rounded-md text-fg-secondary hover:bg-surface-subtle hover:text-fg md:size-8"
+                                       aria-label="<?= $escaper->escapeHtmlAttr(__('Détail de la livraison %1', $order->getIncrementId())) ?>">
+                                        <?= $icons->renderHtml('eye', '', 16, 16, ['aria-hidden' => 'true']) ?>
+                                    </a>
+                                </td>
+                            </tr>
+                        <?php endforeach ?>
+                    </tbody>
+                </table>
+            </div>
+        <?php else: ?>
+            <p class="myca-body-s text-fg-secondary"><?= $escaper->escapeHtml(__('Aucune expédition ne correspond à ces critères.')) ?></p>
+        <?php endif ?>
+    </section>
+
+    <?php if ($selected): ?>
+        <?php
+        /** @var Order $order */
+        $order = $selected['order'];
+        $address = $order->getShippingAddress();
+        $items = $order->getAllVisibleItems();
+        $first = reset($items) ?: null;
+        $details = [
+            [__('Commande'), $order->getIncrementId()],
+            [__('N° suivi'), $selected['track']?->getTrackNumber() ?? '—'],
+            [__('Transporteur'), $selected['track']?->getTitle() ?? __('Non communiqué')],
+            [__('Destination'), $address ? $address->getPostcode() . ' ' . $address->getCity() . ', ' . $address->getCountryId() : '—'],
+            [__('Expédiée le'), $block->formatDate($selected['shipment']->getCreatedAt(), IntlDateFormatter::MEDIUM)],
+        ];
+        ?>
+        <div class="grid gap-4 xl:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_minmax(0,0.8fr)]">
+            <section class="myca-card p-4 shadow-card" aria-labelledby="myca-shipment-detail">
+                <h2 id="myca-shipment-detail" class="myca-card-title">
+                    <?= $icons->renderHtml('truck', 'text-accent-text', 18, 18, ['aria-hidden' => 'true']) ?>
+                    <?= $escaper->escapeHtml(__('Détail de la livraison : %1', $order->getIncrementId())) ?>
+                </h2>
+                <div class="flex gap-4">
+                    <?php if ($first): ?>
+                        <img src="<?= $escaper->escapeUrl($space->getProductImageUrl($first->getProduct())) ?>" alt=""
+                             class="hidden size-[120px] shrink-0 object-contain sm:block" width="120" height="120" loading="lazy">
+                    <?php endif ?>
+                    <div class="flex min-w-0 flex-1 flex-col gap-2">
+                        <?php if ($first): ?>
+                            <p class="myca-body-s-strong text-fg"><?= $escaper->escapeHtml($first->getName()) ?><?= count($items) > 1 ? $escaper->escapeHtml(' +' . (count($items) - 1)) : '' ?></p>
+                        <?php endif ?>
+                        <dl class="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1.5 myca-caption">
+                            <?php foreach ($details as [$label, $value]): ?>
+                                <dt class="text-fg-secondary"><?= $escaper->escapeHtml($label) ?></dt>
+                                <dd class="text-right font-semibold text-fg"><?= $escaper->escapeHtml((string) $value) ?></dd>
+                            <?php endforeach ?>
+                        </dl>
+                    </div>
+                </div>
+            </section>
+
+            <section class="myca-card p-4 shadow-card" aria-labelledby="myca-shipment-tracking">
+                <h2 id="myca-shipment-tracking" class="myca-card-title">
+                    <?= $icons->renderHtml('map-pin', 'text-accent-text', 18, 18, ['aria-hidden' => 'true']) ?>
+                    <?= $escaper->escapeHtml(__('Suivi')) ?>
+                </h2>
+                <?= $block->getLayout()->createBlock(Template::class)->setTemplate('Magento_Sales::order/myca-tracking.phtml')->setData('order', $order)->toHtml() ?>
+                <p class="mt-3 myca-caption text-fg-muted"><?= $escaper->escapeHtml(__('Étapes horodatées par MYCA. Le suivi détaillé du transporteur sera affiché une fois son API connectée.')) ?></p>
+            </section>
+
+            <section class="myca-card p-4 shadow-card" aria-labelledby="myca-shipment-actions">
+                <h2 id="myca-shipment-actions" class="myca-card-title">
+                    <?= $icons->renderHtml('zap', 'text-accent-text', 18, 18, ['aria-hidden' => 'true']) ?>
+                    <?= $escaper->escapeHtml(__('Actions rapides')) ?>
+                </h2>
+                <ul class="flex flex-col gap-2.5">
+                    <li>
+                        <a href="<?= $escaper->escapeUrl($block->getUrl('partenaire/commandes', ['_query' => ['commande' => $order->getId()]])) ?>" class="myca-btn myca-btn-secondary w-full justify-between text-left whitespace-normal">
+                            <span class="flex items-center gap-2"><?= $icons->renderHtml('layers', 'text-accent-text', 16, 16, ['aria-hidden' => 'true']) ?><?= $escaper->escapeHtml(__('Voir la commande')) ?></span>
+                            <?= $icons->renderHtml('chevron-right', '', 16, 16, ['aria-hidden' => 'true']) ?>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="<?= $escaper->escapeUrl($block->getUrl('', ['_direct' => 'contact'])) ?>" class="myca-btn myca-btn-secondary w-full justify-between text-left whitespace-normal">
+                            <span class="flex items-center gap-2"><?= $icons->renderHtml('alert', 'text-accent-text', 16, 16, ['aria-hidden' => 'true']) ?><?= $escaper->escapeHtml(__('Signaler un problème de livraison')) ?></span>
+                            <?= $icons->renderHtml('chevron-right', '', 16, 16, ['aria-hidden' => 'true']) ?>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="<?= $escaper->escapeUrl($block->getUrl('', ['_direct' => 'contact'])) ?>" class="myca-btn myca-btn-secondary w-full justify-between text-left whitespace-normal">
+                            <span class="flex items-center gap-2"><?= $icons->renderHtml('headset', 'text-accent-text', 16, 16, ['aria-hidden' => 'true']) ?><?= $escaper->escapeHtml(__('Contacter le support')) ?></span>
+                            <?= $icons->renderHtml('chevron-right', '', 16, 16, ['aria-hidden' => 'true']) ?>
+                        </a>
+                    </li>
+                </ul>
+            </section>
+        </div>
+    <?php endif ?>
+</div>

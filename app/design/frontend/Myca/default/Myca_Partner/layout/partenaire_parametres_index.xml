@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<page xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:noNamespaceSchemaLocation="urn:magento:framework:View/Layout/etc/page_configuration.xsd">
+    <update handle="myca_partner_space"/>
+    <body>
+        <referenceBlock name="myca.partner.banner">
+            <arguments>
+                <argument name="kicker" xsi:type="string" translate="true">PARAMÈTRES</argument>
+                <argument name="title" xsi:type="string" translate="true">Paramètres de mon espace</argument>
+                <argument name="subtitle" xsi:type="string" translate="true">Personnalisez vos notifications et gérez l’accès de votre équipe.</argument>
+            </arguments>
+        </referenceBlock>
+        <referenceContainer name="content">
+            <block name="myca.partner.page" template="Myca_Partner::settings.phtml" after="myca.partner.banner"/>
+        </referenceContainer>
+    </body>
+</page>
