@@ -1,0 +1,37 @@
+<?php
+/**
+ * Ajustement manuel d'un solde : e-mail du client, points (négatif pour retirer), motif visible du client.
+ */
+
+declare(strict_types=1);
+
+use Magento\Backend\Block\Template;
+use Magento\Framework\Escaper;
+
+/** @var Template $block */
+/** @var Escaper $escaper */
+?>
+<form method="post" action="<?= $escaper->escapeUrl($block->getUrl('myca_loyalty/transaction/adjustPost')) ?>" class="admin__fieldset">
+    <input type="hidden" name="form_key" value="<?= $escaper->escapeHtmlAttr($block->getFormKey()) ?>">
+    <input type="hidden" name="token" value="<?= $escaper->escapeHtmlAttr(bin2hex(random_bytes(16))) ?>">
+    <div class="admin__field _required">
+        <label class="admin__field-label" for="myca-loyalty-email"><span><?= $escaper->escapeHtml(__('E-mail du client')) ?></span></label>
+        <div class="admin__field-control"><input id="myca-loyalty-email" type="email" name="email" required class="admin__control-text"></div>
+    </div>
+    <div class="admin__field _required">
+        <label class="admin__field-label" for="myca-loyalty-points"><span><?= $escaper->escapeHtml(__('Points')) ?></span></label>
+        <div class="admin__field-control">
+            <input id="myca-loyalty-points" type="number" name="points" step="1" required class="admin__control-text">
+            <div class="admin__field-note"><?= $escaper->escapeHtml(__('Nombre négatif pour retirer des points. Le mouvement s’ajoute au journal ; il ne remplace rien.')) ?></div>
+        </div>
+    </div>
+    <div class="admin__field _required">
+        <label class="admin__field-label" for="myca-loyalty-reason"><span><?= $escaper->escapeHtml(__('Motif (visible du client)')) ?></span></label>
+        <div class="admin__field-control"><input id="myca-loyalty-reason" type="text" name="reason" maxlength="255" required class="admin__control-text"></div>
+    </div>
+    <div class="admin__field">
+        <div class="admin__field-control">
+            <button type="submit" class="action-primary"><?= $escaper->escapeHtml(__('Enregistrer l’ajustement')) ?></button>
+        </div>
+    </div>
+</form>

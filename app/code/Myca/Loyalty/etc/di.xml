@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="urn:magento:framework:ObjectManager/etc/config.xsd">
+    <type name="Magento\SalesRule\Model\Utility">
+        <plugin name="myca_loyalty_restrict_voucher" type="Myca\Loyalty\Plugin\RestrictVoucherToOwner"/>
+    </type>
+    <!-- Journal fidélité dans l'administration (ui_component myca_loyalty_transaction_listing). -->
+    <virtualType name="Myca\Loyalty\Model\ResourceModel\Transaction\Grid\Collection"
+                 type="Magento\Framework\View\Element\UiComponent\DataProvider\SearchResult">
+        <arguments>
+            <argument name="mainTable" xsi:type="string">myca_loyalty_transaction</argument>
+            <argument name="resourceModel" xsi:type="string">Myca\Loyalty\Model\ResourceModel\Transaction</argument>
+        </arguments>
+    </virtualType>
+    <type name="Magento\Framework\View\Element\UiComponent\DataProvider\CollectionFactory">
+        <arguments>
+            <argument name="collections" xsi:type="array">
+                <item name="myca_loyalty_transaction_listing_data_source" xsi:type="string">Myca\Loyalty\Model\ResourceModel\Transaction\Grid\Collection</item>
+            </argument>
+        </arguments>
+    </type>
+</config>

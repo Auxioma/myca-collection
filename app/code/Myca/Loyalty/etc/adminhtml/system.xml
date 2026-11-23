@@ -1,0 +1,40 @@
+<?xml version="1.0"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Config:etc/system_file.xsd">
+    <system>
+        <section id="myca_loyalty" translate="label" sortOrder="60" showInDefault="1" showInWebsite="1">
+            <label>Programme fidélité</label>
+            <tab>myca</tab>
+            <resource>Myca_Loyalty::config</resource>
+            <group id="program" translate="label comment" sortOrder="10" showInDefault="1" showInWebsite="1">
+                <label>Règles du programme</label>
+                <comment>Règlement, barème et exemples soumis à validation commerciale. Les valeurs ne sont pas contractuelles tant qu’elles ne figurent pas dans les CGV.</comment>
+                <field id="enabled" translate="label comment" type="select" sortOrder="10" showInDefault="1" showInWebsite="1" canRestore="1">
+                    <label>Activer le programme</label>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                    <comment>Désactivé, aucun point n’est crédité et la rubrique n’apparaît pas dans l’espace client.</comment>
+                </field>
+                <field id="points_per_euro" translate="label comment" type="text" sortOrder="20" showInDefault="1" showInWebsite="1" canRestore="1">
+                    <label>Points par euro éligible</label>
+                    <validate>required-entry validate-number validate-zero-or-greater</validate>
+                    <comment>Montant payé TTC par ligne, après remises, hors frais de livraison. Arrondi à l’entier inférieur, ligne par ligne.</comment>
+                </field>
+                <field id="rewards" translate="label comment" type="text" sortOrder="30" showInDefault="1" showInWebsite="1">
+                    <label>Récompenses (points=euros)</label>
+                    <backend_model>Myca\Loyalty\Model\Config\Backend\Rewards</backend_model>
+                    <comment>Paliers de bons d’achat séparés par des virgules, par exemple « 100=6, 150=10 ».</comment>
+                </field>
+                <field id="expiry_months" translate="label comment" type="text" sortOrder="40" showInDefault="1" showInWebsite="1" canRestore="1">
+                    <label>Expiration après inactivité (mois)</label>
+                    <validate>validate-digits validate-zero-or-greater</validate>
+                    <comment>Les points utilisables expirent si aucun point n’a été gagné pendant cette durée. 0 = pas d’expiration.</comment>
+                </field>
+                <field id="b2b_enabled" translate="label comment" type="select" sortOrder="50" showInDefault="1" showInWebsite="1" canRestore="1">
+                    <label>Points sur les commandes des boutiques partenaires</label>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                    <comment>Non par défaut (cahier des charges) : seules les commandes B2C rapportent des points.</comment>
+                </field>
+            </group>
+        </section>
+    </system>
+</config>

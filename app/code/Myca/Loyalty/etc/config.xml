@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Store:etc/config.xsd">
+    <default>
+        <myca_loyalty>
+            <program>
+                <enabled>0</enabled>
+                <points_per_euro>1</points_per_euro>
+                <rewards/>
+                <expiry_months>0</expiry_months>
+                <b2b_enabled>0</b2b_enabled>
+            </program>
+        </myca_loyalty>
+    </default>
+</config>

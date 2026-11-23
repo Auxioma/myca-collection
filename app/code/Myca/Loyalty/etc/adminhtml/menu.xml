@@ -1,0 +1,8 @@
+<?xml version="1.0"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Backend:etc/menu.xsd">
+    <menu>
+        <add id="Myca_Loyalty::loyalty" title="Programme fidélité" translate="title" module="Myca_Loyalty" sortOrder="60"
+             parent="Magento_Customer::customer" action="myca_loyalty/transaction/index" resource="Myca_Loyalty::loyalty"/>
+    </menu>
+</config>

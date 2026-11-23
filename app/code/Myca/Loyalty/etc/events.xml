@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="urn:magento:framework:Event/etc/events.xsd">
+    <!-- Commande enregistrée (vitrine, administration, API) : points en attente, bon fidélité marqué utilisé. -->
+    <event name="checkout_submit_all_after">
+        <observer name="myca_loyalty_earn" instance="Myca\Loyalty\Observer\EarnOnOrderPlaced"/>
+    </event>
+    <event name="order_cancel_after">
+        <observer name="myca_loyalty_cancel" instance="Myca\Loyalty\Observer\CancelOnOrderCanceled"/>
+    </event>
+    <event name="sales_order_creditmemo_save_after">
+        <observer name="myca_loyalty_refund" instance="Myca\Loyalty\Observer\RemoveOnRefund"/>
+    </event>
+</config>

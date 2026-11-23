@@ -1,0 +1,81 @@
+<?xml version="1.0"?>
+<!--
+    Programme fidélité. Le journal (myca_loyalty_transaction) est la source de vérité : on n'y fait qu'ajouter des
+    lignes, chacune avec une clé d'unicité qui empêche toute double attribution. myca_loyalty_account n'est qu'un
+    solde tenu à jour dans la même transaction, verrouillé pendant chaque mouvement.
+-->
+<schema xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="urn:magento:framework:Setup/Declaration/Schema/etc/schema.xsd">
+    <table name="myca_loyalty_account" resource="default" engine="innodb" comment="MYCA - Solde fidélité par client">
+        <column xsi:type="int" name="customer_id" unsigned="true" nullable="false"/>
+        <column xsi:type="int" name="available" unsigned="false" nullable="false" default="0" comment="Points utilisables (peut être négatif après un retour)"/>
+        <column xsi:type="int" name="pending" unsigned="false" nullable="false" default="0" comment="Points en attente de validation"/>
+        <column xsi:type="timestamp" name="updated_at" nullable="false" default="CURRENT_TIMESTAMP" on_update="true"/>
+        <constraint xsi:type="primary" referenceId="PRIMARY">
+            <column name="customer_id"/>
+        </constraint>
+        <constraint xsi:type="foreign" referenceId="MYCA_LOYALTY_ACCOUNT_CUSTOMER_ID_CUSTOMER_ENTITY_ENTITY_ID"
+                    table="myca_loyalty_account" column="customer_id" referenceTable="customer_entity" referenceColumn="entity_id" onDelete="CASCADE"/>
+    </table>
+
+    <table name="myca_loyalty_transaction" resource="default" engine="innodb" comment="MYCA - Journal fidélité (ajout seul)">
+        <column xsi:type="int" name="transaction_id" unsigned="true" nullable="false" identity="true"/>
+        <column xsi:type="varchar" name="idempotency_key" length="128" nullable="false" comment="Empêche qu'un même événement compte deux fois"/>
+        <column xsi:type="int" name="customer_id" unsigned="true" nullable="false"/>
+        <column xsi:type="int" name="order_id" unsigned="true" nullable="true"/>
+        <column xsi:type="varchar" name="order_increment_id" length="50" nullable="true"/>
+        <column xsi:type="int" name="order_item_id" unsigned="true" nullable="true"/>
+        <column xsi:type="int" name="creditmemo_id" unsigned="true" nullable="true"/>
+        <column xsi:type="int" name="voucher_id" unsigned="true" nullable="true"/>
+        <column xsi:type="varchar" name="event" length="16" nullable="false" comment="earn, validate, cancel, refund, redeem, restore, expire, adjust"/>
+        <column xsi:type="int" name="pending_delta" unsigned="false" nullable="false" default="0"/>
+        <column xsi:type="int" name="available_delta" unsigned="false" nullable="false" default="0"/>
+        <column xsi:type="int" name="pending_before" unsigned="false" nullable="false"/>
+        <column xsi:type="int" name="pending_after" unsigned="false" nullable="false"/>
+        <column xsi:type="int" name="available_before" unsigned="false" nullable="false"/>
+        <column xsi:type="int" name="available_after" unsigned="false" nullable="false"/>
+        <column xsi:type="varchar" name="reason" length="255" nullable="false"/>
+        <column xsi:type="varchar" name="author" length="255" nullable="false" comment="system, client, nom de l'administrateur"/>
+        <column xsi:type="timestamp" name="created_at" nullable="false" default="CURRENT_TIMESTAMP"/>
+        <constraint xsi:type="primary" referenceId="PRIMARY">
+            <column name="transaction_id"/>
+        </constraint>
+        <constraint xsi:type="unique" referenceId="MYCA_LOYALTY_TRANSACTION_IDEMPOTENCY_KEY">
+            <column name="idempotency_key"/>
+        </constraint>
+        <constraint xsi:type="foreign" referenceId="MYCA_LOYALTY_TRANSACTION_CUSTOMER_ID_CUSTOMER_ENTITY_ENTITY_ID"
+                    table="myca_loyalty_transaction" column="customer_id" referenceTable="customer_entity" referenceColumn="entity_id" onDelete="CASCADE"/>
+        <index referenceId="MYCA_LOYALTY_TRANSACTION_CUSTOMER_ID" indexType="btree">
+            <column name="customer_id"/>
+        </index>
+        <index referenceId="MYCA_LOYALTY_TRANSACTION_ORDER_ITEM_ID" indexType="btree">
+            <column name="order_item_id"/>
+        </index>
+        <index referenceId="MYCA_LOYALTY_TRANSACTION_ORDER_ID" indexType="btree">
+            <column name="order_id"/>
+        </index>
+    </table>
+
+    <table name="myca_loyalty_voucher" resource="default" engine="innodb" comment="MYCA - Bons d'achat fidélité">
+        <column xsi:type="int" name="voucher_id" unsigned="true" nullable="false" identity="true"/>
+        <column xsi:type="int" name="customer_id" unsigned="true" nullable="false"/>
+        <column xsi:type="int" name="rule_id" unsigned="true" nullable="false" comment="Règle panier Magento à usage unique"/>
+        <column xsi:type="varchar" name="code" length="64" nullable="false"/>
+        <column xsi:type="decimal" name="amount" scale="4" precision="12" unsigned="true" nullable="false"/>
+        <column xsi:type="int" name="points" unsigned="true" nullable="false"/>
+        <column xsi:type="varchar" name="status" length="16" nullable="false" default="active" comment="active, used, restored"/>
+        <column xsi:type="int" name="order_id" unsigned="true" nullable="true" comment="Commande où le bon a été utilisé"/>
+        <column xsi:type="timestamp" name="created_at" nullable="false" default="CURRENT_TIMESTAMP"/>
+        <constraint xsi:type="primary" referenceId="PRIMARY">
+            <column name="voucher_id"/>
+        </constraint>
+        <constraint xsi:type="unique" referenceId="MYCA_LOYALTY_VOUCHER_CODE">
+            <column name="code"/>
+        </constraint>
+        <constraint xsi:type="unique" referenceId="MYCA_LOYALTY_VOUCHER_RULE_ID">
+            <column name="rule_id"/>
+        </constraint>
+        <constraint xsi:type="foreign" referenceId="MYCA_LOYALTY_VOUCHER_CUSTOMER_ID_CUSTOMER_ENTITY_ENTITY_ID"
+                    table="myca_loyalty_voucher" column="customer_id" referenceTable="customer_entity" referenceColumn="entity_id" onDelete="CASCADE"/>
+    </table>
+</schema>

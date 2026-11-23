@@ -1,0 +1,65 @@
+{
+    "myca_loyalty_account": {
+        "column": {
+            "customer_id": true,
+            "available": true,
+            "pending": true,
+            "updated_at": true
+        },
+        "constraint": {
+            "PRIMARY": true,
+            "MYCA_LOYALTY_ACCOUNT_CUSTOMER_ID_CUSTOMER_ENTITY_ENTITY_ID": true
+        }
+    },
+    "myca_loyalty_transaction": {
+        "column": {
+            "transaction_id": true,
+            "idempotency_key": true,
+            "customer_id": true,
+            "order_id": true,
+            "order_increment_id": true,
+            "order_item_id": true,
+            "creditmemo_id": true,
+            "voucher_id": true,
+            "event": true,
+            "pending_delta": true,
+            "available_delta": true,
+            "pending_before": true,
+            "pending_after": true,
+            "available_before": true,
+            "available_after": true,
+            "reason": true,
+            "author": true,
+            "created_at": true
+        },
+        "index": {
+            "MYCA_LOYALTY_TRANSACTION_CUSTOMER_ID": true,
+            "MYCA_LOYALTY_TRANSACTION_ORDER_ITEM_ID": true,
+            "MYCA_LOYALTY_TRANSACTION_ORDER_ID": true
+        },
+        "constraint": {
+            "PRIMARY": true,
+            "MYCA_LOYALTY_TRANSACTION_IDEMPOTENCY_KEY": true,
+            "MYCA_LOYALTY_TRANSACTION_CUSTOMER_ID_CUSTOMER_ENTITY_ENTITY_ID": true
+        }
+    },
+    "myca_loyalty_voucher": {
+        "column": {
+            "voucher_id": true,
+            "customer_id": true,
+            "rule_id": true,
+            "code": true,
+            "amount": true,
+            "points": true,
+            "status": true,
+            "order_id": true,
+            "created_at": true
+        },
+        "constraint": {
+            "PRIMARY": true,
+            "MYCA_LOYALTY_VOUCHER_CODE": true,
+            "MYCA_LOYALTY_VOUCHER_RULE_ID": true,
+            "MYCA_LOYALTY_VOUCHER_CUSTOMER_ID_CUSTOMER_ENTITY_ENTITY_ID": true
+        }
+    }
+}
