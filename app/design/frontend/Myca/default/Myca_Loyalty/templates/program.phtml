@@ -1,0 +1,239 @@
+<?php
+/**
+ * M36 — Mon programme fidélité : points utilisables et en attente, prochaine récompense, progression par paliers,
+ * façons de gagner (règles actives seulement), récompenses, bons d'achat, historique et totaux exigés par le
+ * cahier des charges (disponibles, en attente, utilisés, annulés, expirés).
+ */
+
+declare(strict_types=1);
+
+use Hyva\Theme\Model\ViewModelRegistry;
+use Hyva\Theme\ViewModel\SvgIcons;
+use Magento\Framework\Escaper;
+use Magento\Framework\View\Element\Template;
+use Myca\Loyalty\ViewModel\Program;
+
+/** @var Template $block */
+/** @var Escaper $escaper */
+/** @var ViewModelRegistry $viewModels */
+
+$icons = $viewModels->require(SvgIcons::class);
+/** @var Program $program */
+$program = $viewModels->require(Program::class);
+$account = $program->getAccount();
+$totals = $program->getTotals();
+$rewards = $program->getRewards();
+$next = $program->getNextReward();
+$vouchers = $program->getActiveVouchers();
+$showAll = $block->getRequest()->getParam('historique') === 'tout';
+$history = $program->getHistory($showAll ? null : 5);
+$available = $account['available'];
+$points = static fn (int $value) => __('%1 points', number_format($value, 0, ',', "\u{202F}"));
+?>
+<div class="flex min-w-0 flex-col gap-4">
+    <div class="grid gap-3 md:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]">
+        <div class="myca-card flex items-center gap-3 p-4 shadow-card">
+            <?= $icons->renderHtml('gift', 'shrink-0 text-icon-kpi', 28, 28, ['aria-hidden' => 'true']) ?>
+            <span class="flex flex-col">
+                <span class="myca-caption-strong text-fg-secondary"><?= $escaper->escapeHtml(__('Mes points fidélité')) ?></span>
+                <span class="text-[22px] leading-7 font-bold text-fg"><?= $escaper->escapeHtml($points($available)) ?></span>
+                <?php if ($account['pending'] > 0): ?>
+                    <span class="myca-caption text-fg-muted"><?= $escaper->escapeHtml(__('+ %1 en attente de validation', $points($account['pending']))) ?></span>
+                <?php endif ?>
+            </span>
+        </div>
+        <div class="myca-card flex items-center gap-3 p-4 shadow-card">
+            <?= $icons->renderHtml('award', 'shrink-0 text-icon-kpi', 28, 28, ['aria-hidden' => 'true']) ?>
+            <span class="flex flex-col">
+                <span class="myca-caption-strong text-fg-secondary"><?= $escaper->escapeHtml(__('Ma prochaine récompense')) ?></span>
+                <?php if ($next): ?>
+                    <span class="text-[22px] leading-7 font-bold text-fg"><?= $escaper->escapeHtml(__('Bon d’achat de %1', $program->formatPrice($next['amount']))) ?></span>
+                    <span class="myca-caption text-fg-muted"><?= $escaper->escapeHtml(__('à %1', $points($next['points']))) ?></span>
+                <?php elseif ($rewards): ?>
+                    <span class="text-lg leading-6 font-bold text-fg"><?= $escaper->escapeHtml(__('Toutes les récompenses sont à votre portée')) ?></span>
+                <?php else: ?>
+                    <span class="myca-body-s text-fg-secondary"><?= $escaper->escapeHtml(__('Les récompenses seront bientôt annoncées.')) ?></span>
+                <?php endif ?>
+            </span>
+        </div>
+        <?php if ($rewards): ?>
+            <div class="flex flex-wrap items-start gap-2.5 md:col-span-2 xl:col-span-1">
+                <a href="#myca-loyalty-rewards" class="myca-btn myca-btn-primary"><?= $icons->renderHtml('gift', '', 16, 16, ['aria-hidden' => 'true']) ?><?= $escaper->escapeHtml(__('Utiliser mes points')) ?></a>
+            </div>
+        <?php endif ?>
+    </div>
+
+    <?php if ($rewards): ?>
+        <section class="myca-card p-4" aria-labelledby="myca-loyalty-progress">
+            <h2 id="myca-loyalty-progress" class="myca-card-title"><?= $icons->renderHtml('trend', '', 18, 18, ['aria-hidden' => 'true']) ?><?= $escaper->escapeHtml(__('Ma progression')) ?></h2>
+            <ol class="flex items-start overflow-x-auto pb-1">
+                <?php $index = 0; foreach ([0 => null] + $rewards as $threshold => $amount): ?>
+                    <?php $reached = $available >= $threshold; ?>
+                    <?php if ($index++ > 0): ?>
+                        <li class="min-w-2 flex-1 pt-4" aria-hidden="true"><span class="block h-[3px] rounded-[2px] <?= $reached ? 'bg-green-600' : 'bg-gray-300' ?>"></span></li>
+                    <?php endif ?>
+                    <li class="flex min-w-14 flex-col items-center gap-1 text-center sm:min-w-[72px]">
+                        <span class="flex size-8 items-center justify-center rounded-pill <?= $reached ? 'bg-green-600 text-white' : 'border border-line-strong bg-surface-subtle text-fg-secondary' ?>">
+                            <?= $icons->renderHtml($amount === null ? 'star' : 'gift', '', 16, 16, ['aria-hidden' => 'true']) ?>
+                        </span>
+                        <span class="text-xs leading-4 font-semibold text-fg"><?= $escaper->escapeHtml($amount === null ? __('0 pt') : $points($threshold)) ?></span>
+                        <?php if ($amount !== null): ?>
+                            <span class="myca-caption text-fg-muted"><?= $escaper->escapeHtml(__('bon de %1', $program->formatPrice($amount))) ?></span>
+                        <?php endif ?>
+                        <span class="sr-only"><?= $escaper->escapeHtml($reached ? __('atteint') : __('à atteindre')) ?></span>
+                    </li>
+                <?php endforeach ?>
+            </ol>
+        </section>
+    <?php endif ?>
+
+    <div class="grid gap-4 xl:grid-cols-3">
+        <section class="myca-card p-4" aria-labelledby="myca-loyalty-earn">
+            <h2 id="myca-loyalty-earn" class="myca-card-title"><?= $icons->renderHtml('info', '', 18, 18, ['aria-hidden' => 'true']) ?><?= $escaper->escapeHtml(__('Comment gagner des points ?')) ?></h2>
+            <ul class="flex flex-col divide-y divide-line">
+                <li class="flex gap-3 py-2.5">
+                    <?= $icons->renderHtml('cart', 'mt-0.5 shrink-0 text-fg', 18, 18, ['aria-hidden' => 'true']) ?>
+                    <span class="flex flex-col">
+                        <span class="myca-body-s-strong text-fg"><?= $escaper->escapeHtml(__('Vos achats sur la boutique')) ?></span>
+                        <span class="myca-caption text-fg-secondary">
+                            <?= $escaper->escapeHtml(__('1 € dépensé (montant éligible, après remise, hors livraison) = %1', $program->getPointsPerEuro() === 1.0 ? __('1 point') : __('%1 points', $program->getPointsPerEuro()))) ?>
+                        </span>
+                    </span>
+                </li>
+                <li class="flex gap-3 py-2.5">
+                    <?= $icons->renderHtml('clock', 'mt-0.5 shrink-0 text-fg', 18, 18, ['aria-hidden' => 'true']) ?>
+                    <span class="flex flex-col">
+                        <span class="myca-body-s-strong text-fg"><?= $escaper->escapeHtml(__('Quand sont-ils utilisables ?')) ?></span>
+                        <span class="myca-caption text-fg-secondary"><?= $escaper->escapeHtml(__('Vos points restent en attente jusqu’à la fin du délai de retour de votre commande livrée, puis deviennent utilisables.')) ?></span>
+                    </span>
+                </li>
+                <li class="flex gap-3 py-2.5">
+                    <?= $icons->renderHtml('refresh', 'mt-0.5 shrink-0 text-fg', 18, 18, ['aria-hidden' => 'true']) ?>
+                    <span class="flex flex-col">
+                        <span class="myca-body-s-strong text-fg"><?= $escaper->escapeHtml(__('En cas de retour')) ?></span>
+                        <span class="myca-caption text-fg-secondary"><?= $escaper->escapeHtml(__('Les points des seuls articles remboursés sont retirés.')) ?></span>
+                    </span>
+                </li>
+                <?php if ($program->getExpiryMonths() > 0): ?>
+                    <li class="flex gap-3 py-2.5">
+                        <?= $icons->renderHtml('alert', 'mt-0.5 shrink-0 text-fg', 18, 18, ['aria-hidden' => 'true']) ?>
+                        <span class="flex flex-col">
+                            <span class="myca-body-s-strong text-fg"><?= $escaper->escapeHtml(__('Validité')) ?></span>
+                            <span class="myca-caption text-fg-secondary"><?= $escaper->escapeHtml(__('Vos points expirent après %1 mois sans achat.', $program->getExpiryMonths())) ?></span>
+                        </span>
+                    </li>
+                <?php endif ?>
+            </ul>
+        </section>
+
+        <section id="myca-loyalty-rewards" class="myca-card p-4" aria-labelledby="myca-loyalty-rewards-title">
+            <h2 id="myca-loyalty-rewards-title" class="myca-card-title"><?= $icons->renderHtml('gift', '', 18, 18, ['aria-hidden' => 'true']) ?><?= $escaper->escapeHtml(__('Mes récompenses disponibles')) ?></h2>
+            <?php if ($rewards): ?>
+                <ul class="grid gap-3 sm:grid-cols-2">
+                    <?php foreach ($rewards as $threshold => $amount): ?>
+                        <?php $usable = $available >= $threshold; ?>
+                        <li class="flex flex-col gap-2 rounded-lg border p-3.5 <?= $usable ? 'border-gold-500 bg-gold-100' : 'border-line' ?>">
+                            <span class="text-[26px] leading-8 font-bold text-fg"><?= $escaper->escapeHtml($program->formatPrice($amount)) ?></span>
+                            <span class="myca-caption text-fg-secondary"><?= $escaper->escapeHtml(__('Bon d’achat fidélité · %1', $points($threshold))) ?></span>
+                            <?php if ($usable): ?>
+                                <form method="post" action="<?= $escaper->escapeUrl($block->getUrl('fidelite/index/utiliser')) ?>" class="mt-auto">
+                                    <?= $block->getBlockHtml('formkey') ?>
+                                    <input type="hidden" name="points" value="<?= (int) $threshold ?>">
+                                    <button type="submit" class="myca-btn myca-btn-primary w-full whitespace-normal">
+                                        <?= $escaper->escapeHtml(__('Utiliser maintenant')) ?>
+                                    </button>
+                                </form>
+                            <?php else: ?>
+                                <span class="myca-btn myca-btn-secondary mt-auto w-full cursor-default border-transparent bg-surface-subtle text-fg-secondary" aria-disabled="true">
+                                    <?= $escaper->escapeHtml(__('Encore %1', $points($threshold - $available))) ?>
+                                </span>
+                            <?php endif ?>
+                        </li>
+                    <?php endforeach ?>
+                </ul>
+            <?php else: ?>
+                <p class="myca-body-s text-fg-secondary"><?= $escaper->escapeHtml(__('Les récompenses seront bientôt annoncées.')) ?></p>
+            <?php endif ?>
+            <?php if ($vouchers): ?>
+                <h3 class="mt-4 mb-2 myca-body-s-strong text-fg"><?= $escaper->escapeHtml(__('Mes bons d’achat à utiliser')) ?></h3>
+                <ul class="flex flex-col gap-2">
+                    <?php foreach ($vouchers as $voucher): ?>
+                        <li class="flex items-center justify-between gap-3 rounded-md bg-surface-subtle px-3 py-2 myca-body-s">
+                            <span class="font-mono font-semibold text-fg select-all"><?= $escaper->escapeHtml((string) $voucher['code']) ?></span>
+                            <span class="font-semibold text-fg"><?= $escaper->escapeHtml($program->formatPrice((float) $voucher['amount'])) ?></span>
+                        </li>
+                    <?php endforeach ?>
+                </ul>
+                <p class="mt-2 myca-caption text-fg-secondary"><?= $escaper->escapeHtml(__('Saisissez le code dans votre panier. Un bon s’utilise une fois, sur votre compte uniquement.')) ?></p>
+            <?php endif ?>
+        </section>
+
+        <section class="myca-card p-4" aria-labelledby="myca-loyalty-history">
+            <h2 id="myca-loyalty-history" class="myca-card-title">
+                <?= $icons->renderHtml('clock', '', 18, 18, ['aria-hidden' => 'true']) ?><?= $escaper->escapeHtml(__('Historique de mes points')) ?>
+                <?php if (!$showAll && count($history) === 5): ?>
+                    <a href="<?= $escaper->escapeUrl($block->getUrl('fidelite', ['_query' => ['historique' => 'tout'], '_fragment' => 'myca-loyalty-history'])) ?>" class="ms-auto inline-flex min-h-11 items-center gap-1 myca-caption-strong text-fg md:min-h-0">
+                        <?= $escaper->escapeHtml(__('Voir tout')) ?><?= $icons->renderHtml('arrow-right', '', 14, 14, ['aria-hidden' => 'true']) ?>
+                    </a>
+                <?php endif ?>
+            </h2>
+            <?php if ($history): ?>
+                <table class="w-full myca-body-s">
+                    <thead>
+                        <tr class="bg-surface-subtle text-left myca-caption-strong text-fg-secondary">
+                            <th scope="col" class="px-2.5 py-2"><?= $escaper->escapeHtml(__('Date')) ?></th>
+                            <th scope="col" class="px-2.5 py-2"><?= $escaper->escapeHtml(__('Action')) ?></th>
+                            <th scope="col" class="px-2.5 py-2 text-right"><?= $escaper->escapeHtml(__('Points')) ?></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($history as $entry): ?>
+                            <?php $change = $program->getEntryPoints($entry); ?>
+                            <tr class="border-b border-line align-top">
+                                <td class="px-2.5 py-2 whitespace-nowrap text-fg"><?= $escaper->escapeHtml($block->formatDate((string) $entry['created_at'], IntlDateFormatter::MEDIUM)) ?></td>
+                                <td class="px-2.5 py-2 text-fg">
+                                    <?= $escaper->escapeHtml($program->getEventLabel((string) $entry['event'])) ?>
+                                    <span class="block myca-caption text-fg-secondary"><?= $escaper->escapeHtml((string) $entry['reason']) ?></span>
+                                </td>
+                                <td class="px-2.5 py-2 text-right font-semibold whitespace-nowrap <?= $change['points'] < 0 ? 'text-danger' : 'text-fg' ?>">
+                                    <?= $escaper->escapeHtml(sprintf('%+d pts', $change['points'])) ?>
+                                    <?php if ($change['pending']): ?>
+                                        <span class="block myca-caption font-normal text-fg-muted"><?= $escaper->escapeHtml(__('en attente')) ?></span>
+                                    <?php endif ?>
+                                </td>
+                            </tr>
+                        <?php endforeach ?>
+                    </tbody>
+                </table>
+            <?php else: ?>
+                <p class="myca-body-s text-fg-secondary"><?= $escaper->escapeHtml(__('Vos points apparaîtront ici après votre premier achat.')) ?></p>
+            <?php endif ?>
+        </section>
+    </div>
+
+    <section class="myca-card p-4" aria-labelledby="myca-loyalty-summary">
+        <h2 id="myca-loyalty-summary" class="myca-card-title"><?= $icons->renderHtml('chart', '', 18, 18, ['aria-hidden' => 'true']) ?><?= $escaper->escapeHtml(__('Mon solde en détail')) ?></h2>
+        <dl class="grid grid-cols-2 gap-3 sm:grid-cols-5">
+            <?php foreach ([
+                [__('Disponibles'), $available],
+                [__('En attente'), $account['pending']],
+                [__('Utilisés'), $totals['used']],
+                [__('Annulés'), $totals['canceled']],
+                [__('Expirés'), $totals['expired']],
+            ] as [$label, $value]): ?>
+                <div class="rounded-md bg-surface-subtle p-3">
+                    <dt class="myca-caption-strong text-fg-secondary"><?= $escaper->escapeHtml($label) ?></dt>
+                    <dd class="text-lg leading-6 font-bold <?= $value < 0 ? 'text-danger' : 'text-fg' ?>"><?= $escaper->escapeHtml(number_format((int) $value, 0, ',', "\u{202F}")) ?></dd>
+                </div>
+            <?php endforeach ?>
+        </dl>
+        <?php if ($available < 0): ?>
+            <p class="mt-3 myca-caption text-fg-secondary"><?= $escaper->escapeHtml(__('Votre solde est négatif : des points déjà utilisés provenaient d’articles retournés. Il sera compensé par vos prochains achats.')) ?></p>
+        <?php endif ?>
+    </section>
+
+    <p class="flex gap-2 rounded-md bg-warning-bg p-3 myca-caption text-warning">
+        <?= $icons->renderHtml('alert', 'mt-px shrink-0', 16, 16, ['aria-hidden' => 'true']) ?>
+        <span><?= $escaper->escapeHtml(__('Points crédités uniquement sur le montant éligible, retirés au prorata en cas de remboursement, sans double attribution. Le règlement du programme figure dans nos CGV.')) ?></span>
+    </p>
+</div>
