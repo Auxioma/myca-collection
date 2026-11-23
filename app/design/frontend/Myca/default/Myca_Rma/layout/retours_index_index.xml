@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<page xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:noNamespaceSchemaLocation="urn:magento:framework:View/Layout/etc/page_configuration.xsd">
+    <update handle="customer_account"/>
+    <body>
+        <referenceBlock name="myca.account.banner">
+            <arguments>
+                <argument name="title" xsi:type="string" translate="true">Mes retours &amp; SAV</argument>
+                <argument name="subtitle" xsi:type="string" translate="true">Suivez vos demandes de retour, d’échange et de service après-vente.</argument>
+            </arguments>
+        </referenceBlock>
+        <referenceContainer name="content">
+            <block name="myca.rma.customer.list" template="Myca_Rma::customer/list.phtml" after="myca.account.banner" cacheable="false"/>
+        </referenceContainer>
+    </body>
+</page>

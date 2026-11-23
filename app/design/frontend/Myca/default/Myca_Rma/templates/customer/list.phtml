@@ -1,0 +1,77 @@
+<?php
+/**
+ * « Mes retours & SAV » du client : demandes de ses achats MYCA en ligne. Pas d'écran Figma dédié : la page reprend
+ * les cartes et le tableau de « Mes commandes » (M29), d'où l'on ouvre une demande.
+ */
+
+declare(strict_types=1);
+
+use Hyva\Theme\Model\ViewModelRegistry;
+use Hyva\Theme\ViewModel\SvgIcons;
+use Magento\Framework\Escaper;
+use Magento\Framework\View\Element\Template;
+use Myca\Rma\ViewModel\Returns;
+
+/** @var Template $block */
+/** @var Escaper $escaper */
+/** @var ViewModelRegistry $viewModels */
+
+$icons = $viewModels->require(SvgIcons::class);
+/** @var Returns $returns */
+$returns = $viewModels->require(Returns::class);
+$rmas = $returns->getCustomerRmas();
+?>
+<section class="myca-card p-4" aria-labelledby="myca-rma-list">
+    <h2 id="myca-rma-list" class="myca-card-title"><?= $icons->renderHtml('refresh', '', 18, 18, ['aria-hidden' => 'true']) ?><?= $escaper->escapeHtml(__('Mes demandes de retour et SAV')) ?></h2>
+    <?php if ($rmas): ?>
+        <div class="relative md:overflow-x-auto">
+            <table class="w-full myca-body-s">
+                <thead class="hidden md:table-header-group">
+                    <tr class="bg-surface-subtle text-left myca-caption-strong text-fg-secondary">
+                        <th scope="col" class="px-2.5 py-2"><?= $escaper->escapeHtml(__('N° demande')) ?></th>
+                        <th scope="col" class="px-2.5 py-2"><?= $escaper->escapeHtml(__('Date')) ?></th>
+                        <th scope="col" class="px-2.5 py-2"><?= $escaper->escapeHtml(__('N° commande')) ?></th>
+                        <th scope="col" class="px-2.5 py-2"><?= $escaper->escapeHtml(__('Type')) ?></th>
+                        <th scope="col" class="px-2.5 py-2"><?= $escaper->escapeHtml(__('Motif')) ?></th>
+                        <th scope="col" class="px-2.5 py-2"><?= $escaper->escapeHtml(__('Statut')) ?></th>
+                        <th scope="col" class="px-2.5 py-2 text-right"><?= $escaper->escapeHtml(__('Remboursement')) ?></th>
+                        <th scope="col" class="px-2.5 py-2"><span class="sr-only"><?= $escaper->escapeHtml(__('Actions')) ?></span></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ($rmas as $rma): ?>
+                        <?php
+                        $status = $returns->getStatus($rma);
+                        $refunded = $rma->getData('refunded_amount');
+                        $order = $returns->getOrder($rma);
+                        ?>
+                        <tr class="grid grid-cols-[1fr_auto] gap-x-3 gap-y-1 border-b border-line py-3 md:table-row md:py-0">
+                            <td class="font-semibold whitespace-nowrap text-accent-text md:px-2.5 md:py-3"><?= $escaper->escapeHtml($rma->getIncrementId()) ?></td>
+                            <td class="whitespace-nowrap text-fg-secondary md:px-2.5 md:py-3 md:text-fg"><?= $escaper->escapeHtml($block->formatDate((string) $rma->getData('created_at'), IntlDateFormatter::MEDIUM)) ?></td>
+                            <td class="text-fg md:px-2.5 md:py-3"><?= $escaper->escapeHtml((string) $rma->getData('order_increment_id')) ?></td>
+                            <td class="md:px-2.5 md:py-3"><span class="myca-badge myca-badge-<?= $escaper->escapeHtmlAttr($returns->getTypeTone($rma->getType())) ?>"><?= $escaper->escapeHtml($returns->getTypeLabel($rma)) ?></span></td>
+                            <td class="col-span-2 text-fg md:px-2.5 md:py-3"><?= $escaper->escapeHtml($returns->getReasonLabel($rma)) ?></td>
+                            <td class="md:px-2.5 md:py-3"><span class="myca-badge myca-badge-<?= $escaper->escapeHtmlAttr($status['tone']) ?>"><?= $escaper->escapeHtml($status['label']) ?></span></td>
+                            <td class="whitespace-nowrap text-fg md:px-2.5 md:py-3 md:text-right">
+                                <?= $refunded !== null && $order ? /* @noEscape */ $order->formatPrice((float) $refunded) : '—' ?>
+                            </td>
+                            <td class="col-span-2 md:px-2.5 md:py-2">
+                                <a href="<?= $escaper->escapeUrl($block->getUrl('retours/voir', ['_query' => ['id' => $rma->getId()]])) ?>"
+                                   class="inline-flex min-h-11 items-center gap-1 myca-body-s-strong text-fg hover:text-accent-text md:min-h-8">
+                                    <?= $icons->renderHtml('eye', '', 16, 16, ['aria-hidden' => 'true']) ?><?= $escaper->escapeHtml(__('Voir')) ?>
+                                    <span class="sr-only"><?= $escaper->escapeHtml($rma->getIncrementId()) ?></span>
+                                </a>
+                            </td>
+                        </tr>
+                    <?php endforeach ?>
+                </tbody>
+            </table>
+        </div>
+    <?php else: ?>
+        <p class="myca-body-s text-fg-secondary"><?= $escaper->escapeHtml(__('Vous n’avez aucune demande de retour.')) ?></p>
+    <?php endif ?>
+    <p class="mt-4 myca-caption text-fg-secondary">
+        <?= $escaper->escapeHtml(__('Pour retourner un article, ouvrez la commande concernée dans « Mes commandes », puis choisissez « Demander un retour ».')) ?>
+        <a href="<?= $escaper->escapeUrl($block->getUrl('sales/order/history')) ?>" class="font-semibold text-fg underline"><?= $escaper->escapeHtml(__('Mes commandes')) ?></a>
+    </p>
+</section>

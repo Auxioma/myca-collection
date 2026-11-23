@@ -1,0 +1,204 @@
+<?php
+/**
+ * « Demander un retour » : articles et quantités, type (retour, échange, SAV), motif, commentaire.
+ * Commun au client (achat MYCA en ligne, avec ou sans compte) et à la boutique (argument « partner »).
+ * Les règles (délai, quantités, origine, bon portail) sont revérifiées côté serveur par RmaManagement.
+ */
+
+declare(strict_types=1);
+
+use Hyva\Theme\Model\ViewModelRegistry;
+use Hyva\Theme\ViewModel\SvgIcons;
+use Magento\Framework\Escaper;
+use Magento\Framework\View\Element\Template;
+use Myca\Rma\Model\ReturnPolicy;
+use Myca\Rma\ViewModel\Returns;
+
+/** @var Template $block */
+/** @var Escaper $escaper */
+/** @var ViewModelRegistry $viewModels */
+
+$icons = $viewModels->require(SvgIcons::class);
+/** @var Returns $returns */
+$returns = $viewModels->require(Returns::class);
+$isPartner = (bool) $block->getData('partner');
+$order = $returns->getRequestOrder($isPartner);
+if ($order === null) {
+    return;
+}
+$origin = $returns->getOrderOrigin($order);
+$types = $returns->getAllowedTypes($origin);
+$typeLabels = $returns->getTypeLabels();
+$reasonsByType = $returns->getReasonsByType();
+$returnable = $returns->getReturnableQtys($order);
+$blocking = $returns->getBlockingReasons($order);
+$deadline = $returns->getDeadline($order);
+$warrantyDeadline = $returns->getDeadline($order, ReturnPolicy::TYPE_WARRANTY);
+$returnClosed = $returns->isDeadlinePassed($order);
+$defaultType = $returnClosed || !in_array(ReturnPolicy::TYPE_RETURN, $types, true) ? ReturnPolicy::TYPE_WARRANTY : ReturnPolicy::TYPE_RETURN;
+$typeHelp = [
+    ReturnPolicy::TYPE_RETURN => __('Rétractation : vous renvoyez l’article et êtes remboursé.'),
+    ReturnPolicy::TYPE_EXCHANGE => __('Une autre taille ou un autre coloris du même modèle.'),
+    ReturnPolicy::TYPE_WARRANTY => __('Défaut, article endommagé ou non conforme.'),
+];
+$action = $isPartner ? 'partenaire/retours/enregistrer' : 'retours/demande/enregistrer';
+$back = $isPartner
+    ? $block->getUrl('partenaire/commandes', ['_query' => ['commande' => $order->getId()]])
+    : $block->getUrl('sales/order/history', ['_query' => ['commande' => $order->getId()]]);
+?>
+<div class="flex flex-col gap-4">
+    <a href="<?= $escaper->escapeUrl($back) ?>" class="inline-flex min-h-11 items-center gap-1.5 self-start myca-body-s-strong text-fg-secondary hover:text-fg">
+        <?= $icons->renderHtml('chevron-right', 'rotate-180', 16, 16, ['aria-hidden' => 'true']) ?>
+        <?= $escaper->escapeHtml(__('Retour à la commande %1', $order->getIncrementId())) ?>
+    </a>
+
+    <?php if ($blocking): ?>
+        <section class="myca-card p-4" aria-labelledby="myca-rma-blocked">
+            <h2 id="myca-rma-blocked" class="myca-card-title"><?= $icons->renderHtml('alert', 'text-warning', 18, 18, ['aria-hidden' => 'true']) ?><?= $escaper->escapeHtml(__('Demande impossible pour le moment')) ?></h2>
+            <?php foreach ($blocking as $reason): ?>
+                <p class="myca-body-s text-fg"><?= $escaper->escapeHtml($reason) ?></p>
+            <?php endforeach ?>
+        </section>
+    <?php else: ?>
+        <form method="post" action="<?= $escaper->escapeUrl($block->getUrl($action)) ?>"
+              class="grid gap-4 xl:grid-cols-[minmax(0,1fr)_340px] xl:items-start"
+              x-data="{ type: '<?= $escaper->escapeJs($defaultType) ?>' }">
+            <?= $block->getBlockHtml('formkey') ?>
+            <input type="hidden" name="commande" value="<?= (int) $order->getId() ?>">
+
+            <div class="flex flex-col gap-4">
+                <fieldset class="myca-card p-4">
+                    <legend class="myca-card-title float-left w-full"><?= $icons->renderHtml('refresh', 'text-accent-text', 18, 18, ['aria-hidden' => 'true']) ?><?= $escaper->escapeHtml(__('Type de demande')) ?></legend>
+                    <div class="clear-both grid gap-2.5 md:grid-cols-3">
+                        <?php foreach ($types as $type): ?>
+                            <?php $disabled = $type !== ReturnPolicy::TYPE_WARRANTY && $returnClosed; ?>
+                            <label class="flex min-h-11 cursor-pointer gap-2.5 rounded-md border border-line-strong p-3 has-checked:border-accent has-checked:bg-surface-subtle has-disabled:cursor-not-allowed has-disabled:opacity-60">
+                                <input type="radio" name="type" value="<?= $escaper->escapeHtmlAttr($type) ?>" x-model="type" class="mt-0.5 accent-accent"
+                                       <?= $type === $defaultType ? 'checked' : '' ?> <?= $disabled ? 'disabled' : '' ?>>
+                                <span class="flex flex-col">
+                                    <span class="myca-body-s-strong text-fg"><?= $escaper->escapeHtml($typeLabels[$type]) ?></span>
+                                    <span class="myca-caption text-fg-secondary"><?= $escaper->escapeHtml($typeHelp[$type]) ?></span>
+                                </span>
+                            </label>
+                        <?php endforeach ?>
+                    </div>
+                    <?php if ($returnClosed): ?>
+                        <p class="mt-3 myca-caption text-fg-secondary"><?= $escaper->escapeHtml(__('Le délai de retour de %1 jours est dépassé ; un défaut reste couvert par la garantie.', $returns->getPolicyDays($order))) ?></p>
+                    <?php endif ?>
+                    <?php if ($origin === ReturnPolicy::ORIGIN_STORE): ?>
+                        <p class="mt-3 myca-caption text-fg-secondary"><?= $escaper->escapeHtml(__('Article vendu sur le stock de votre boutique : votre client le retourne à votre comptoir, selon votre politique. MYCA traite uniquement les dossiers de garantie fournisseur.')) ?></p>
+                    <?php endif ?>
+                </fieldset>
+
+                <section class="myca-card p-4" aria-labelledby="myca-rma-items">
+                    <h2 id="myca-rma-items" class="myca-card-title"><?= $icons->renderHtml('box', 'text-accent-text', 18, 18, ['aria-hidden' => 'true']) ?><?= $escaper->escapeHtml(__('Articles concernés')) ?></h2>
+                    <ul class="flex flex-col divide-y divide-line">
+                        <?php foreach ($order->getAllVisibleItems() as $item): ?>
+                            <?php
+                            $itemId = (int) $item->getItemId();
+                            $max = (int) floor($returnable[$itemId] ?? 0);
+                            $qtyId = 'myca-rma-qty-' . $itemId;
+                            ?>
+                            <li class="grid gap-3 py-3 sm:grid-cols-[minmax(0,1fr)_120px] sm:items-center">
+                                <span class="flex flex-col">
+                                    <span class="myca-body-s-strong text-fg"><?= $escaper->escapeHtml($item->getName()) ?></span>
+                                    <span class="myca-caption text-fg-secondary">
+                                        <?= $escaper->escapeHtml(__('Réf. %1', $item->getSku())) ?> ·
+                                        <?= $max > 0
+                                            ? $escaper->escapeHtml(__('%1 retournable(s)', $max))
+                                            : $escaper->escapeHtml(__('Déjà retourné ou non expédié')) ?>
+                                    </span>
+                                </span>
+                                <span>
+                                    <label for="<?= $escaper->escapeHtmlAttr($qtyId) ?>" class="myca-field-label"><?= $escaper->escapeHtml(__('Quantité')) ?></label>
+                                    <select id="<?= $escaper->escapeHtmlAttr($qtyId) ?>" name="qty[<?= (int) $itemId ?>]" class="myca-field" <?= $max === 0 ? 'disabled' : '' ?>>
+                                        <?php for ($qty = 0; $qty <= $max; $qty++): ?>
+                                            <option value="<?= (int) $qty ?>"><?= (int) $qty ?></option>
+                                        <?php endfor ?>
+                                    </select>
+                                </span>
+                                <?php if ($max > 0): ?>
+                                    <span class="sm:col-span-2" x-show="type === 'exchange'" x-cloak>
+                                        <label for="myca-rma-wish-<?= (int) $itemId ?>" class="myca-field-label"><?= $escaper->escapeHtml(__('Taille ou coloris souhaité')) ?></label>
+                                        <input id="myca-rma-wish-<?= (int) $itemId ?>" type="text" name="wish[<?= (int) $itemId ?>]" maxlength="255" class="myca-field"
+                                               :disabled="type !== 'exchange'" placeholder="<?= $escaper->escapeHtmlAttr(__('Ex. : taille L')) ?>">
+                                    </span>
+                                <?php endif ?>
+                            </li>
+                        <?php endforeach ?>
+                    </ul>
+                </section>
+
+                <section class="myca-card flex flex-col gap-3 p-4" aria-labelledby="myca-rma-reason">
+                    <h2 id="myca-rma-reason" class="myca-card-title mb-0"><?= $icons->renderHtml('edit', 'text-accent-text', 18, 18, ['aria-hidden' => 'true']) ?><?= $escaper->escapeHtml(__('Motif')) ?></h2>
+                    <?php if ($isPartner && $origin === null): ?>
+                        <div>
+                            <label for="myca-rma-origin" class="myca-field-label"><?= $escaper->escapeHtml(__('Comment cet article a-t-il été vendu ?')) ?></label>
+                            <select id="myca-rma-origin" name="origin" class="myca-field" required>
+                                <option value=""><?= $escaper->escapeHtml(__('Choisir…')) ?></option>
+                                <option value="<?= $escaper->escapeHtmlAttr(ReturnPolicy::ORIGIN_DROPSHIP) ?>"><?= $escaper->escapeHtml(__('En dropshipping (expédié par MYCA à mon client)')) ?></option>
+                                <option value="<?= $escaper->escapeHtmlAttr(ReturnPolicy::ORIGIN_STORE) ?>"><?= $escaper->escapeHtml(__('En boutique, sur mon stock (garantie uniquement)')) ?></option>
+                            </select>
+                        </div>
+                    <?php endif ?>
+                    <?php foreach ($types as $type): ?>
+                        <div x-show="type === '<?= $escaper->escapeJs($type) ?>'" <?= $type !== $defaultType ? 'x-cloak' : '' ?>>
+                            <label for="myca-rma-reason-<?= $escaper->escapeHtmlAttr($type) ?>" class="myca-field-label"><?= $escaper->escapeHtml(__('Motif de la demande')) ?></label>
+                            <select id="myca-rma-reason-<?= $escaper->escapeHtmlAttr($type) ?>" name="reason" class="myca-field" required
+                                    :disabled="type !== '<?= $escaper->escapeJs($type) ?>'" <?= $type !== $defaultType ? 'disabled' : '' ?>>
+                                <option value=""><?= $escaper->escapeHtml(__('Choisir un motif…')) ?></option>
+                                <?php foreach ($reasonsByType[$type] as $code => $label): ?>
+                                    <option value="<?= $escaper->escapeHtmlAttr($code) ?>"><?= $escaper->escapeHtml($label) ?></option>
+                                <?php endforeach ?>
+                            </select>
+                        </div>
+                    <?php endforeach ?>
+                    <div>
+                        <label for="myca-rma-comment" class="myca-field-label">
+                            <?= $escaper->escapeHtml(__('Commentaire')) ?>
+                            <span class="font-normal text-fg-secondary" x-text="type === 'warranty' ? <?= $escaper->escapeHtmlAttr(json_encode((string) __('(obligatoire : décrivez le défaut)'))) ?> : <?= $escaper->escapeHtmlAttr(json_encode((string) __('(facultatif)'))) ?>"></span>
+                        </label>
+                        <textarea id="myca-rma-comment" name="comment" rows="4" maxlength="1000" class="myca-field"
+                                  :required="type === 'warranty'"></textarea>
+                    </div>
+                </section>
+            </div>
+
+            <aside class="flex flex-col gap-4">
+                <section class="myca-card flex flex-col gap-3 p-4" aria-labelledby="myca-rma-summary">
+                    <h2 id="myca-rma-summary" class="myca-card-title mb-0"><?= $icons->renderHtml('file', 'text-accent-text', 18, 18, ['aria-hidden' => 'true']) ?><?= $escaper->escapeHtml(__('Commande %1', $order->getIncrementId())) ?></h2>
+                    <dl class="flex flex-col gap-1.5 myca-body-s">
+                        <div class="flex justify-between gap-3"><dt class="text-fg-secondary"><?= $escaper->escapeHtml(__('Date')) ?></dt><dd class="font-semibold text-fg"><?= $escaper->escapeHtml($block->formatDate($order->getCreatedAt(), IntlDateFormatter::MEDIUM)) ?></dd></div>
+                        <?php if ($origin !== null): ?>
+                            <div class="flex justify-between gap-3"><dt class="text-fg-secondary"><?= $escaper->escapeHtml(__('Canal de vente')) ?></dt><dd class="text-right font-semibold text-fg"><?= $escaper->escapeHtml($returns->getOriginLabel($origin)) ?></dd></div>
+                        <?php endif ?>
+                        <div class="flex justify-between gap-3">
+                            <dt class="text-fg-secondary"><?= $escaper->escapeHtml(__('Retour possible jusqu’au')) ?></dt>
+                            <dd class="text-right font-semibold text-fg">
+                                <?= $deadline
+                                    ? $escaper->escapeHtml($block->formatDate($deadline->setTimezone(new DateTimeZone('UTC'))->format('Y-m-d H:i:s'), IntlDateFormatter::MEDIUM))
+                                    : $escaper->escapeHtml(__('%1 jours après la livraison', $returns->getPolicyDays($order))) ?>
+                            </dd>
+                        </div>
+                        <?php if ($warrantyDeadline): ?>
+                            <div class="flex justify-between gap-3"><dt class="text-fg-secondary"><?= $escaper->escapeHtml(__('Garantie jusqu’au')) ?></dt><dd class="font-semibold text-fg"><?= $escaper->escapeHtml($block->formatDate($warrantyDeadline->setTimezone(new DateTimeZone('UTC'))->format('Y-m-d H:i:s'), IntlDateFormatter::MEDIUM)) ?></dd></div>
+                        <?php endif ?>
+                    </dl>
+                </section>
+                <p class="flex gap-2 rounded-md bg-warning-bg p-3 myca-caption text-warning">
+                    <?= $icons->renderHtml('info', 'mt-px shrink-0', 16, 16, ['aria-hidden' => 'true']) ?>
+                    <span>
+                        <?php if ($isPartner): ?>
+                            <?= $escaper->escapeHtml(__('Dropshipping : retour logistique par MYCA ; vous remboursez votre client ; MYCA vous émet un avoir après contrôle des articles.')) ?>
+                        <?php else: ?>
+                            <?= $escaper->escapeHtml(__('Après réception et contrôle des articles, MYCA vous rembourse sur le moyen de paiement utilisé. Les instructions de retour vous sont envoyées dès l’autorisation de la demande.')) ?>
+                        <?php endif ?>
+                    </span>
+                </p>
+                <button type="submit" class="myca-btn myca-btn-primary w-full">
+                    <?= $icons->renderHtml('send', '', 16, 16, ['aria-hidden' => 'true']) ?><?= $escaper->escapeHtml(__('Envoyer la demande')) ?>
+                </button>
+            </aside>
+        </form>
+    <?php endif ?>
+</div>

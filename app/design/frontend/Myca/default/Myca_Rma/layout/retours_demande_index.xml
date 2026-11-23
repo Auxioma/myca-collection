@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<!-- Le cadre de l'espace client (poignée customer_account) est ajouté par le contrôleur pour un client connecté. -->
+<page xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:noNamespaceSchemaLocation="urn:magento:framework:View/Layout/etc/page_configuration.xsd">
+    <body>
+        <referenceBlock name="myca.account.banner">
+            <arguments>
+                <argument name="title" xsi:type="string" translate="true">Demander un retour</argument>
+                <argument name="subtitle" xsi:type="string" translate="true">Choisissez les articles, le type de demande et le motif.</argument>
+            </arguments>
+        </referenceBlock>
+        <referenceContainer name="content">
+            <block name="myca.rma.request" template="Myca_Rma::request-form.phtml" after="myca.account.banner" cacheable="false"/>
+        </referenceContainer>
+    </body>
+</page>

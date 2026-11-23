@@ -1,0 +1,47 @@
+<?php
+/**
+ * « Suivi de la demande » (M23) : étapes franchies (vert), étape en cours (rouge), étapes à venir (gris).
+ */
+
+declare(strict_types=1);
+
+use Hyva\Theme\Model\ViewModelRegistry;
+use Magento\Framework\Escaper;
+use Magento\Framework\View\Element\Template;
+use Myca\Rma\Model\Rma;
+use Myca\Rma\ViewModel\Returns;
+
+/** @var Template $block */
+/** @var Escaper $escaper */
+/** @var ViewModelRegistry $viewModels */
+
+/** @var Rma|null $rma */
+$rma = $block->getData('rma');
+if (!$rma instanceof Rma) {
+    return;
+}
+/** @var Returns $returns */
+$returns = $viewModels->require(Returns::class);
+$steps = $returns->getSteps($rma);
+$dots = ['done' => 'bg-green-600', 'current' => 'bg-accent ring-4 ring-red-100', 'upcoming' => 'bg-gray-300'];
+$stateLabels = ['done' => __('terminée'), 'current' => __('en cours'), 'upcoming' => __('à venir')];
+?>
+<ol class="flex flex-col" aria-label="<?= $escaper->escapeHtmlAttr(__('Suivi de la demande %1', $rma->getIncrementId())) ?>">
+    <?php foreach ($steps as $index => $step): ?>
+        <li class="relative flex gap-3 pb-4 last:pb-0">
+            <?php if ($index < count($steps) - 1): ?>
+                <span class="absolute top-4 bottom-0 left-[6px] w-0.5 <?= $step['state'] === 'done' ? 'bg-green-600' : 'bg-gray-300' ?>" aria-hidden="true"></span>
+            <?php endif ?>
+            <span class="relative mt-1 size-3.5 shrink-0 rounded-pill <?= /* @noEscape */ $dots[$step['state']] ?>" aria-hidden="true"></span>
+            <span class="flex flex-col">
+                <span class="myca-body-s-strong <?= $step['state'] === 'upcoming' ? 'text-fg-secondary' : 'text-fg' ?>">
+                    <?= $escaper->escapeHtml($step['label']) ?>
+                    <span class="sr-only">(<?= $escaper->escapeHtml($stateLabels[$step['state']]) ?>)</span>
+                </span>
+                <?php if ($step['date']): ?>
+                    <span class="myca-caption text-fg-muted"><?= $escaper->escapeHtml($block->formatDate($step['date'], IntlDateFormatter::MEDIUM, true)) ?></span>
+                <?php endif ?>
+            </span>
+        </li>
+    <?php endforeach ?>
+</ol>

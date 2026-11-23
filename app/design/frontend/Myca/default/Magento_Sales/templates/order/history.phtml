@@ -1,7 +1,8 @@
 <?php
 /**
  * « Mes commandes » (M29) : indicateurs, filtres par statut, historique, détail de la commande choisie
- * (articles, adresse, paiement, suivi, totaux, actions). Les retours / SAV arriveront avec Myca_Rma.
+ * (articles, adresse, paiement, suivi, totaux, actions). Les retours / SAV (Myca_Rma) ont leur page « Mes retours & SAV »,
+ * ouverte par l'indicateur et le filtre « Retours / SAV » ; « Demander un retour » ouvre le formulaire de la commande.
  */
 
 declare(strict_types=1);
@@ -13,6 +14,7 @@ use Magento\Sales\Block\Order\History;
 use Magento\Sales\Model\Order;
 use Myca\Core\ViewModel\AccountOverview;
 use Myca\Core\ViewModel\OrderProgress;
+use Myca\Rma\ViewModel\Returns;
 
 /** @var History $block */
 /** @var Escaper $escaper */
@@ -23,6 +25,10 @@ $icons = $viewModels->require(SvgIcons::class);
 $account = $viewModels->require(AccountOverview::class);
 /** @var OrderProgress $progress */
 $progress = $viewModels->require(OrderProgress::class);
+/** @var Returns $returns */
+$returns = $viewModels->require(Returns::class);
+$rmaCount = count($returns->getCustomerRmas());
+$returnsUrl = $block->getUrl('retours');
 
 $orders = $account->getOrders();
 $filters = [
@@ -71,18 +77,22 @@ $kpis = [
     ['box', __('Total commandes'), (string) count($orders)],
     ['clock', __('En cours'), (string) $account->countOrdersInProgress()],
     ['truck', __('Livrées'), (string) $delivered],
+    ['refresh', __('Retours / SAV'), (string) $rmaCount, $returnsUrl],
     ['percent', __('Montant total'), $orders ? strip_tags((string) $orders[0]->formatPrice($total)) : '—'],
 ];
 ?>
 <div class="flex flex-col gap-4">
-    <ul class="grid grid-cols-2 gap-3 lg:grid-cols-4" aria-label="<?= $escaper->escapeHtmlAttr(__('Indicateurs')) ?>">
-        <?php foreach ($kpis as [$icon, $label, $value]): ?>
-            <li class="myca-card flex items-center gap-3 p-4 shadow-card">
+    <ul class="grid grid-cols-2 gap-3 lg:grid-cols-5" aria-label="<?= $escaper->escapeHtmlAttr(__('Indicateurs')) ?>">
+        <?php foreach ($kpis as $kpi): ?>
+            <?php [$icon, $label, $value] = $kpi; $url = $kpi[3] ?? null; ?>
+            <li class="<?= $url ? '' : 'myca-card flex items-center gap-3 p-4 shadow-card' ?>">
+                <?php if ($url): ?><a href="<?= $escaper->escapeUrl($url) ?>" class="myca-card flex h-full items-center gap-3 p-4 shadow-card hover:border-line-strong"><?php endif ?>
                 <?= $icons->renderHtml($icon, 'shrink-0 text-icon-kpi', 26, 26, ['aria-hidden' => 'true']) ?>
-                <span class="flex min-w-0 flex-col">
+                <span class="flex min-w-0 flex-1 flex-col">
                     <span class="myca-caption-strong text-fg-secondary"><?= $escaper->escapeHtml($label) ?></span>
                     <span class="truncate text-lg leading-6 font-bold text-fg sm:text-[22px] sm:leading-7"><?= $escaper->escapeHtml($value) ?></span>
                 </span>
+                <?php if ($url): ?><?= $icons->renderHtml('chevron-right', 'shrink-0 text-fg-secondary', 16, 16, ['aria-hidden' => 'true']) ?></a><?php endif ?>
             </li>
         <?php endforeach ?>
     </ul>
@@ -99,6 +109,11 @@ $kpis = [
                     ><?= $escaper->escapeHtml($label) ?> (<?= (int) $count ?>)</a>
                 </li>
             <?php endforeach ?>
+            <li>
+                <a href="<?= $escaper->escapeUrl($returnsUrl) ?>" class="myca-btn myca-btn-secondary">
+                    <?= $icons->renderHtml('refresh', '', 16, 16, ['aria-hidden' => 'true']) ?><?= $escaper->escapeHtml(__('Retours / SAV')) ?> (<?= (int) $rmaCount ?>)
+                </a>
+            </li>
         </ul>
     </nav>
 
@@ -174,6 +189,11 @@ $kpis = [
                     <a href="<?= $escaper->escapeUrl($block->getUrl('', ['_direct' => 'contact'])) ?>" class="myca-btn myca-btn-secondary">
                         <?= $icons->renderHtml('headset', '', 16, 16, ['aria-hidden' => 'true']) ?><?= $escaper->escapeHtml(__('Contacter le support')) ?>
                     </a>
+                    <?php if ($returns->canRequest($selected)): ?>
+                        <a href="<?= $escaper->escapeUrl($block->getUrl('retours/demande', ['_query' => ['commande' => $selected->getId()]])) ?>" class="myca-btn myca-btn-secondary">
+                            <?= $icons->renderHtml('refresh', '', 16, 16, ['aria-hidden' => 'true']) ?><?= $escaper->escapeHtml(__('Demander un retour')) ?>
+                        </a>
+                    <?php endif ?>
                 </div>
             </section>
         <?php endif ?>

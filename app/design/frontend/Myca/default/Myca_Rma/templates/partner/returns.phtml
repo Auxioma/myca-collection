@@ -1,0 +1,342 @@
+<?php
+/**
+ * M23 — Retours & SAV (partenaire) : indicateurs, filtres, tableau des demandes de la boutique, détail, suivi,
+ * résumé du traitement et actions rapides. Seules les demandes de la boutique active sont lues.
+ */
+
+declare(strict_types=1);
+
+use Hyva\Theme\Model\ViewModelRegistry;
+use Hyva\Theme\ViewModel\SvgIcons;
+use Magento\Framework\Escaper;
+use Magento\Framework\View\Element\Template;
+use Myca\Partner\ViewModel\PartnerSpace;
+use Myca\Rma\Model\ReturnPolicy;
+use Myca\Rma\Model\Rma;
+use Myca\Rma\ViewModel\Returns;
+
+/** @var Template $block */
+/** @var Escaper $escaper */
+/** @var ViewModelRegistry $viewModels */
+
+$icons = $viewModels->require(SvgIcons::class);
+/** @var Returns $returns */
+$returns = $viewModels->require(Returns::class);
+/** @var PartnerSpace $space */
+$space = $viewModels->require(PartnerSpace::class);
+$request = $block->getRequest();
+
+$rmas = $returns->getPartnerRmas();
+$filters = [
+    'toutes' => ['layers', __('Toutes les demandes')],
+    'retours' => ['refresh', __('Retours')],
+    'echanges' => ['swap', __('Échanges')],
+    'sav' => ['wrench', __('SAV')],
+    'en-cours' => ['clock', __('En cours')],
+    'cloturees' => ['check-circle', __('Clôturées')],
+];
+$typeByFilter = ['retours' => ReturnPolicy::TYPE_RETURN, 'echanges' => ReturnPolicy::TYPE_EXCHANGE, 'sav' => ReturnPolicy::TYPE_WARRANTY];
+$matchesFilter = static function (Rma $rma, string $filter) use ($returns, $typeByFilter): bool {
+    return match ($filter) {
+        'toutes' => true,
+        'en-cours' => $returns->isOpen($rma),
+        'cloturees' => !$returns->isOpen($rma),
+        default => $rma->getType() === ($typeByFilter[$filter] ?? null),
+    };
+};
+$periods = ['30' => __('30 derniers jours'), '90' => __('3 derniers mois'), '365' => __('12 derniers mois'), 'tout' => __('Toute la période')];
+
+$filter = (string) $request->getParam('filtre', 'toutes');
+$filter = isset($filters[$filter]) ? $filter : 'toutes';
+$period = (string) $request->getParam('periode', 'tout');
+$period = isset($periods[$period]) ? $period : 'tout';
+$query = trim((string) $request->getParam('q'));
+$since = $period === 'tout' ? 0 : strtotime('-' . (int) $period . ' days');
+
+$itemsByRma = [];
+foreach ($rmas as $rma) {
+    $itemsByRma[(int) $rma->getId()] = $returns->getItems($rma);
+}
+$matchesSearch = static function (Rma $rma) use ($query, $itemsByRma): bool {
+    if ($query === '') {
+        return true;
+    }
+    $haystack = [$rma->getIncrementId(), (string) $rma->getData('order_increment_id')];
+    foreach ($itemsByRma[(int) $rma->getId()] as $item) {
+        $haystack[] = (string) $item['name'];
+        $haystack[] = (string) $item['sku'];
+    }
+
+    return mb_stripos(implode(' ', $haystack), $query) !== false;
+};
+$inScope = array_values(array_filter(
+    $rmas,
+    static fn (Rma $rma) => strtotime((string) $rma->getData('created_at')) >= $since && $matchesSearch($rma)
+));
+$visible = array_values(array_filter($inScope, static fn (Rma $rma) => $matchesFilter($rma, $filter)));
+
+$selectedId = (int) $request->getParam('demande');
+$selected = null;
+foreach ($visible as $rma) {
+    if ($selected === null || (int) $rma->getId() === $selectedId) {
+        $selected = $rma;
+    }
+}
+// Une demande ouverte par lien direct reste affichée même si les filtres la masquent.
+if ($selectedId > 0 && ($selected === null || (int) $selected->getId() !== $selectedId)) {
+    foreach ($rmas as $rma) {
+        if ((int) $rma->getId() === $selectedId) {
+            $selected = $rma;
+        }
+    }
+}
+$baseQuery = array_filter(['q' => $query, 'periode' => $period === 'tout' ? null : $period]);
+
+$count = static fn (string $code) => count(array_filter($rmas, static fn (Rma $rma) => $matchesFilter($rma, $code)));
+$closed = $count('cloturees');
+$credited = array_sum(array_map(static fn (Rma $rma) => (float) $rma->getData('refunded_amount'), $rmas));
+$kpis = [
+    ['icon' => 'refresh', 'label' => __('Demandes totales'), 'value' => (string) count($rmas)],
+    ['icon' => 'box', 'label' => __('Retours'), 'value' => (string) $count('retours')],
+    ['icon' => 'swap', 'label' => __('Échanges'), 'value' => (string) $count('echanges')],
+    ['icon' => 'wrench', 'label' => __('SAV / garantie'), 'value' => (string) $count('sav')],
+    ['icon' => 'clock', 'label' => __('En cours'), 'value' => (string) $count('en-cours')],
+    ['icon' => 'check-circle', 'label' => __('Clôturées'), 'value' => (string) $closed, 'detail' => $rmas ? sprintf('%d %%', round($closed / count($rmas) * 100)) : null],
+    ['icon' => 'euro', 'label' => __('Avoirs MYCA'), 'value' => $space->formatPrice($credited)],
+];
+?>
+<div class="flex flex-col gap-4">
+    <?= $block->getLayout()->createBlock(Template::class)->setTemplate('Myca_Partner::partials/kpis.phtml')->setData('kpis', $kpis)->toHtml() ?>
+
+    <nav aria-label="<?= $escaper->escapeHtmlAttr(__('Filtrer les demandes')) ?>">
+        <ul class="flex flex-wrap gap-2">
+            <?php foreach ($filters as $code => [$icon, $label]): ?>
+                <?php $n = count(array_filter($inScope, static fn (Rma $rma) => $matchesFilter($rma, $code))); ?>
+                <li>
+                    <a href="<?= $escaper->escapeUrl($block->getUrl('partenaire/retours', ['_query' => $baseQuery + ($code === 'toutes' ? [] : ['filtre' => $code])])) ?>"
+                       class="myca-btn <?= $code === $filter ? 'myca-btn-primary' : 'myca-btn-secondary' ?>"
+                       <?= $code === $filter ? 'aria-current="page"' : '' ?>>
+                        <?= $icons->renderHtml($icon, '', 16, 16, ['aria-hidden' => 'true']) ?><?= $escaper->escapeHtml($label) ?> (<?= (int) $n ?>)
+                    </a>
+                </li>
+            <?php endforeach ?>
+        </ul>
+    </nav>
+
+    <form method="get" action="<?= $escaper->escapeUrl($block->getUrl('partenaire/retours')) ?>"
+          class="grid gap-3 md:grid-cols-[minmax(0,1fr)_200px_auto_auto] md:items-end">
+        <?php if ($filter !== 'toutes'): ?>
+            <input type="hidden" name="filtre" value="<?= $escaper->escapeHtmlAttr($filter) ?>">
+        <?php endif ?>
+        <div>
+            <label for="myca-rma-q" class="sr-only"><?= $escaper->escapeHtml(__('Rechercher une demande')) ?></label>
+            <input id="myca-rma-q" type="search" name="q" value="<?= $escaper->escapeHtmlAttr($query) ?>" class="myca-field"
+                   placeholder="<?= $escaper->escapeHtmlAttr(__('Rechercher (n° demande, commande, article…)')) ?>">
+        </div>
+        <div>
+            <label for="myca-rma-period" class="myca-field-label"><?= $escaper->escapeHtml(__('Période')) ?></label>
+            <select id="myca-rma-period" name="periode" class="myca-field">
+                <?php foreach ($periods as $code => $label): ?>
+                    <option value="<?= $escaper->escapeHtmlAttr($code) ?>" <?= $code === $period ? 'selected' : '' ?>><?= $escaper->escapeHtml($label) ?></option>
+                <?php endforeach ?>
+            </select>
+        </div>
+        <button type="submit" class="myca-btn myca-btn-dark"><?= $icons->renderHtml('search', '', 16, 16, ['aria-hidden' => 'true']) ?><?= $escaper->escapeHtml(__('Rechercher')) ?></button>
+        <a href="<?= $escaper->escapeUrl($block->getUrl('partenaire/retours')) ?>" class="myca-btn myca-btn-secondary">
+            <?= $icons->renderHtml('refresh', '', 16, 16, ['aria-hidden' => 'true']) ?><?= $escaper->escapeHtml(__('Réinitialiser')) ?>
+        </a>
+    </form>
+
+    <section class="myca-card p-4 shadow-card" aria-labelledby="myca-partner-rmas">
+        <h2 id="myca-partner-rmas" class="sr-only"><?= $escaper->escapeHtml(__('Demandes')) ?></h2>
+        <?php if ($visible): ?>
+            <div class="relative md:overflow-x-auto">
+                <table class="w-full myca-body-s">
+                    <thead class="hidden md:table-header-group">
+                        <tr class="bg-surface-subtle text-left myca-caption-strong text-fg-secondary">
+                            <th scope="col" class="px-2.5 py-2"><?= $escaper->escapeHtml(__('N° demande')) ?></th>
+                            <th scope="col" class="px-2.5 py-2"><?= $escaper->escapeHtml(__('Date')) ?></th>
+                            <th scope="col" class="px-2.5 py-2"><?= $escaper->escapeHtml(__('N° commande')) ?></th>
+                            <th scope="col" class="px-2.5 py-2"><?= $escaper->escapeHtml(__('Type')) ?></th>
+                            <th scope="col" class="px-2.5 py-2"><?= $escaper->escapeHtml(__('Article / modèle')) ?></th>
+                            <th scope="col" class="px-2.5 py-2"><?= $escaper->escapeHtml(__('Motif')) ?></th>
+                            <th scope="col" class="px-2.5 py-2"><?= $escaper->escapeHtml(__('Statut')) ?></th>
+                            <th scope="col" class="px-2.5 py-2 text-right"><?= $escaper->escapeHtml(__('Avoir MYCA')) ?></th>
+                            <th scope="col" class="px-2.5 py-2"><span class="sr-only"><?= $escaper->escapeHtml(__('Actions')) ?></span></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($visible as $rma): ?>
+                            <?php
+                            $isSelected = $selected && $rma->getId() === $selected->getId();
+                            $status = $returns->getStatus($rma);
+                            $items = $itemsByRma[(int) $rma->getId()];
+                            $first = reset($items) ?: null;
+                            $refunded = $rma->getData('refunded_amount');
+                            ?>
+                            <tr class="grid grid-cols-[1fr_auto] gap-x-3 gap-y-1 border-b border-line py-3 md:table-row md:py-0 <?= $isSelected ? 'md:bg-red-50' : '' ?>">
+                                <td class="font-semibold whitespace-nowrap text-accent-text md:px-2.5 md:py-3"><?= $escaper->escapeHtml($rma->getIncrementId()) ?></td>
+                                <td class="whitespace-nowrap text-fg-secondary md:px-2.5 md:py-3 md:text-fg"><?= $escaper->escapeHtml($block->formatDate((string) $rma->getData('created_at'), IntlDateFormatter::MEDIUM)) ?></td>
+                                <td class="text-fg md:px-2.5 md:py-3"><?= $escaper->escapeHtml((string) $rma->getData('order_increment_id')) ?></td>
+                                <td class="md:px-2.5 md:py-3"><span class="myca-badge myca-badge-<?= $escaper->escapeHtmlAttr($returns->getTypeTone($rma->getType())) ?>"><?= $escaper->escapeHtml($returns->getTypeLabel($rma)) ?></span></td>
+                                <td class="col-span-2 text-fg md:px-2.5 md:py-3">
+                                    <?php if ($first): ?>
+                                        <?= $escaper->escapeHtml((string) $first['name']) ?><?= count($items) > 1 ? $escaper->escapeHtml(' +' . (count($items) - 1)) : '' ?>
+                                    <?php endif ?>
+                                </td>
+                                <td class="col-span-2 text-fg-secondary md:px-2.5 md:py-3 md:text-fg"><?= $escaper->escapeHtml($returns->getReasonLabel($rma)) ?></td>
+                                <td class="md:px-2.5 md:py-3"><span class="myca-badge myca-badge-<?= $escaper->escapeHtmlAttr($status['tone']) ?>"><?= $escaper->escapeHtml($status['label']) ?></span></td>
+                                <td class="whitespace-nowrap text-fg md:px-2.5 md:py-3 md:text-right"><?= $refunded !== null ? $escaper->escapeHtml($space->formatPrice((float) $refunded)) : '—' ?></td>
+                                <td class="col-span-2 md:px-2.5 md:py-2">
+                                    <a href="<?= $escaper->escapeUrl($block->getUrl('partenaire/retours', ['_query' => $baseQuery + array_filter(['filtre' => $filter === 'toutes' ? null : $filter, 'demande' => $rma->getId()])])) ?>"
+                                       class="inline-flex size-11 items-center justify-center rounded-md text-fg-secondary hover:bg-surface-subtle hover:text-fg md:size-8"
+                                       aria-label="<?= $escaper->escapeHtmlAttr(__('Afficher le détail de la demande %1', $rma->getIncrementId())) ?>">
+                                        <?= $icons->renderHtml('eye', '', 16, 16, ['aria-hidden' => 'true']) ?>
+                                    </a>
+                                </td>
+                            </tr>
+                        <?php endforeach ?>
+                    </tbody>
+                </table>
+            </div>
+        <?php elseif ($rmas): ?>
+            <p class="myca-body-s text-fg-secondary"><?= $escaper->escapeHtml(__('Aucune demande ne correspond à ces critères.')) ?></p>
+        <?php else: ?>
+            <p class="myca-body-s text-fg-secondary">
+                <?= $escaper->escapeHtml(__('Aucune demande de retour ou de SAV. Pour en ouvrir une, choisissez la commande concernée dans « Mes commandes ».')) ?>
+                <a href="<?= $escaper->escapeUrl($block->getUrl('partenaire/commandes')) ?>" class="font-semibold text-fg underline"><?= $escaper->escapeHtml(__('Mes commandes')) ?></a>
+            </p>
+        <?php endif ?>
+    </section>
+
+    <?php if ($selected): ?>
+        <?php
+        $items = $itemsByRma[(int) $selected->getId()] ?? $returns->getItems($selected);
+        $status = $returns->getStatus($selected);
+        $order = $returns->getOrder($selected);
+        $firstItem = reset($items) ?: null;
+        $orderItem = $firstItem && $order ? $order->getItemById((int) $firstItem['order_item_id']) : null;
+        $refunded = $selected->getData('refunded_amount');
+        $actionUrl = $block->getUrl('partenaire/retours/action');
+        $actions = $returns->getRequesterActions($selected);
+        ?>
+        <div class="grid gap-4 lg:grid-cols-2 2xl:grid-cols-[minmax(0,374fr)_minmax(0,278fr)_minmax(0,282fr)_minmax(0,278fr)]">
+            <section class="myca-card p-4 shadow-card" aria-labelledby="myca-rma-detail">
+                <h2 id="myca-rma-detail" class="myca-card-title"><?= $icons->renderHtml('refresh', 'text-accent-text', 18, 18, ['aria-hidden' => 'true']) ?><?= $escaper->escapeHtml(__('Détail de la demande : %1', $selected->getIncrementId())) ?></h2>
+                <div class="flex gap-4">
+                    <?php if ($orderItem): ?>
+                        <img src="<?= $escaper->escapeUrl($space->getProductImageUrl($orderItem->getProduct())) ?>" alt=""
+                             class="hidden size-[120px] shrink-0 object-contain sm:block" width="120" height="120" loading="lazy">
+                    <?php endif ?>
+                    <div class="flex min-w-0 flex-1 flex-col gap-2">
+                        <ul class="flex flex-col gap-1">
+                            <?php foreach ($items as $item): ?>
+                                <li class="myca-body-s-strong text-fg">
+                                    <?= $escaper->escapeHtml((string) $item['name']) ?> <span class="font-normal text-fg-secondary"><?= $escaper->escapeHtml(__('× %1', (float) $item['qty'])) ?></span>
+                                </li>
+                            <?php endforeach ?>
+                        </ul>
+                        <dl class="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1.5 myca-caption">
+                            <dt class="whitespace-nowrap text-fg-secondary"><?= $escaper->escapeHtml(__('N° commande')) ?></dt>
+                            <dd class="text-right font-semibold text-fg"><?= $escaper->escapeHtml((string) $selected->getData('order_increment_id')) ?></dd>
+                            <dt class="whitespace-nowrap text-fg-secondary"><?= $escaper->escapeHtml(__('Date de demande')) ?></dt>
+                            <dd class="text-right font-semibold text-fg"><?= $escaper->escapeHtml($block->formatDate((string) $selected->getData('created_at'), IntlDateFormatter::MEDIUM)) ?></dd>
+                            <dt class="whitespace-nowrap text-fg-secondary"><?= $escaper->escapeHtml(__('Type')) ?></dt>
+                            <dd class="text-right font-semibold text-fg"><?= $escaper->escapeHtml($returns->getTypeLabel($selected)) ?></dd>
+                            <dt class="whitespace-nowrap text-fg-secondary"><?= $escaper->escapeHtml(__('Motif')) ?></dt>
+                            <dd class="text-right font-semibold text-fg"><?= $escaper->escapeHtml($returns->getReasonLabel($selected)) ?></dd>
+                            <dt class="whitespace-nowrap text-fg-secondary"><?= $escaper->escapeHtml(__('Canal vendeur')) ?></dt>
+                            <dd class="text-right font-semibold text-fg"><?= $escaper->escapeHtml($returns->getOriginLabel($selected->getOrigin())) ?></dd>
+                            <dt class="whitespace-nowrap text-fg-secondary"><?= $escaper->escapeHtml(__('Statut')) ?></dt>
+                            <dd class="text-right"><span class="myca-badge myca-badge-<?= $escaper->escapeHtmlAttr($status['tone']) ?>"><?= $escaper->escapeHtml($status['label']) ?></span></dd>
+                        </dl>
+                    </div>
+                </div>
+            </section>
+
+            <section class="myca-card p-4 shadow-card" aria-labelledby="myca-rma-tracking">
+                <h2 id="myca-rma-tracking" class="myca-card-title"><?= $icons->renderHtml('trend', 'text-accent-text', 18, 18, ['aria-hidden' => 'true']) ?><?= $escaper->escapeHtml(__('Suivi de la demande')) ?></h2>
+                <?= $block->getLayout()->createBlock(Template::class)->setTemplate('Myca_Rma::partials/timeline.phtml')->setData('rma', $selected)->toHtml() ?>
+            </section>
+
+            <section class="myca-card flex flex-col gap-3 p-4 shadow-card" aria-labelledby="myca-rma-summary">
+                <h2 id="myca-rma-summary" class="myca-card-title mb-0"><?= $icons->renderHtml('file', 'text-accent-text', 18, 18, ['aria-hidden' => 'true']) ?><?= $escaper->escapeHtml(__('Résumé du traitement')) ?></h2>
+                <dl class="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1.5 myca-caption">
+                    <?php foreach ($items as $item): ?>
+                        <dt class="whitespace-nowrap text-fg-secondary"><?= $escaper->escapeHtml(__('Article retourné')) ?></dt>
+                        <dd class="text-right font-semibold text-fg"><?= $escaper->escapeHtml((string) $item['name']) ?></dd>
+                        <?php if ($item['exchange_wish']): ?>
+                            <dt class="whitespace-nowrap text-fg-secondary"><?= $escaper->escapeHtml(__('Souhaité')) ?></dt>
+                            <dd class="text-right font-semibold text-fg"><?= $escaper->escapeHtml((string) $item['exchange_wish']) ?></dd>
+                        <?php endif ?>
+                        <?php if ($item['item_condition']): ?>
+                            <dt class="whitespace-nowrap text-fg-secondary"><?= $escaper->escapeHtml(__('Contrôle')) ?></dt>
+                            <dd class="text-right font-semibold text-fg"><?= $escaper->escapeHtml($returns->getConditionLabel((string) $item['item_condition'])) ?></dd>
+                        <?php endif ?>
+                    <?php endforeach ?>
+                    <?php if ($selected->getOrigin() === ReturnPolicy::ORIGIN_DROPSHIP): ?>
+                        <dt class="whitespace-nowrap text-fg-secondary"><?= $escaper->escapeHtml(__('Remboursement du client')) ?></dt>
+                        <dd class="text-right font-semibold text-fg"><?= $escaper->escapeHtml((int) $selected->getData('partner_refunded_customer') ? __('Déclaré par la boutique') : __('À faire par la boutique')) ?></dd>
+                    <?php endif ?>
+                </dl>
+                <p class="mt-auto flex justify-between gap-3 rounded-md bg-gold-100 px-3 py-2 myca-body-s">
+                    <span class="font-semibold text-fg"><?= $escaper->escapeHtml(__('Avoir MYCA')) ?></span>
+                    <span class="font-bold text-fg"><?= $refunded !== null ? $escaper->escapeHtml($space->formatPrice((float) $refunded)) : $escaper->escapeHtml(__('après contrôle')) ?></span>
+                </p>
+            </section>
+
+            <section class="myca-card flex flex-col gap-2.5 p-4 shadow-card" aria-labelledby="myca-rma-actions">
+                <h2 id="myca-rma-actions" class="myca-card-title mb-1"><?= $icons->renderHtml('zap', 'text-accent-text', 18, 18, ['aria-hidden' => 'true']) ?><?= $escaper->escapeHtml(__('Actions rapides')) ?></h2>
+                <?php if ($order): ?>
+                    <a href="<?= $escaper->escapeUrl($block->getUrl('partenaire/commandes', ['_query' => ['commande' => $order->getId()]])) ?>" class="myca-btn myca-btn-secondary w-full justify-between text-left whitespace-normal">
+                        <span class="flex items-center gap-2"><?= $icons->renderHtml('truck', 'text-accent-text', 16, 16, ['aria-hidden' => 'true']) ?><?= $escaper->escapeHtml(__('Voir la commande')) ?></span>
+                        <?= $icons->renderHtml('chevron-right', '', 16, 16, ['aria-hidden' => 'true']) ?>
+                    </a>
+                <?php endif ?>
+                <?php foreach ($actions as $action): ?>
+                    <form method="post" action="<?= $escaper->escapeUrl($actionUrl) ?>">
+                        <?= $block->getBlockHtml('formkey') ?>
+                        <input type="hidden" name="id" value="<?= (int) $selected->getId() ?>">
+                        <input type="hidden" name="action" value="<?= $escaper->escapeHtmlAttr($action) ?>">
+                        <?php if ($action === 'expedie'): ?>
+                            <button type="submit" class="myca-btn myca-btn-secondary w-full justify-between text-left whitespace-normal">
+                                <span class="flex items-center gap-2"><?= $icons->renderHtml('check', 'text-accent-text', 16, 16, ['aria-hidden' => 'true']) ?><?= $escaper->escapeHtml(__('Colis remis au transporteur')) ?></span>
+                                <?= $icons->renderHtml('chevron-right', '', 16, 16, ['aria-hidden' => 'true']) ?>
+                            </button>
+                        <?php else: ?>
+                            <button type="submit" class="myca-btn myca-btn-outline-accent w-full justify-between bg-red-50 text-left whitespace-normal">
+                                <span class="flex items-center gap-2"><?= $icons->renderHtml('logout', '', 16, 16, ['aria-hidden' => 'true']) ?><?= $escaper->escapeHtml(__('Annuler la demande')) ?></span>
+                                <?= $icons->renderHtml('chevron-right', '', 16, 16, ['aria-hidden' => 'true']) ?>
+                            </button>
+                        <?php endif ?>
+                    </form>
+                <?php endforeach ?>
+                <?php if ($returns->canDeclarePartnerRefund($selected)): ?>
+                    <form method="post" action="<?= $escaper->escapeUrl($actionUrl) ?>">
+                        <?= $block->getBlockHtml('formkey') ?>
+                        <input type="hidden" name="id" value="<?= (int) $selected->getId() ?>">
+                        <input type="hidden" name="action" value="client-rembourse">
+                        <button type="submit" class="myca-btn myca-btn-secondary w-full justify-between text-left whitespace-normal">
+                            <span class="flex items-center gap-2"><?= $icons->renderHtml('euro', 'text-accent-text', 16, 16, ['aria-hidden' => 'true']) ?><?= $escaper->escapeHtml(__('J’ai remboursé mon client')) ?></span>
+                            <?= $icons->renderHtml('chevron-right', '', 16, 16, ['aria-hidden' => 'true']) ?>
+                        </button>
+                    </form>
+                <?php endif ?>
+                <a href="#myca-rma-messages" class="myca-btn myca-btn-secondary w-full justify-between text-left whitespace-normal">
+                    <span class="flex items-center gap-2"><?= $icons->renderHtml('mail', 'text-accent-text', 16, 16, ['aria-hidden' => 'true']) ?><?= $escaper->escapeHtml(__('Ajouter un message (SAV)')) ?></span>
+                    <?= $icons->renderHtml('chevron-right', '', 16, 16, ['aria-hidden' => 'true']) ?>
+                </a>
+            </section>
+        </div>
+
+        <section class="myca-card p-4 shadow-card" aria-labelledby="myca-rma-messages">
+            <h2 id="myca-rma-messages" class="myca-card-title"><?= $icons->renderHtml('mail', 'text-accent-text', 18, 18, ['aria-hidden' => 'true']) ?><?= $escaper->escapeHtml(__('Échanges avec le SAV MYCA')) ?></h2>
+            <?= $block->getLayout()->createBlock(Template::class)->setTemplate('Myca_Rma::partials/messages.phtml')->setData('rma', $selected)->setData('action_url', $actionUrl)->toHtml() ?>
+        </section>
+    <?php endif ?>
+
+    <p class="flex gap-2 rounded-md bg-warning-bg p-3 myca-caption text-warning">
+        <?= $icons->renderHtml('alert', 'mt-px shrink-0', 16, 16, ['aria-hidden' => 'true']) ?>
+        <span><?= $escaper->escapeHtml(__('Dropshipping : retour logistique via MYCA ; le remboursement du consommateur est effectué par la boutique vendeuse ; MYCA émet un avoir éventuel au partenaire. Achat en boutique physique : retour auprès de la boutique, sans remboursement automatique MYCA.')) ?></span>
+    </p>
+</div>

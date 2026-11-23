@@ -18,7 +18,7 @@ use Magento\Framework\View\Element\Template;
 $icons = $viewModels->require(SvgIcons::class);
 /** @var array<int, array<string, mixed>> $kpis */
 $kpis = (array) $block->getData('kpis');
-$columns = [3 => 'lg:grid-cols-3', 4 => 'lg:grid-cols-4', 5 => 'lg:grid-cols-5', 6 => 'lg:grid-cols-3 2xl:grid-cols-6'][count($kpis)] ?? 'lg:grid-cols-4';
+$columns = [3 => 'lg:grid-cols-3', 4 => 'lg:grid-cols-4', 5 => 'lg:grid-cols-5', 6 => 'lg:grid-cols-3 2xl:grid-cols-6', 7 => 'lg:grid-cols-4 2xl:grid-cols-7'][count($kpis)] ?? 'lg:grid-cols-4';
 ?>
 <ul class="grid grid-cols-2 gap-3 <?= /* @noEscape */ $columns ?>" aria-label="<?= $escaper->escapeHtmlAttr(__('Indicateurs')) ?>">
     <?php foreach ($kpis as $kpi): ?>

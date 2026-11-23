@@ -307,6 +307,14 @@ $modeLabels = ['dropship' => __('Dropshipping'), 'stock' => __('Achat de stock')
                             <?= $icons->renderHtml('chevron-right', '', 16, 16, ['aria-hidden' => 'true']) ?>
                         </a>
                     </li>
+                    <?php if ($selected->hasShipments()): ?>
+                        <li>
+                            <a href="<?= $escaper->escapeUrl($block->getUrl('partenaire/retours/demande', ['_query' => ['commande' => $selected->getId()]])) ?>" class="myca-btn myca-btn-secondary w-full justify-between text-left whitespace-normal">
+                                <span class="flex items-center gap-2"><?= $icons->renderHtml('refresh', 'text-accent-text', 16, 16, ['aria-hidden' => 'true']) ?><?= $escaper->escapeHtml(__('Demander un retour / SAV')) ?></span>
+                                <?= $icons->renderHtml('chevron-right', '', 16, 16, ['aria-hidden' => 'true']) ?>
+                            </a>
+                        </li>
+                    <?php endif ?>
                     <li>
                         <a href="<?= $escaper->escapeUrl($block->getUrl('', ['_direct' => 'contact'])) ?>" class="myca-btn myca-btn-secondary w-full justify-between text-left whitespace-normal">
                             <span class="flex items-center gap-2"><?= $icons->renderHtml('headset', 'text-accent-text', 16, 16, ['aria-hidden' => 'true']) ?><?= $escaper->escapeHtml(__('Contacter le support')) ?></span>

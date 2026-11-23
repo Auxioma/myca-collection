@@ -1,0 +1,55 @@
+<?php
+/**
+ * Échanges entre le demandeur et le service client MYCA, et formulaire d'envoi d'un message.
+ * Données : « rma », « action_url » (POST, action=message).
+ */
+
+declare(strict_types=1);
+
+use Hyva\Theme\Model\ViewModelRegistry;
+use Hyva\Theme\ViewModel\SvgIcons;
+use Magento\Framework\Escaper;
+use Magento\Framework\View\Element\Template;
+use Myca\Rma\Model\Rma;
+use Myca\Rma\ViewModel\Returns;
+
+/** @var Template $block */
+/** @var Escaper $escaper */
+/** @var ViewModelRegistry $viewModels */
+
+/** @var Rma|null $rma */
+$rma = $block->getData('rma');
+if (!$rma instanceof Rma) {
+    return;
+}
+$icons = $viewModels->require(SvgIcons::class);
+/** @var Returns $returns */
+$returns = $viewModels->require(Returns::class);
+$fieldId = 'myca-rma-message-' . (int) $rma->getId();
+?>
+<?php $messages = $returns->getMessages($rma); ?>
+<?php if ($messages): ?>
+    <ul class="flex flex-col gap-2.5">
+        <?php foreach ($messages as $message): ?>
+            <li class="rounded-md p-3 <?= $message['author_type'] === 'admin' ? 'bg-surface-subtle' : 'border border-line' ?>">
+                <p class="myca-caption text-fg-secondary">
+                    <span class="font-semibold text-fg"><?= $escaper->escapeHtml($returns->getAuthorLabel((string) $message['author_type'])) ?></span>
+                    · <?= $escaper->escapeHtml($block->formatDate((string) $message['created_at'], IntlDateFormatter::MEDIUM, true)) ?>
+                </p>
+                <p class="mt-1 myca-body-s whitespace-pre-line text-fg"><?= $escaper->escapeHtml((string) $message['message']) ?></p>
+            </li>
+        <?php endforeach ?>
+    </ul>
+<?php else: ?>
+    <p class="myca-body-s text-fg-secondary"><?= $escaper->escapeHtml(__('Aucun message pour le moment.')) ?></p>
+<?php endif ?>
+<?php if ($returns->isOpen($rma)): ?>
+    <form method="post" action="<?= $escaper->escapeUrl((string) $block->getData('action_url')) ?>" class="mt-3 flex flex-col gap-2">
+        <?= $block->getBlockHtml('formkey') ?>
+        <input type="hidden" name="id" value="<?= (int) $rma->getId() ?>">
+        <input type="hidden" name="action" value="message">
+        <label for="<?= $escaper->escapeHtmlAttr($fieldId) ?>" class="myca-field-label"><?= $escaper->escapeHtml(__('Écrire au service client')) ?></label>
+        <textarea id="<?= $escaper->escapeHtmlAttr($fieldId) ?>" name="message" rows="3" maxlength="2000" required class="myca-field"></textarea>
+        <button type="submit" class="myca-btn myca-btn-secondary self-start"><?= $icons->renderHtml('send', '', 16, 16, ['aria-hidden' => 'true']) ?><?= $escaper->escapeHtml(__('Envoyer')) ?></button>
+    </form>
+<?php endif ?>

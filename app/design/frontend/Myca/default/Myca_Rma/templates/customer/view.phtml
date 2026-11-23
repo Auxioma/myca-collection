@@ -1,0 +1,107 @@
+<?php
+/**
+ * Détail d'une demande côté client : articles, suivi, règle de remboursement, actions et messages.
+ * Même organisation que le détail de M23 (détail, suivi, résumé, actions).
+ */
+
+declare(strict_types=1);
+
+use Hyva\Theme\Model\ViewModelRegistry;
+use Hyva\Theme\ViewModel\SvgIcons;
+use Magento\Framework\Escaper;
+use Magento\Framework\View\Element\Template;
+use Myca\Rma\ViewModel\Returns;
+
+/** @var Template $block */
+/** @var Escaper $escaper */
+/** @var ViewModelRegistry $viewModels */
+
+$icons = $viewModels->require(SvgIcons::class);
+/** @var Returns $returns */
+$returns = $viewModels->require(Returns::class);
+$rma = $returns->getCurrentCustomerRma();
+if ($rma === null) {
+    return;
+}
+$order = $returns->getOrder($rma);
+$status = $returns->getStatus($rma);
+$refunded = $rma->getData('refunded_amount');
+$actionUrl = $block->getUrl('retours/voir/action');
+$actions = $returns->getRequesterActions($rma);
+?>
+<div class="flex flex-col gap-4">
+    <?php if ($returns->isCustomerLoggedIn()): ?>
+        <a href="<?= $escaper->escapeUrl($block->getUrl('retours')) ?>" class="inline-flex min-h-11 items-center gap-1.5 self-start myca-body-s-strong text-fg-secondary hover:text-fg">
+            <?= $icons->renderHtml('chevron-right', 'rotate-180', 16, 16, ['aria-hidden' => 'true']) ?><?= $escaper->escapeHtml(__('Mes retours & SAV')) ?>
+        </a>
+    <?php endif ?>
+
+    <div class="grid gap-4 xl:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)_minmax(0,1fr)]">
+        <section class="myca-card p-4" aria-labelledby="myca-rma-detail">
+            <h2 id="myca-rma-detail" class="myca-card-title">
+                <?= $icons->renderHtml('refresh', '', 18, 18, ['aria-hidden' => 'true']) ?>
+                <?= $escaper->escapeHtml(__('Demande %1', $rma->getIncrementId())) ?>
+                <span class="ms-auto myca-badge myca-badge-<?= $escaper->escapeHtmlAttr($status['tone']) ?>"><?= $escaper->escapeHtml($status['label']) ?></span>
+            </h2>
+            <dl class="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1.5 myca-body-s">
+                <dt class="text-fg-secondary"><?= $escaper->escapeHtml(__('N° commande')) ?></dt>
+                <dd class="text-right font-semibold text-fg"><?= $escaper->escapeHtml((string) $rma->getData('order_increment_id')) ?></dd>
+                <dt class="text-fg-secondary"><?= $escaper->escapeHtml(__('Date de demande')) ?></dt>
+                <dd class="text-right font-semibold text-fg"><?= $escaper->escapeHtml($block->formatDate((string) $rma->getData('created_at'), IntlDateFormatter::MEDIUM)) ?></dd>
+                <dt class="text-fg-secondary"><?= $escaper->escapeHtml(__('Type')) ?></dt>
+                <dd class="text-right font-semibold text-fg"><?= $escaper->escapeHtml($returns->getTypeLabel($rma)) ?></dd>
+                <dt class="text-fg-secondary"><?= $escaper->escapeHtml(__('Motif')) ?></dt>
+                <dd class="text-right font-semibold text-fg"><?= $escaper->escapeHtml($returns->getReasonLabel($rma)) ?></dd>
+            </dl>
+            <ul class="mt-3 flex flex-col divide-y divide-line border-t border-line">
+                <?php foreach ($returns->getItems($rma) as $item): ?>
+                    <li class="flex justify-between gap-3 py-2 myca-body-s">
+                        <span class="flex flex-col">
+                            <span class="font-semibold text-fg"><?= $escaper->escapeHtml((string) $item['name']) ?></span>
+                            <?php if ($item['exchange_wish']): ?>
+                                <span class="myca-caption text-fg-secondary"><?= $escaper->escapeHtml(__('Souhaité : %1', $item['exchange_wish'])) ?></span>
+                            <?php endif ?>
+                        </span>
+                        <span class="whitespace-nowrap text-fg"><?= $escaper->escapeHtml(__('× %1', (float) $item['qty'])) ?></span>
+                    </li>
+                <?php endforeach ?>
+            </ul>
+            <?php if ($rma->getData('comment')): ?>
+                <p class="mt-3 myca-caption whitespace-pre-line text-fg-secondary"><?= $escaper->escapeHtml((string) $rma->getData('comment')) ?></p>
+            <?php endif ?>
+        </section>
+
+        <section class="myca-card p-4" aria-labelledby="myca-rma-tracking">
+            <h2 id="myca-rma-tracking" class="myca-card-title"><?= $icons->renderHtml('trend', '', 18, 18, ['aria-hidden' => 'true']) ?><?= $escaper->escapeHtml(__('Suivi de la demande')) ?></h2>
+            <?= $block->getLayout()->createBlock(Template::class)->setTemplate('Myca_Rma::partials/timeline.phtml')->setData('rma', $rma)->toHtml() ?>
+        </section>
+
+        <section class="myca-card flex flex-col gap-3 p-4" aria-labelledby="myca-rma-actions">
+            <h2 id="myca-rma-actions" class="myca-card-title mb-0"><?= $icons->renderHtml('zap', '', 18, 18, ['aria-hidden' => 'true']) ?><?= $escaper->escapeHtml(__('Remboursement et actions')) ?></h2>
+            <p class="myca-body-s text-fg"><?= $escaper->escapeHtml($returns->getRefundRule($rma)) ?></p>
+            <?php if ($refunded !== null && $order): ?>
+                <p class="flex justify-between rounded-md bg-gold-100 px-3 py-2 myca-body-s">
+                    <span class="font-semibold text-fg"><?= $escaper->escapeHtml(__('Montant remboursé')) ?></span>
+                    <span class="font-bold text-fg"><?= /* @noEscape */ $order->formatPrice((float) $refunded) ?></span>
+                </p>
+            <?php endif ?>
+            <?php foreach ($actions as $action): ?>
+                <form method="post" action="<?= $escaper->escapeUrl($actionUrl) ?>">
+                    <?= $block->getBlockHtml('formkey') ?>
+                    <input type="hidden" name="id" value="<?= (int) $rma->getId() ?>">
+                    <input type="hidden" name="action" value="<?= $escaper->escapeHtmlAttr($action) ?>">
+                    <?php if ($action === 'expedie'): ?>
+                        <button type="submit" class="myca-btn myca-btn-primary w-full"><?= $icons->renderHtml('truck', '', 16, 16, ['aria-hidden' => 'true']) ?><?= $escaper->escapeHtml(__('J’ai envoyé le colis')) ?></button>
+                    <?php else: ?>
+                        <button type="submit" class="myca-btn myca-btn-secondary w-full"><?= $icons->renderHtml('logout', '', 16, 16, ['aria-hidden' => 'true']) ?><?= $escaper->escapeHtml(__('Annuler la demande')) ?></button>
+                    <?php endif ?>
+                </form>
+            <?php endforeach ?>
+        </section>
+    </div>
+
+    <section class="myca-card p-4" aria-labelledby="myca-rma-messages">
+        <h2 id="myca-rma-messages" class="myca-card-title"><?= $icons->renderHtml('mail', '', 18, 18, ['aria-hidden' => 'true']) ?><?= $escaper->escapeHtml(__('Échanges avec le service client')) ?></h2>
+        <?= $block->getLayout()->createBlock(Template::class)->setTemplate('Myca_Rma::partials/messages.phtml')->setData('rma', $rma)->setData('action_url', $actionUrl)->toHtml() ?>
+    </section>
+</div>
