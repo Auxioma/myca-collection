@@ -1,0 +1,281 @@
+<?php
+/**
+ * M30 — Mes devis : indicateurs, filtres, tableau des devis, détail (articles, HT / TVA / TTC), suivi et actions.
+ * Accepter un devis n'est pas une facture : la commande et le paiement suivent « Transformer en commande ».
+ */
+
+declare(strict_types=1);
+
+use Hyva\Theme\Model\ViewModelRegistry;
+use Hyva\Theme\ViewModel\SvgIcons;
+use Magento\Framework\Escaper;
+use Magento\Framework\View\Element\Template;
+use Myca\Quote\Model\Quote;
+use Myca\Quote\ViewModel\Quotes;
+
+/** @var Template $block */
+/** @var Escaper $escaper */
+/** @var ViewModelRegistry $viewModels */
+
+$icons = $viewModels->require(SvgIcons::class);
+/** @var Quotes $quotes */
+$quotes = $viewModels->require(Quotes::class);
+$request = $block->getRequest();
+$all = $quotes->getQuotes();
+$counts = $quotes->getCounts();
+$filter = (string) $request->getParam('filtre', 'tous');
+$filter = isset($counts[$filter]) ? $filter : 'tous';
+$query = trim((string) $request->getParam('q'));
+$visible = array_values(array_filter($all, static function (Quote $quote) use ($quotes, $filter, $query): bool {
+    if (!$quotes->matches($quote, $filter)) {
+        return false;
+    }
+    if ($query === '') {
+        return true;
+    }
+    $haystack = [$quote->getIncrementId()];
+    foreach ($quotes->getItems($quote) as $item) {
+        $haystack[] = (string) $item['name'];
+        $haystack[] = (string) $item['sku'];
+    }
+
+    return mb_stripos(implode(' ', $haystack), $query) !== false;
+}));
+$selectedId = (int) $request->getParam('devis');
+$selected = null;
+foreach ($all as $quote) {
+    if ((int) $quote->getId() === $selectedId) {
+        $selected = $quote;
+    }
+}
+$selected ??= $visible[0] ?? null;
+$kpis = [
+    ['tous', 'file', __('Mes devis')],
+    ['en-attente', 'clock', __('En attente')],
+    ['acceptes', 'check-circle', __('Acceptés')],
+    ['refuses', 'alert', __('Refusés')],
+    ['brouillons', 'edit', __('Brouillons')],
+];
+$actionLabels = [
+    'envoyer' => ['send', __('Envoyer la demande'), 'myca-btn-primary'],
+    'accepter' => ['check', __('Accepter ce devis'), 'myca-btn-primary'],
+    'commander' => ['cart', __('Transformer en commande'), 'myca-btn-primary'],
+    'refuser' => ['logout', __('Refuser ce devis'), 'myca-btn-secondary'],
+    'annuler' => ['logout', __('Annuler ce devis'), 'myca-btn-outline-accent'],
+];
+?>
+<div class="flex min-w-0 flex-col gap-4">
+    <ul class="grid grid-cols-2 gap-3 lg:grid-cols-5" aria-label="<?= $escaper->escapeHtmlAttr(__('Indicateurs')) ?>">
+        <?php foreach ($kpis as [$code, $icon, $label]): ?>
+            <li>
+                <a href="<?= $escaper->escapeUrl($block->getUrl('devis', ['_query' => $code === 'tous' ? [] : ['filtre' => $code]])) ?>"
+                   class="myca-card flex h-full items-center gap-3 p-4 shadow-card hover:border-line-strong <?= $code === $filter ? 'border-accent' : '' ?>"
+                   <?= $code === $filter ? 'aria-current="page"' : '' ?>>
+                    <?= $icons->renderHtml($icon, 'shrink-0 text-icon-kpi', 26, 26, ['aria-hidden' => 'true']) ?>
+                    <span class="flex min-w-0 flex-1 flex-col">
+                        <span class="myca-caption-strong text-fg-secondary"><?= $escaper->escapeHtml($label) ?></span>
+                        <span class="text-[22px] leading-7 font-bold text-fg"><?= (int) $counts[$code] ?></span>
+                    </span>
+                    <?= $icons->renderHtml('chevron-right', 'shrink-0 text-fg-secondary', 16, 16, ['aria-hidden' => 'true']) ?>
+                </a>
+            </li>
+        <?php endforeach ?>
+    </ul>
+
+    <div class="grid gap-3 md:grid-cols-[minmax(0,1fr)_auto] md:items-end">
+        <form method="get" action="<?= $escaper->escapeUrl($block->getUrl('devis')) ?>" class="flex gap-2">
+            <?php if ($filter !== 'tous'): ?>
+                <input type="hidden" name="filtre" value="<?= $escaper->escapeHtmlAttr($filter) ?>">
+            <?php endif ?>
+            <label for="myca-quote-q" class="sr-only"><?= $escaper->escapeHtml(__('Rechercher un devis')) ?></label>
+            <input id="myca-quote-q" type="search" name="q" value="<?= $escaper->escapeHtmlAttr($query) ?>" class="myca-field"
+                   placeholder="<?= $escaper->escapeHtmlAttr(__('Rechercher un devis (n°, produit…)')) ?>">
+            <button type="submit" class="myca-btn myca-btn-secondary shrink-0" aria-label="<?= $escaper->escapeHtmlAttr(__('Rechercher')) ?>"><?= $icons->renderHtml('search', '', 16, 16, ['aria-hidden' => 'true']) ?></button>
+        </form>
+        <a href="<?= $escaper->escapeUrl($block->getUrl('checkout/cart', ['_query' => ['devis' => 1]])) ?>" class="myca-btn myca-btn-primary">
+            <?= $icons->renderHtml('send', '', 16, 16, ['aria-hidden' => 'true']) ?><?= $escaper->escapeHtml(__('Demander un devis')) ?>
+        </a>
+    </div>
+
+    <section class="myca-card p-4" aria-labelledby="myca-quotes-table">
+        <h2 id="myca-quotes-table" class="sr-only"><?= $escaper->escapeHtml(__('Devis')) ?></h2>
+        <?php if ($visible): ?>
+            <div class="relative md:overflow-x-auto">
+                <table class="w-full myca-body-s">
+                    <thead class="hidden md:table-header-group">
+                        <tr class="bg-surface-subtle text-left myca-caption-strong text-fg-secondary">
+                            <th scope="col" class="px-2.5 py-2"><?= $escaper->escapeHtml(__('N° devis')) ?></th>
+                            <th scope="col" class="px-2.5 py-2"><?= $escaper->escapeHtml(__('Date')) ?></th>
+                            <th scope="col" class="px-2.5 py-2"><?= $escaper->escapeHtml(__('Articles')) ?></th>
+                            <th scope="col" class="px-2.5 py-2 text-right"><?= $escaper->escapeHtml(__('Montant HT')) ?></th>
+                            <th scope="col" class="px-2.5 py-2 text-right"><?= $escaper->escapeHtml(__('TVA')) ?></th>
+                            <th scope="col" class="px-2.5 py-2 text-right"><?= $escaper->escapeHtml(__('Montant TTC')) ?></th>
+                            <th scope="col" class="px-2.5 py-2"><?= $escaper->escapeHtml(__('Statut')) ?></th>
+                            <th scope="col" class="px-2.5 py-2"><?= $escaper->escapeHtml(__('Validité')) ?></th>
+                            <th scope="col" class="px-2.5 py-2"><span class="sr-only"><?= $escaper->escapeHtml(__('Actions')) ?></span></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($visible as $quote): ?>
+                            <?php
+                            $status = $quotes->getStatus($quote);
+                            $isSelected = $selected && $quote->getId() === $selected->getId();
+                            $priced = $quotes->isPriced($quote);
+                            ?>
+                            <tr class="grid grid-cols-[1fr_auto] gap-x-3 gap-y-1 border-b border-line py-3 md:table-row md:py-0 <?= $isSelected ? 'md:bg-gold-100' : '' ?>">
+                                <td class="font-semibold whitespace-nowrap text-fg md:px-2.5 md:py-3"><?= $escaper->escapeHtml($quote->getIncrementId()) ?></td>
+                                <td class="whitespace-nowrap text-fg-secondary md:px-2.5 md:py-3 md:text-fg"><?= $escaper->escapeHtml($block->formatDate((string) $quote->getData('created_at'), IntlDateFormatter::MEDIUM)) ?></td>
+                                <td class="col-span-2 text-fg md:px-2.5 md:py-3"><?= $escaper->escapeHtml($quotes->getSummary($quote)) ?></td>
+                                <td class="hidden whitespace-nowrap text-fg md:table-cell md:px-2.5 md:py-3 md:text-right"><?= $escaper->escapeHtml($priced ? $quotes->formatPrice((float) $quote->getData('subtotal_excl_tax')) : '—') ?></td>
+                                <td class="hidden whitespace-nowrap text-fg md:table-cell md:px-2.5 md:py-3 md:text-right"><?= $escaper->escapeHtml($priced ? $quotes->formatPrice((float) $quote->getData('tax_amount')) : '—') ?></td>
+                                <td class="font-semibold whitespace-nowrap text-fg md:px-2.5 md:py-3 md:text-right md:font-normal"><?= $escaper->escapeHtml($priced ? $quotes->formatPrice((float) $quote->getData('grand_total')) : __('À chiffrer')) ?></td>
+                                <td class="md:px-2.5 md:py-3"><span class="myca-badge myca-badge-<?= $escaper->escapeHtmlAttr($status['tone']) ?>"><?= $escaper->escapeHtml($status['label']) ?></span></td>
+                                <td class="whitespace-nowrap text-fg-secondary md:px-2.5 md:py-3 md:text-fg"><?= $escaper->escapeHtml($quotes->formatDate($quote->getData('valid_until') ? (string) $quote->getData('valid_until') : null)) ?></td>
+                                <td class="col-span-2 md:px-2.5 md:py-2">
+                                    <span class="flex items-center gap-1">
+                                        <a href="<?= $escaper->escapeUrl($block->getUrl('devis', ['_query' => array_filter(['filtre' => $filter === 'tous' ? null : $filter, 'q' => $query ?: null, 'devis' => $quote->getId()])])) ?>"
+                                           class="inline-flex size-11 items-center justify-center rounded-md text-fg-secondary hover:bg-surface-subtle hover:text-fg md:size-8"
+                                           aria-label="<?= $escaper->escapeHtmlAttr(__('Afficher le devis %1', $quote->getIncrementId())) ?>">
+                                            <?= $icons->renderHtml('eye', '', 16, 16, ['aria-hidden' => 'true']) ?>
+                                        </a>
+                                        <?php if ($quote->getData('pdf_path')): ?>
+                                            <a href="<?= $escaper->escapeUrl($block->getUrl('devis/pdf', ['_query' => ['id' => $quote->getId()]])) ?>"
+                                               class="inline-flex size-11 items-center justify-center rounded-md text-fg-secondary hover:bg-surface-subtle hover:text-fg md:size-8"
+                                               aria-label="<?= $escaper->escapeHtmlAttr(__('Télécharger le devis %1 (PDF)', $quote->getIncrementId())) ?>">
+                                                <?= $icons->renderHtml('download', '', 16, 16, ['aria-hidden' => 'true']) ?>
+                                            </a>
+                                        <?php endif ?>
+                                    </span>
+                                </td>
+                            </tr>
+                        <?php endforeach ?>
+                    </tbody>
+                </table>
+            </div>
+        <?php elseif ($all): ?>
+            <p class="myca-body-s text-fg-secondary"><?= $escaper->escapeHtml(__('Aucun devis ne correspond à ces critères.')) ?></p>
+        <?php else: ?>
+            <p class="myca-body-s text-fg-secondary"><?= $escaper->escapeHtml(__('Vous n’avez pas encore de devis. Ajoutez les articles et quantités souhaités à votre panier, puis choisissez « Demander un devis ».')) ?></p>
+        <?php endif ?>
+    </section>
+
+    <?php if ($selected): ?>
+        <?php
+        $items = $quotes->getItems($selected);
+        $status = $quotes->getStatus($selected);
+        $priced = $quotes->isPriced($selected);
+        $first = reset($items) ?: null;
+        ?>
+        <div class="grid gap-4 xl:grid-cols-[minmax(0,650fr)_minmax(0,298fr)_minmax(0,298fr)]">
+            <section class="myca-card p-4" aria-labelledby="myca-quote-detail">
+                <h2 id="myca-quote-detail" class="myca-card-title"><?= $icons->renderHtml('file', '', 18, 18, ['aria-hidden' => 'true']) ?><?= $escaper->escapeHtml(__('Détail du devis : %1', $selected->getIncrementId())) ?></h2>
+                <div class="grid gap-4 lg:grid-cols-[auto_minmax(0,1fr)]">
+                    <div class="flex gap-3">
+                        <?php if ($first): ?>
+                            <img src="<?= $escaper->escapeUrl($quotes->getImageUrl((int) $first['product_id'])) ?>" alt="" class="hidden size-[110px] shrink-0 object-contain sm:block" width="110" height="110" loading="lazy">
+                        <?php endif ?>
+                        <dl class="grid flex-1 grid-cols-[auto_1fr] content-start gap-x-3 gap-y-2 myca-caption lg:min-w-[200px]">
+                            <dt class="text-fg-secondary"><?= $escaper->escapeHtml(__('Devis du')) ?></dt>
+                            <dd class="text-right font-semibold whitespace-nowrap text-fg"><?= $escaper->escapeHtml($block->formatDate((string) $selected->getData('created_at'), IntlDateFormatter::MEDIUM)) ?></dd>
+                            <dt class="text-fg-secondary"><?= $escaper->escapeHtml(__('Statut')) ?></dt>
+                            <dd class="text-right"><span class="myca-badge myca-badge-<?= $escaper->escapeHtmlAttr($status['tone']) ?>"><?= $escaper->escapeHtml($status['label']) ?></span></dd>
+                            <dt class="text-fg-secondary"><?= $escaper->escapeHtml(__('Validité')) ?></dt>
+                            <dd class="text-right font-semibold whitespace-nowrap text-fg"><?= $escaper->escapeHtml($quotes->formatDate($selected->getData('valid_until') ? (string) $selected->getData('valid_until') : null)) ?></dd>
+                            <?php if ($selected->getData('order_increment_id')): ?>
+                                <dt class="text-fg-secondary"><?= $escaper->escapeHtml(__('Commande')) ?></dt>
+                                <dd class="text-right font-semibold text-fg"><?= $escaper->escapeHtml((string) $selected->getData('order_increment_id')) ?></dd>
+                            <?php endif ?>
+                        </dl>
+                    </div>
+                    <div class="flex min-w-0 flex-col gap-2">
+                        <table class="w-full myca-caption">
+                            <thead>
+                                <tr class="bg-surface-subtle text-left myca-caption-strong text-fg-secondary">
+                                    <th scope="col" class="px-2 py-1.5"><?= $escaper->escapeHtml(__('Article')) ?></th>
+                                    <th scope="col" class="px-2 py-1.5 text-right"><?= $escaper->escapeHtml(__('Qté')) ?></th>
+                                    <th scope="col" class="px-2 py-1.5 text-right"><?= $escaper->escapeHtml(__('PU TTC')) ?></th>
+                                    <th scope="col" class="px-2 py-1.5 text-right"><?= $escaper->escapeHtml(__('Total')) ?></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php foreach ($items as $item): ?>
+                                    <?php $unit = $item['unit_price_incl_tax'] === null ? null : (float) $item['unit_price_incl_tax']; ?>
+                                    <tr class="border-b border-line">
+                                        <td class="px-2 py-2 text-fg"><?= $escaper->escapeHtml((string) $item['name']) ?></td>
+                                        <td class="px-2 py-2 text-right text-fg"><?= (float) $item['qty'] ?></td>
+                                        <td class="px-2 py-2 text-right whitespace-nowrap text-fg"><?= $escaper->escapeHtml($quotes->formatPrice($unit)) ?></td>
+                                        <td class="px-2 py-2 text-right whitespace-nowrap text-fg"><?= $escaper->escapeHtml($quotes->formatPrice($unit === null ? null : $unit * (float) $item['qty'])) ?></td>
+                                    </tr>
+                                <?php endforeach ?>
+                            </tbody>
+                        </table>
+                        <?php if ($priced): ?>
+                            <dl class="flex flex-col gap-1 myca-body-s">
+                                <div class="flex justify-between"><dt class="text-fg-secondary"><?= $escaper->escapeHtml(__('Total HT')) ?></dt><dd class="font-semibold text-fg"><?= $escaper->escapeHtml($quotes->formatPrice((float) $selected->getData('subtotal_excl_tax'))) ?></dd></div>
+                                <div class="flex justify-between"><dt class="text-fg-secondary"><?= $escaper->escapeHtml(__('TVA')) ?></dt><dd class="font-semibold text-fg"><?= $escaper->escapeHtml($quotes->formatPrice((float) $selected->getData('tax_amount'))) ?></dd></div>
+                                <div class="flex justify-between rounded-md bg-gold-100 px-3 py-2"><dt class="font-semibold text-fg"><?= $escaper->escapeHtml(__('Total TTC')) ?></dt><dd class="font-bold text-fg"><?= $escaper->escapeHtml($quotes->formatPrice((float) $selected->getData('grand_total'))) ?></dd></div>
+                            </dl>
+                        <?php else: ?>
+                            <p class="myca-caption text-fg-secondary"><?= $escaper->escapeHtml(__('Les prix seront indiqués dans la proposition de MYCA.')) ?></p>
+                        <?php endif ?>
+                        <?php if ($selected->getData('proposal_note')): ?>
+                            <p class="myca-caption whitespace-pre-line text-fg"><span class="font-semibold"><?= $escaper->escapeHtml(__('Conditions :')) ?></span> <?= $escaper->escapeHtml((string) $selected->getData('proposal_note')) ?></p>
+                        <?php endif ?>
+                    </div>
+                </div>
+            </section>
+
+            <section class="myca-card p-4" aria-labelledby="myca-quote-tracking">
+                <h2 id="myca-quote-tracking" class="myca-card-title"><?= $icons->renderHtml('trend', '', 18, 18, ['aria-hidden' => 'true']) ?><?= $escaper->escapeHtml(__('Suivi du devis')) ?></h2>
+                <ol class="flex flex-col">
+                    <?php $steps = $quotes->getSteps($selected); foreach ($steps as $index => $step): ?>
+                        <li class="relative flex gap-3 pb-4 last:pb-0">
+                            <?php if ($index < count($steps) - 1): ?>
+                                <span class="absolute top-4 bottom-0 left-[6px] w-0.5 <?= $step['done'] ? 'bg-green-600' : 'bg-gray-300' ?>" aria-hidden="true"></span>
+                            <?php endif ?>
+                            <span class="relative mt-1 size-3.5 shrink-0 rounded-pill <?= $step['done'] ? 'bg-green-600' : 'bg-gray-300' ?>" aria-hidden="true"></span>
+                            <span class="flex flex-col">
+                                <span class="myca-body-s-strong <?= $step['done'] ? 'text-fg' : 'text-fg-secondary' ?>"><?= $escaper->escapeHtml($step['label']) ?><span class="sr-only"> (<?= $escaper->escapeHtml($step['done'] ? __('fait') : __('à venir')) ?>)</span></span>
+                                <span class="myca-caption text-fg-muted"><?= $step['date'] ? $escaper->escapeHtml($block->formatDate($step['date'], IntlDateFormatter::MEDIUM, true)) : $escaper->escapeHtml(__('(à venir)')) ?></span>
+                            </span>
+                        </li>
+                    <?php endforeach ?>
+                </ol>
+            </section>
+
+            <section class="myca-card flex flex-col gap-2.5 p-4" aria-labelledby="myca-quote-actions">
+                <h2 id="myca-quote-actions" class="myca-card-title mb-1"><?= $icons->renderHtml('zap', '', 18, 18, ['aria-hidden' => 'true']) ?><?= $escaper->escapeHtml(__('Actions')) ?></h2>
+                <?php foreach ($quotes->getActions($selected) as $action): ?>
+                    <?php [$icon, $label, $style] = $actionLabels[$action]; ?>
+                    <form method="post" action="<?= $escaper->escapeUrl($block->getUrl('devis/action')) ?>">
+                        <?= $block->getBlockHtml('formkey') ?>
+                        <input type="hidden" name="id" value="<?= (int) $selected->getId() ?>">
+                        <input type="hidden" name="action" value="<?= $escaper->escapeHtmlAttr($action) ?>">
+                        <button type="submit" class="myca-btn <?= $escaper->escapeHtmlAttr($style) ?> w-full justify-between text-left whitespace-normal">
+                            <span class="flex items-center gap-2"><?= $icons->renderHtml($icon, '', 16, 16, ['aria-hidden' => 'true']) ?><?= $escaper->escapeHtml($label) ?></span>
+                            <?= $icons->renderHtml('chevron-right', '', 16, 16, ['aria-hidden' => 'true']) ?>
+                        </button>
+                    </form>
+                <?php endforeach ?>
+                <?php if ($selected->getData('pdf_path')): ?>
+                    <a href="<?= $escaper->escapeUrl($block->getUrl('devis/pdf', ['_query' => ['id' => $selected->getId()]])) ?>" class="myca-btn myca-btn-secondary w-full justify-between text-left whitespace-normal">
+                        <span class="flex items-center gap-2"><?= $icons->renderHtml('download', '', 16, 16, ['aria-hidden' => 'true']) ?><?= $escaper->escapeHtml(__('Télécharger le devis (PDF)')) ?></span>
+                        <?= $icons->renderHtml('chevron-right', '', 16, 16, ['aria-hidden' => 'true']) ?>
+                    </a>
+                <?php endif ?>
+                <a href="<?= $escaper->escapeUrl($block->getUrl('', ['_direct' => 'contact'])) ?>" class="myca-btn myca-btn-secondary w-full justify-between text-left whitespace-normal">
+                    <span class="flex items-center gap-2"><?= $icons->renderHtml('mail', '', 16, 16, ['aria-hidden' => 'true']) ?><?= $escaper->escapeHtml(__('Contacter MYCA')) ?></span>
+                    <?= $icons->renderHtml('chevron-right', '', 16, 16, ['aria-hidden' => 'true']) ?>
+                </a>
+                <?php if (in_array('commander', $quotes->getActions($selected), true)): ?>
+                    <p class="myca-caption text-fg-secondary"><?= $escaper->escapeHtml(__('« Transformer en commande » remplace le contenu de votre panier par les articles du devis.')) ?></p>
+                <?php endif ?>
+            </section>
+        </div>
+    <?php endif ?>
+
+    <p class="flex gap-2 rounded-md bg-info-bg p-3 myca-caption text-info">
+        <?= $icons->renderHtml('info', 'mt-px shrink-0', 16, 16, ['aria-hidden' => 'true']) ?>
+        <span><?= $escaper->escapeHtml(__('Acceptation d’un devis ≠ facture : aucune facturation avant la commande et son paiement. Version PDF figée et datée ; validité affichée.')) ?></span>
+    </p>
+</div>

@@ -1,0 +1,46 @@
+<?php
+/**
+ * Encart du panier : « Demander un devis » pour une commande en volume ou personnalisée. Le panier sert de liste
+ * d'articles ; il n'est pas vidé.
+ */
+
+declare(strict_types=1);
+
+use Hyva\Theme\Model\ViewModelRegistry;
+use Hyva\Theme\ViewModel\SvgIcons;
+use Magento\Framework\Escaper;
+use Magento\Framework\View\Element\Template;
+use Myca\Quote\ViewModel\Quotes;
+
+/** @var Template $block */
+/** @var Escaper $escaper */
+/** @var ViewModelRegistry $viewModels */
+
+$icons = $viewModels->require(SvgIcons::class);
+/** @var Quotes $quotes */
+$quotes = $viewModels->require(Quotes::class);
+?>
+<details class="mt-4 border-t border-line pt-4 group" <?= $block->getRequest()->getParam('devis') !== null ? 'open' : '' ?>>
+    <summary class="flex min-h-11 cursor-pointer list-none items-center gap-2 myca-body-s-strong text-fg">
+        <?= $icons->renderHtml('file', 'shrink-0', 18, 18, ['aria-hidden' => 'true']) ?>
+        <span class="flex-1"><?= $escaper->escapeHtml(__('Commande en volume ou personnalisée ? Demandez un devis')) ?></span>
+        <?= $icons->renderHtml('chevron-down', 'shrink-0 transition-transform group-open:rotate-180', 16, 16, ['aria-hidden' => 'true']) ?>
+    </summary>
+    <?php if ($quotes->isLoggedIn()): ?>
+        <form method="post" action="<?= $escaper->escapeUrl($block->getUrl('devis/demande/creer')) ?>" class="mt-3 flex flex-col gap-2.5">
+            <?= $block->getBlockHtml('formkey') ?>
+            <p class="myca-caption text-fg-secondary"><?= $escaper->escapeHtml(__('Votre demande reprend les articles et quantités de ce panier. MYCA vous répond avec une proposition chiffrée.')) ?></p>
+            <label for="myca-quote-note" class="myca-field-label"><?= $escaper->escapeHtml(__('Votre besoin (personnalisation, délai…)')) ?></label>
+            <textarea id="myca-quote-note" name="note" rows="3" maxlength="2000" class="myca-field"></textarea>
+            <div class="flex flex-wrap gap-2">
+                <button type="submit" name="envoyer" value="1" class="myca-btn myca-btn-primary"><?= $icons->renderHtml('send', '', 16, 16, ['aria-hidden' => 'true']) ?><?= $escaper->escapeHtml(__('Demander un devis')) ?></button>
+                <button type="submit" name="brouillon" value="1" class="myca-btn myca-btn-secondary"><?= $escaper->escapeHtml(__('Enregistrer en brouillon')) ?></button>
+            </div>
+        </form>
+    <?php else: ?>
+        <p class="mt-3 myca-caption text-fg-secondary">
+            <?= $escaper->escapeHtml(__('Connectez-vous pour demander un devis.')) ?>
+            <a href="<?= $escaper->escapeUrl($block->getUrl('customer/account/login')) ?>" class="font-semibold text-fg underline"><?= $escaper->escapeHtml(__('Se connecter')) ?></a>
+        </p>
+    <?php endif ?>
+</details>

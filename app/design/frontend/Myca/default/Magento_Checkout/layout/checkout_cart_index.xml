@@ -22,6 +22,10 @@
                 </arguments>
             </block>
         </referenceContainer>
+        <!-- Commande en volume ou personnalisée : « Demander un devis » à partir du panier (Myca_Quote). -->
+        <referenceContainer name="cart.summary">
+            <block name="myca.cart.quote" template="Myca_Quote::cart-request.phtml" after="-" cacheable="false"/>
+        </referenceContainer>
         <move element="checkout.cart.coupon" destination="checkout.cart.wrapper" as="myca.cart.coupon"/>
         <referenceBlock name="checkout.cart.wrapper">
             <block name="myca.cart.reassurance" as="myca.cart.reassurance" template="Magento_Checkout::php-cart/myca-reassurance.phtml"/>
