@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Backend:etc/menu.xsd">
+    <menu>
+        <add id="Myca_Passport::passport" title="Passeports du vêtement" translate="title" module="Myca_Passport" sortOrder="50"
+             parent="Magento_Catalog::inventory" action="myca_passport/lot/index" resource="Myca_Passport::passport"/>
+        <add id="Myca_Passport::verify" title="Vérifier un passeport" translate="title" module="Myca_Passport" sortOrder="51"
+             parent="Magento_Catalog::inventory" action="myca_passport/verify/index" resource="Myca_Passport::verify"/>
+    </menu>
+</config>

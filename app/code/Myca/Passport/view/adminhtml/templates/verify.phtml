@@ -1,0 +1,50 @@
+<?php
+/**
+ * Vérification d'un passeport par le support : statut, lot, variante, consultations. Aucune donnée personnelle
+ * (clients ayant enregistré le passeport) n'est affichée.
+ */
+
+declare(strict_types=1);
+
+use Magento\Backend\Block\Template;
+use Magento\Framework\Escaper;
+use Myca\Passport\ViewModel\Admin;
+
+/** @var Template $block */
+/** @var Escaper $escaper */
+
+/** @var Admin $viewModel */
+$viewModel = $block->getData('view_model');
+$code = $viewModel->getSearchedCode();
+$passport = $viewModel->getVerified();
+?>
+<form method="get" action="<?= $escaper->escapeUrl($viewModel->getUrl('myca_passport/verify/index')) ?>" class="admin__fieldset">
+    <div class="admin__field">
+        <label class="admin__field-label" for="myca-verify-code"><span><?= $escaper->escapeHtml(__('Numéro, identifiant ou adresse du QR code')) ?></span></label>
+        <div class="admin__field-control">
+            <input id="myca-verify-code" name="code" value="<?= $escaper->escapeHtmlAttr($code) ?>" required class="admin__control-text">
+            <button type="submit" class="action-primary"><?= $escaper->escapeHtml(__('Vérifier')) ?></button>
+        </div>
+    </div>
+</form>
+<?php if ($code !== ''): ?>
+    <section class="admin__page-section">
+        <?php if ($passport === null): ?>
+            <p><strong><?= $escaper->escapeHtml(__('Aucun passeport MYCA ne correspond à ce code : l’étiquette n’est pas authentique ou le code est mal saisi.')) ?></strong></p>
+        <?php else: ?>
+            <?php
+            $stats = $viewModel->getScanStats((int) $passport['passport_id']);
+            ?>
+            <table class="admin__table-secondary">
+                <tbody>
+                    <tr><th><?= $escaper->escapeHtml(__('Passeport')) ?></th><td><?= $escaper->escapeHtml($viewModel->formatNumber((string) $passport['token'])) ?></td></tr>
+                    <tr><th><?= $escaper->escapeHtml(__('Statut')) ?></th><td><?= $escaper->escapeHtml($passport['status'] === 'active' ? __('Actif — authentique') : __('Révoqué : %1', $passport['revoked_reason'])) ?></td></tr>
+                    <tr><th><?= $escaper->escapeHtml(__('Article')) ?></th><td><?= $escaper->escapeHtml((string) $passport['variant_label']) ?> (<?= $escaper->escapeHtml((string) $passport['sku']) ?>)</td></tr>
+                    <tr><th><?= $escaper->escapeHtml(__('N° de série')) ?></th><td><?= $escaper->escapeHtml((string) ($passport['serial_number'] ?: '—')) ?></td></tr>
+                    <tr><th><?= $escaper->escapeHtml(__('Lot')) ?></th><td><a href="<?= $escaper->escapeUrl($viewModel->getUrl('myca_passport/lot/edit', ['id' => $passport['lot_id']])) ?>"><?= $escaper->escapeHtml(__('Ouvrir le lot')) ?></a></td></tr>
+                    <tr><th><?= $escaper->escapeHtml(__('Consultations')) ?></th><td><?= $escaper->escapeHtml(__('%1 au total, %2 visiteurs distincts sur 24 h', $stats['total'], $stats['visitors_24h'])) ?><?= $stats['suspicious'] ? ' — <strong>' . $escaper->escapeHtml(__('volume anormal : étiquette possiblement copiée')) . '</strong>' : '' ?></td></tr>
+                </tbody>
+            </table>
+        <?php endif ?>
+    </section>
+<?php endif ?>

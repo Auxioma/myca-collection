@@ -1,0 +1,93 @@
+{
+    "myca_passport_lot": {
+        "column": {
+            "lot_id": true,
+            "lot_code": true,
+            "product_id": true,
+            "model_reference": true,
+            "collection": true,
+            "cut": true,
+            "material": true,
+            "grammage": true,
+            "origin": true,
+            "manufactured_on": true,
+            "field_status": true,
+            "created_at": true,
+            "updated_at": true
+        },
+        "constraint": {
+            "PRIMARY": true,
+            "MYCA_PASSPORT_LOT_LOT_CODE": true,
+            "MYCA_PASSPORT_LOT_PRODUCT_ID_CATALOG_PRODUCT_ENTITY_ENTITY_ID": true
+        }
+    },
+    "myca_passport": {
+        "column": {
+            "passport_id": true,
+            "token": true,
+            "lot_id": true,
+            "sku": true,
+            "variant_label": true,
+            "serial_number": true,
+            "status": true,
+            "revoked_reason": true,
+            "replaced_by_id": true,
+            "created_at": true,
+            "revoked_at": true
+        },
+        "index": {
+            "MYCA_PASSPORT_SERIAL_NUMBER": true,
+            "MYCA_PASSPORT_LOT_ID_SKU": true
+        },
+        "constraint": {
+            "PRIMARY": true,
+            "MYCA_PASSPORT_TOKEN": true,
+            "MYCA_PASSPORT_LOT_ID_MYCA_PASSPORT_LOT_LOT_ID": true
+        }
+    },
+    "myca_passport_history": {
+        "column": {
+            "history_id": true,
+            "lot_id": true,
+            "passport_id": true,
+            "action": true,
+            "field": true,
+            "old_value": true,
+            "new_value": true,
+            "reason": true,
+            "author": true,
+            "created_at": true
+        },
+        "constraint": {
+            "PRIMARY": true,
+            "MYCA_PASSPORT_HISTORY_LOT_ID_MYCA_PASSPORT_LOT_LOT_ID": true
+        }
+    },
+    "myca_passport_scan": {
+        "column": {
+            "scan_id": true,
+            "passport_id": true,
+            "visitor_hash": true,
+            "created_at": true
+        },
+        "index": {
+            "MYCA_PASSPORT_SCAN_PASSPORT_ID_CREATED_AT": true
+        },
+        "constraint": {
+            "PRIMARY": true,
+            "MYCA_PASSPORT_SCAN_PASSPORT_ID_MYCA_PASSPORT_PASSPORT_ID": true
+        }
+    },
+    "myca_passport_owner": {
+        "column": {
+            "passport_id": true,
+            "customer_id": true,
+            "created_at": true
+        },
+        "constraint": {
+            "PRIMARY": true,
+            "MYCA_PASSPORT_OWNER_PASSPORT_ID_MYCA_PASSPORT_PASSPORT_ID": true,
+            "MYCA_PASSPORT_OWNER_CUSTOMER_ID_CUSTOMER_ENTITY_ENTITY_ID": true
+        }
+    }
+}

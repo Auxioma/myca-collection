@@ -1,0 +1,169 @@
+<?php
+/**
+ * Fiche d'un lot : données et statut de chacune (certifiée, déclarée, en cours de validation), passeports
+ * (génération, QR à imprimer, révocation, remplacement) et historique des corrections.
+ */
+
+declare(strict_types=1);
+
+use Magento\Backend\Block\Template;
+use Magento\Framework\Escaper;
+use Myca\Passport\ViewModel\Admin;
+
+/** @var Template $block */
+/** @var Escaper $escaper */
+
+/** @var Admin $viewModel */
+$viewModel = $block->getData('view_model');
+$lot = $viewModel->getLot();
+$formKey = $block->getFormKey();
+$statusLabels = $viewModel->getStatusLabels();
+?>
+<p><a href="<?= $escaper->escapeUrl($viewModel->getUrl('myca_passport/lot/index')) ?>">&larr; <?= $escaper->escapeHtml(__('Tous les lots')) ?></a></p>
+
+<section class="admin__page-section">
+    <div class="admin__page-section-title"><span class="title"><?= $escaper->escapeHtml($lot ? __('Lot %1 — %2', $lot['lot_code'], $viewModel->getProductLabel($lot)) : __('Nouveau lot')) ?></span></div>
+    <?php if ($lot): ?>
+        <p><?= $escaper->escapeHtml($viewModel->canCertify($lot)
+            ? __('Collection et référence modèle certifiées : le certificat d’authenticité peut s’afficher (si l’option est activée).')
+            : __('Certificat non affiché tant que la collection et la référence modèle ne sont pas certifiées.')) ?></p>
+    <?php endif ?>
+    <form method="post" action="<?= $escaper->escapeUrl($viewModel->getUrl('myca_passport/lot/save')) ?>">
+        <input type="hidden" name="form_key" value="<?= $escaper->escapeHtmlAttr($formKey) ?>">
+        <?php if ($lot): ?>
+            <input type="hidden" name="id" value="<?= (int) $lot['lot_id'] ?>">
+        <?php else: ?>
+            <div class="admin__field _required">
+                <label class="admin__field-label" for="myca-lot-code"><span><?= $escaper->escapeHtml(__('Code du lot')) ?></span></label>
+                <div class="admin__field-control"><input id="myca-lot-code" name="lot[lot_code]" required class="admin__control-text" placeholder="LOT-2026-10-014"></div>
+            </div>
+            <div class="admin__field _required">
+                <label class="admin__field-label" for="myca-lot-product"><span><?= $escaper->escapeHtml(__('ID du produit (modèle)')) ?></span></label>
+                <div class="admin__field-control"><input id="myca-lot-product" name="lot[product_id]" type="number" min="1" required class="admin__control-text"></div>
+            </div>
+        <?php endif ?>
+        <table class="data-table admin__table-primary">
+            <thead>
+                <tr>
+                    <th><?= $escaper->escapeHtml(__('Donnée')) ?></th>
+                    <th><?= $escaper->escapeHtml(__('Valeur')) ?></th>
+                    <th><?= $escaper->escapeHtml(__('Statut')) ?></th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php foreach ($viewModel->getFields() as $field => $label): ?>
+                    <?php $current = $viewModel->getStatus($lot, $field); ?>
+                    <tr>
+                        <td><label for="myca-lot-<?= $escaper->escapeHtmlAttr($field) ?>"><?= $escaper->escapeHtml($label) ?></label></td>
+                        <td>
+                            <input id="myca-lot-<?= $escaper->escapeHtmlAttr($field) ?>" name="lot[<?= $escaper->escapeHtmlAttr($field) ?>]" class="admin__control-text"
+                                   value="<?= $escaper->escapeHtmlAttr((string) ($lot[$field] ?? '')) ?>"
+                                   <?= $field === 'manufactured_on' ? 'placeholder="AAAA-MM"' : '' ?>>
+                        </td>
+                        <td>
+                            <select name="status[<?= $escaper->escapeHtmlAttr($field) ?>]" class="admin__control-select" aria-label="<?= $escaper->escapeHtmlAttr(__('Statut de %1', $label)) ?>">
+                                <?php foreach ($statusLabels as $value => $statusLabel): ?>
+                                    <option value="<?= $escaper->escapeHtmlAttr($value) ?>" <?= $value === $current ? 'selected' : '' ?>><?= $escaper->escapeHtml($statusLabel) ?></option>
+                                <?php endforeach ?>
+                            </select>
+                        </td>
+                    </tr>
+                <?php endforeach ?>
+            </tbody>
+        </table>
+        <?php if ($lot): ?>
+            <div class="admin__field">
+                <label class="admin__field-label" for="myca-lot-reason"><span><?= $escaper->escapeHtml(__('Motif de la correction (obligatoire si une donnée change)')) ?></span></label>
+                <div class="admin__field-control"><input id="myca-lot-reason" name="reason" maxlength="255" class="admin__control-text"></div>
+            </div>
+        <?php endif ?>
+        <button type="submit" class="action-primary"><?= $escaper->escapeHtml($lot ? __('Enregistrer la correction') : __('Créer le lot')) ?></button>
+    </form>
+</section>
+
+<?php if ($lot): ?>
+    <section class="admin__page-section">
+        <div class="admin__page-section-title"><span class="title"><?= $escaper->escapeHtml(__('Passeports')) ?></span></div>
+        <form method="post" action="<?= $escaper->escapeUrl($viewModel->getUrl('myca_passport/lot/generate')) ?>" style="display:inline">
+            <input type="hidden" name="form_key" value="<?= $escaper->escapeHtmlAttr($formKey) ?>">
+            <input type="hidden" name="id" value="<?= (int) $lot['lot_id'] ?>">
+            <button type="submit" class="action-secondary"><?= $escaper->escapeHtml(__('Générer un passeport par variante')) ?></button>
+        </form>
+        <form method="post" action="<?= $escaper->escapeUrl($viewModel->getUrl('myca_passport/lot/generate')) ?>" style="display:inline;margin-left:2rem">
+            <input type="hidden" name="form_key" value="<?= $escaper->escapeHtmlAttr($formKey) ?>">
+            <input type="hidden" name="id" value="<?= (int) $lot['lot_id'] ?>">
+            <input type="hidden" name="mode" value="serial">
+            <select name="sku" class="admin__control-select" aria-label="<?= $escaper->escapeHtmlAttr(__('Variante')) ?>">
+                <?php foreach ($viewModel->getVariants($lot) as $sku => $name): ?>
+                    <option value="<?= $escaper->escapeHtmlAttr($sku) ?>"><?= $escaper->escapeHtml($name) ?></option>
+                <?php endforeach ?>
+            </select>
+            <input type="number" name="count" min="1" max="1000" value="10" class="admin__control-text" style="width:6rem" aria-label="<?= $escaper->escapeHtmlAttr(__('Nombre')) ?>">
+            <button type="submit" class="action-secondary"><?= $escaper->escapeHtml(__('Générer des passeports numérotés')) ?></button>
+        </form>
+        <table class="data-table admin__table-primary" style="margin-top:1.5rem">
+            <thead>
+                <tr>
+                    <th><?= $escaper->escapeHtml(__('Variante')) ?></th>
+                    <th><?= $escaper->escapeHtml(__('N° de série')) ?></th>
+                    <th><?= $escaper->escapeHtml(__('N° de passeport')) ?></th>
+                    <th><?= $escaper->escapeHtml(__('Statut')) ?></th>
+                    <th><?= $escaper->escapeHtml(__('Actions')) ?></th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php foreach ($viewModel->getPassports((int) $lot['lot_id']) as $passport): ?>
+                    <?php $active = $passport['status'] === 'active'; ?>
+                    <tr>
+                        <td><?= $escaper->escapeHtml((string) $passport['variant_label']) ?><br><small><?= $escaper->escapeHtml((string) $passport['sku']) ?></small></td>
+                        <td><?= $escaper->escapeHtml((string) $passport['serial_number']) ?></td>
+                        <td><a href="<?= $escaper->escapeUrl($viewModel->getPublicUrl((string) $passport['token'])) ?>" target="_blank" rel="noopener"><?= $escaper->escapeHtml($viewModel->formatNumber((string) $passport['token'])) ?></a></td>
+                        <td><?= $escaper->escapeHtml($active ? __('Actif') : __('Révoqué : %1', $passport['revoked_reason'])) ?><?= $passport['replaced_by_id'] ? $escaper->escapeHtml(' ' . __('(remplacé)')) : '' ?></td>
+                        <td>
+                            <a href="<?= $escaper->escapeUrl($viewModel->getUrl('myca_passport/lot/qr', ['passport_id' => $passport['passport_id']])) ?>"><?= $escaper->escapeHtml(__('QR (SVG)')) ?></a>
+                            <?php if ($active): ?>
+                                <form method="post" action="<?= $escaper->escapeUrl($viewModel->getUrl('myca_passport/lot/revoke')) ?>" style="margin-top:.5rem">
+                                    <input type="hidden" name="form_key" value="<?= $escaper->escapeHtmlAttr($formKey) ?>">
+                                    <input type="hidden" name="passport_id" value="<?= (int) $passport['passport_id'] ?>">
+                                    <input name="reason" required maxlength="255" class="admin__control-text" placeholder="<?= $escaper->escapeHtmlAttr(__('Motif (affiché au public)')) ?>" aria-label="<?= $escaper->escapeHtmlAttr(__('Motif')) ?>">
+                                    <button type="submit" name="operation" value="replace" class="action-secondary"><?= $escaper->escapeHtml(__('Remplacer')) ?></button>
+                                    <button type="submit" name="operation" value="revoke" class="action-secondary"><?= $escaper->escapeHtml(__('Révoquer')) ?></button>
+                                </form>
+                            <?php endif ?>
+                        </td>
+                    </tr>
+                <?php endforeach ?>
+            </tbody>
+        </table>
+    </section>
+
+    <section class="admin__page-section">
+        <div class="admin__page-section-title"><span class="title"><?= $escaper->escapeHtml(__('Historique (corrections tracées)')) ?></span></div>
+        <table class="data-table admin__table-primary">
+            <thead>
+                <tr>
+                    <th><?= $escaper->escapeHtml(__('Date')) ?></th>
+                    <th><?= $escaper->escapeHtml(__('Action')) ?></th>
+                    <th><?= $escaper->escapeHtml(__('Donnée')) ?></th>
+                    <th><?= $escaper->escapeHtml(__('Avant')) ?></th>
+                    <th><?= $escaper->escapeHtml(__('Après')) ?></th>
+                    <th><?= $escaper->escapeHtml(__('Motif')) ?></th>
+                    <th><?= $escaper->escapeHtml(__('Auteur')) ?></th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php foreach ($viewModel->getHistory((int) $lot['lot_id']) as $entry): ?>
+                    <tr>
+                        <td><?= $escaper->escapeHtml($block->formatDate((string) $entry['created_at'], IntlDateFormatter::MEDIUM, true)) ?></td>
+                        <td><?= $escaper->escapeHtml((string) $entry['action']) ?></td>
+                        <td><?= $escaper->escapeHtml((string) $entry['field']) ?></td>
+                        <td><?= $escaper->escapeHtml((string) $entry['old_value']) ?></td>
+                        <td><?= $escaper->escapeHtml((string) $entry['new_value']) ?></td>
+                        <td><?= $escaper->escapeHtml((string) $entry['reason']) ?></td>
+                        <td><?= $escaper->escapeHtml((string) $entry['author']) ?></td>
+                    </tr>
+                <?php endforeach ?>
+            </tbody>
+        </table>
+    </section>
+<?php endif ?>

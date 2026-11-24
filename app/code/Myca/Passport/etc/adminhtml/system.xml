@@ -1,0 +1,24 @@
+<?xml version="1.0"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Config:etc/system_file.xsd">
+    <system>
+        <section id="myca_passport" translate="label" sortOrder="70" showInDefault="1">
+            <label>Passeport du vêtement</label>
+            <tab>myca</tab>
+            <resource>Myca_Passport::config</resource>
+            <group id="general" translate="label" sortOrder="10" showInDefault="1">
+                <label>Passeport et certificat</label>
+                <field id="certificate_enabled" translate="label comment" type="select" sortOrder="10" showInDefault="1" canRestore="1">
+                    <label>Afficher le certificat d’authenticité</label>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                    <comment>À n’activer que lorsque l’attribution et la vérification des numéros sont opérationnelles (cahier des charges). Le certificat n’apparaît que pour un passeport actif dont le modèle, la collection et la référence sont certifiés.</comment>
+                </field>
+                <field id="scan_alert_threshold" translate="label comment" type="text" sortOrder="20" showInDefault="1" canRestore="1">
+                    <label>Alerte de consultations (visiteurs distincts sur 24 h)</label>
+                    <validate>required-entry validate-digits validate-greater-than-zero</validate>
+                    <comment>Au-delà, la page invite à vérifier l’article auprès de MYCA (étiquette possiblement copiée).</comment>
+                </field>
+            </group>
+        </section>
+    </system>
+</config>
