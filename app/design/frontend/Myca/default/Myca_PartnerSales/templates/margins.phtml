@@ -1,0 +1,308 @@
+<?php
+/**
+ * M21 — Mes marges & ventes : indicateurs de la période, évolution du chiffre d'affaires, répartition et marges par
+ * modèle, top ventes, rentabilité, détail des ventes (déclaration du prix par commande), grille de prix, export.
+ * Aucune vente n'est supposée : sans prix connu, une ligne est exclue des marges et comptée « non déclarée ».
+ */
+
+declare(strict_types=1);
+
+use Hyva\Theme\Model\ViewModelRegistry;
+use Hyva\Theme\ViewModel\SvgIcons;
+use Magento\Framework\Escaper;
+use Magento\Framework\View\Element\Template;
+use Myca\PartnerSales\ViewModel\Margins;
+
+/** @var Template $block */
+/** @var Escaper $escaper */
+/** @var ViewModelRegistry $viewModels */
+
+$icons = $viewModels->require(SvgIcons::class);
+/** @var Margins $margins */
+$margins = $viewModels->require(Margins::class);
+$period = $margins->getPeriod();
+$view = $margins->getView();
+['current' => $current, 'previous' => $previous] = $margins->getSummaries();
+$products = $margins->getProducts();
+$pct = static fn (?float $value) => $value === null ? '—' : number_format($value, 1, ',', "\u{202F}") . "\u{00A0}%";
+$rateDiff = $current['rate'] !== null && $previous['rate'] !== null ? round($current['rate'] - $previous['rate'], 1) : null;
+$kpis = [
+    ['icon' => 'cart', 'label' => __('Chiffre d’affaires'), 'value' => $margins->formatPrice((float) $current['revenue']),
+        'detail' => $current['undeclared'] ? __('%1 vente(s) non déclarée(s)', $current['undeclared']) : __('déclaré par la boutique'),
+        'variation' => $margins->variation((float) $current['revenue'], (float) $previous['revenue'])],
+    ['icon' => 'coins', 'label' => __('Marge brute estimée'), 'value' => $margins->formatPrice((float) $current['margin']),
+        'detail' => __('après prix MYCA et frais de port'), 'variation' => $margins->variation((float) $current['margin'], (float) $previous['margin'])],
+    ['icon' => 'percent', 'label' => __('Taux de marge'), 'value' => $pct($current['rate']),
+        'detail' => $rateDiff === null ? null : ($rateDiff >= 0 ? '+' : '−') . number_format(abs($rateDiff), 1, ',', '') . "\u{00A0}pts"],
+    ['icon' => 'box', 'label' => __('Ventes (quantités)'), 'value' => __('%1 pcs', (float) $current['qty']),
+        'variation' => $margins->variation((float) $current['qty'], (float) $previous['qty'])],
+    ['icon' => 'tag', 'label' => __('Panier moyen'), 'value' => $margins->formatPrice($current['basket']),
+        'variation' => $margins->variation($current['basket'], $previous['basket'])],
+];
+$tabs = [
+    'ensemble' => ['chart', __('Vue d’ensemble')],
+    'ventes' => ['layers', __('Détail des ventes')],
+    'produits' => ['shirt', __('Marges par produit')],
+    'prix' => ['edit', __('Ajuster mes prix de vente')],
+];
+$url = static fn (array $query) => $block->getUrl('partenaire/marges', ['_query' => $query]);
+?>
+<div class="flex min-w-0 flex-col gap-4">
+    <?= $block->getLayout()->createBlock(Template::class)->setTemplate('Myca_Partner::partials/kpis.phtml')->setData('kpis', $kpis)->toHtml() ?>
+
+    <div class="flex flex-wrap items-end justify-between gap-3">
+        <nav aria-label="<?= $escaper->escapeHtmlAttr(__('Vues')) ?>">
+            <ul class="flex flex-wrap gap-2">
+                <?php foreach ($tabs as $code => [$icon, $label]): ?>
+                    <li>
+                        <a href="<?= $escaper->escapeUrl($url(array_filter(['vue' => $code === 'ensemble' ? null : $code, 'periode' => $period === 30 ? null : $period]))) ?>"
+                           class="myca-btn <?= $code === $view ? 'myca-btn-primary' : 'myca-btn-secondary' ?>" <?= $code === $view ? 'aria-current="page"' : '' ?>>
+                            <?= $icons->renderHtml($icon, '', 16, 16, ['aria-hidden' => 'true']) ?><?= $escaper->escapeHtml($label) ?>
+                        </a>
+                    </li>
+                <?php endforeach ?>
+                <li>
+                    <a href="<?= $escaper->escapeUrl($block->getUrl('partenaire/marges/export')) ?>" class="myca-btn myca-btn-secondary">
+                        <?= $icons->renderHtml('download', '', 16, 16, ['aria-hidden' => 'true']) ?><?= $escaper->escapeHtml(__('Export CSV')) ?>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+        <form method="get" action="<?= $escaper->escapeUrl($block->getUrl('partenaire/marges')) ?>" class="flex items-end gap-2">
+            <?php if ($view !== 'ensemble'): ?>
+                <input type="hidden" name="vue" value="<?= $escaper->escapeHtmlAttr($view) ?>">
+            <?php endif ?>
+            <div>
+                <label for="myca-margins-period" class="myca-field-label"><?= $escaper->escapeHtml(__('Période')) ?></label>
+                <select id="myca-margins-period" name="periode" class="myca-field w-52" onchange="this.form.submit()">
+                    <?php foreach (Margins::PERIODS as $days => $label): ?>
+                        <option value="<?= (int) $days ?>" <?= $days === $period ? 'selected' : '' ?>><?= $escaper->escapeHtml(__($label)) ?></option>
+                    <?php endforeach ?>
+                </select>
+            </div>
+            <noscript><button type="submit" class="myca-btn myca-btn-secondary"><?= $escaper->escapeHtml(__('Afficher')) ?></button></noscript>
+        </form>
+    </div>
+
+    <?php if ($view === 'ensemble'): ?>
+        <?php
+        $monthly = $margins->getMonthly();
+        $max = max(1.0, ...array_values($monthly));
+        $step = 10 ** (int) floor(log10($max));
+        $axisMax = ceil($max / $step) * $step;
+        [$w, $h, $left, $bottom, $top] = [420, 210, 64, 26, 12];
+        $plotW = $w - $left - 10;
+        $plotH = $h - $bottom - $top;
+        $points = [];
+        $index = 0;
+        $count = count($monthly);
+        foreach ($monthly as $month => $amount) {
+            $x = $left + ($count > 1 ? $plotW * $index / ($count - 1) : $plotW / 2);
+            $y = $top + $plotH * (1 - $amount / $axisMax);
+            $points[] = ['x' => $x, 'y' => $y, 'month' => $month, 'amount' => $amount,
+                'label' => (new IntlDateFormatter('fr_FR', IntlDateFormatter::NONE, IntlDateFormatter::NONE, null, null, 'MMM yyyy'))->format(strtotime($month . '-01'))];
+            $index++;
+        }
+        $path = implode(' ', array_map(static fn (array $p) => round($p['x'], 1) . ',' . round($p['y'], 1), $points));
+        $shares = array_slice($products, 0, 5);
+        ?>
+        <div class="grid gap-4 xl:grid-cols-3">
+            <section class="myca-card p-4 shadow-card" aria-labelledby="myca-margins-trend">
+                <h2 id="myca-margins-trend" class="myca-card-title"><?= $icons->renderHtml('trend', 'text-accent-text', 18, 18, ['aria-hidden' => 'true']) ?><?= $escaper->escapeHtml(__('Évolution des ventes (CA)')) ?></h2>
+                <div class="relative" x-data="{ tip: null }">
+                    <svg viewBox="0 0 <?= (int) $w ?> <?= (int) $h ?>" class="w-full" role="img" aria-labelledby="myca-margins-trend" aria-describedby="myca-margins-trend-table">
+                        <?php foreach ([0, 0.5, 1] as $ratio): ?>
+                            <?php $gy = $top + $plotH * (1 - $ratio); ?>
+                            <line x1="<?= (int) $left ?>" x2="<?= (int) ($w - 10) ?>" y1="<?= (float) round($gy, 1) ?>" y2="<?= (float) round($gy, 1) ?>" class="stroke-line" stroke-width="1"/>
+                            <text x="<?= (int) ($left - 8) ?>" y="<?= (float) round($gy + 4, 1) ?>" text-anchor="end" class="fill-fg-muted text-[12px]"><?= $escaper->escapeHtml(number_format($axisMax * $ratio, 0, ',', "\u{202F}") . "\u{00A0}€") ?></text>
+                        <?php endforeach ?>
+                        <polygon points="<?= $escaper->escapeHtmlAttr(round($points[0]['x'], 1) . ',' . ($top + $plotH) . ' ' . $path . ' ' . round(end($points)['x'], 1) . ',' . ($top + $plotH)) ?>" class="fill-red-50"/>
+                        <polyline points="<?= $escaper->escapeHtmlAttr($path) ?>" fill="none" class="stroke-accent" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+                        <?php foreach ($points as $i => $p): ?>
+                            <circle cx="<?= (float) round($p['x'], 1) ?>" cy="<?= (float) round($p['y'], 1) ?>" r="4" class="fill-accent stroke-surface" stroke-width="2"/>
+                            <text x="<?= (float) round($p['x'], 1) ?>" y="<?= (int) ($h - 6) ?>" text-anchor="middle" class="fill-fg-muted text-[12px]"><?= $escaper->escapeHtml((string) strtok($p['label'], ' ')) ?></text>
+                            <rect x="<?= (float) round($p['x'] - $plotW / max(1, $count - 1) / 2, 1) ?>" y="<?= (int) $top ?>" width="<?= (float) round($plotW / max(1, $count - 1), 1) ?>" height="<?= (int) $plotH ?>" fill="transparent"
+                                  tabindex="0" @mouseenter="tip = <?= (int) $i ?>" @focus="tip = <?= (int) $i ?>" @mouseleave="tip = null" @blur="tip = null"
+                                  aria-label="<?= $escaper->escapeHtmlAttr($p['label'] . ' : ' . $margins->formatPrice($p['amount'])) ?>"/>
+                        <?php endforeach ?>
+                    </svg>
+                    <?php foreach ($points as $i => $p): ?>
+                        <div x-show="tip === <?= (int) $i ?>" x-cloak class="pointer-events-none absolute -translate-x-1/2 rounded-md bg-navy-900 px-2.5 py-1.5 myca-caption whitespace-nowrap text-white shadow-card"
+                             style="left: <?= (float) round($p['x'] / $w * 100, 2) ?>%; top: 0">
+                            <span class="block opacity-80"><?= $escaper->escapeHtml($p['label']) ?></span>
+                            <span class="font-semibold"><?= $escaper->escapeHtml($margins->formatPrice($p['amount'])) ?></span>
+                        </div>
+                    <?php endforeach ?>
+                </div>
+                <table id="myca-margins-trend-table" class="sr-only">
+                    <caption><?= $escaper->escapeHtml(__('Chiffre d’affaires déclaré par mois')) ?></caption>
+                    <tbody>
+                        <?php foreach ($points as $p): ?>
+                            <tr><th scope="row"><?= $escaper->escapeHtml($p['label']) ?></th><td><?= $escaper->escapeHtml($margins->formatPrice($p['amount'])) ?></td></tr>
+                        <?php endforeach ?>
+                    </tbody>
+                </table>
+            </section>
+
+            <section class="myca-card p-4 shadow-card" aria-labelledby="myca-margins-share">
+                <h2 id="myca-margins-share" class="myca-card-title"><?= $icons->renderHtml('chart', 'text-accent-text', 18, 18, ['aria-hidden' => 'true']) ?><?= $escaper->escapeHtml(__('Répartition du CA par modèle')) ?></h2>
+                <?php if ($shares && $current['revenue'] > 0): ?>
+                    <ul class="flex flex-col gap-2.5">
+                        <?php foreach ($shares as $product): ?>
+                            <?php $share = $product['revenue'] / $current['revenue'] * 100; ?>
+                            <li class="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1 myca-body-s">
+                                <span class="truncate text-fg"><?= $escaper->escapeHtml($product['name']) ?></span>
+                                <span class="font-semibold text-fg"><?= $escaper->escapeHtml($pct($share)) ?></span>
+                                <span class="col-span-2 h-2 rounded-pill bg-surface-subtle" aria-hidden="true"><span class="block h-2 rounded-pill bg-navy-900" style="width: <?= (float) round($share, 1) ?>%"></span></span>
+                            </li>
+                        <?php endforeach ?>
+                    </ul>
+                <?php else: ?>
+                    <p class="myca-body-s text-fg-secondary"><?= $escaper->escapeHtml(__('Aucune vente déclarée sur la période.')) ?></p>
+                <?php endif ?>
+            </section>
+
+            <section class="myca-card p-4 shadow-card" aria-labelledby="myca-margins-rate">
+                <h2 id="myca-margins-rate" class="myca-card-title"><?= $icons->renderHtml('shirt', 'text-accent-text', 18, 18, ['aria-hidden' => 'true']) ?><?= $escaper->escapeHtml(__('Taux de marge par modèle')) ?></h2>
+                <?php if ($shares): ?>
+                    <ul class="flex flex-col gap-2.5">
+                        <?php foreach ($shares as $product): ?>
+                            <?php $rate = max(0.0, min(100.0, (float) $product['rate'])); ?>
+                            <li class="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1 myca-body-s">
+                                <span class="truncate text-fg"><?= $escaper->escapeHtml($product['name']) ?></span>
+                                <span class="font-semibold <?= (float) $product['rate'] < 0 ? 'text-danger' : 'text-fg' ?>"><?= $escaper->escapeHtml($pct($product['rate'])) ?></span>
+                                <span class="col-span-2 h-2 rounded-pill bg-surface-subtle" aria-hidden="true"><span class="block h-2 rounded-pill bg-green-600" style="width: <?= (float) round($rate, 1) ?>%"></span></span>
+                            </li>
+                        <?php endforeach ?>
+                    </ul>
+                <?php else: ?>
+                    <p class="myca-body-s text-fg-secondary"><?= $escaper->escapeHtml(__('Aucune vente déclarée sur la période.')) ?></p>
+                <?php endif ?>
+            </section>
+        </div>
+
+        <div class="grid gap-4 xl:grid-cols-[minmax(0,575fr)_minmax(0,358fr)_minmax(0,298fr)]">
+            <section class="myca-card p-4 shadow-card" aria-labelledby="myca-margins-top">
+                <h2 id="myca-margins-top" class="myca-card-title"><?= $icons->renderHtml('trophy', 'text-accent-text', 18, 18, ['aria-hidden' => 'true']) ?><?= $escaper->escapeHtml(__('Top ventes')) ?> <span class="font-normal text-fg-secondary">(<?= $escaper->escapeHtml(__(Margins::PERIODS[$period])) ?>)</span></h2>
+                <?= $block->getChildBlock('products.table')?->setData('products', array_slice($products, 0, 5))->toHtml() ?>
+            </section>
+
+            <section class="myca-card p-4 shadow-card" aria-labelledby="myca-margins-kpis">
+                <h2 id="myca-margins-kpis" class="myca-card-title"><?= $icons->renderHtml('target', 'text-accent-text', 18, 18, ['aria-hidden' => 'true']) ?><?= $escaper->escapeHtml(__('Indicateurs de rentabilité')) ?></h2>
+                <dl class="flex flex-col divide-y divide-line myca-body-s">
+                    <div class="flex justify-between gap-3 py-2.5"><dt class="text-fg"><?= $escaper->escapeHtml(__('Marge moyenne par article')) ?></dt><dd class="font-semibold text-fg"><?= $escaper->escapeHtml($margins->formatPrice($current['margin_per_item'])) ?></dd></div>
+                    <div class="flex justify-between gap-3 py-2.5"><dt class="text-fg"><?= $escaper->escapeHtml(__('Coût d’achat total (MYCA)')) ?></dt><dd class="font-semibold text-fg"><?= $escaper->escapeHtml($margins->formatPrice((float) $current['cost'])) ?></dd></div>
+                    <div class="flex justify-between gap-3 py-2.5"><dt class="text-fg"><?= $escaper->escapeHtml(__('Marge brute estimée')) ?></dt><dd class="font-semibold text-fg"><?= $escaper->escapeHtml($margins->formatPrice((float) $current['margin'])) ?></dd></div>
+                    <div class="flex justify-between gap-3 py-2.5"><dt class="text-fg"><?= $escaper->escapeHtml(__('Rentabilité estimée')) ?></dt><dd><span class="myca-badge <?= (float) $current['profitability'] >= 0 ? 'myca-badge-success' : 'myca-badge-danger' ?>"><?= $escaper->escapeHtml($current['profitability'] === null ? '—' : ($current['profitability'] >= 0 ? '+' : '−') . number_format(abs((float) $current['profitability']), 1, ',', '') . "\u{00A0}%") ?></span></dd></div>
+                </dl>
+                <p class="mt-2 myca-caption text-fg-secondary"><?= $escaper->escapeHtml(__('Rentabilité : marge estimée rapportée au coût d’achat MYCA des ventes déclarées.')) ?></p>
+            </section>
+
+            <section class="myca-card flex flex-col gap-2.5 p-4 shadow-card" aria-labelledby="myca-margins-actions">
+                <h2 id="myca-margins-actions" class="myca-card-title mb-1"><?= $icons->renderHtml('zap', 'text-accent-text', 18, 18, ['aria-hidden' => 'true']) ?><?= $escaper->escapeHtml(__('Actions rapides')) ?></h2>
+                <?php foreach ([
+                    ['edit', __('Ajuster mes prix de vente'), $url(['vue' => 'prix'])],
+                    ['layers', __('Déclarer le prix d’une commande'), $url(['vue' => 'ventes'])],
+                    ['download', __('Exporter les ventes (CSV)'), $block->getUrl('partenaire/marges/export')],
+                ] as [$icon, $label, $href]): ?>
+                    <a href="<?= $escaper->escapeUrl($href) ?>" class="myca-btn myca-btn-secondary w-full justify-between text-left whitespace-normal">
+                        <span class="flex items-center gap-2"><?= $icons->renderHtml($icon, 'text-accent-text', 16, 16, ['aria-hidden' => 'true']) ?><?= $escaper->escapeHtml($label) ?></span>
+                        <?= $icons->renderHtml('chevron-right', '', 16, 16, ['aria-hidden' => 'true']) ?>
+                    </a>
+                <?php endforeach ?>
+            </section>
+        </div>
+    <?php elseif ($view === 'produits'): ?>
+        <section class="myca-card p-4 shadow-card" aria-labelledby="myca-margins-products">
+            <h2 id="myca-margins-products" class="myca-card-title"><?= $icons->renderHtml('shirt', 'text-accent-text', 18, 18, ['aria-hidden' => 'true']) ?><?= $escaper->escapeHtml(__('Marges par produit')) ?></h2>
+            <?= $block->getChildBlock('products.table')?->setData('products', $products)->toHtml() ?>
+        </section>
+    <?php elseif ($view === 'ventes'): ?>
+        <section class="myca-card p-4 shadow-card" aria-labelledby="myca-margins-sales">
+            <h2 id="myca-margins-sales" class="myca-card-title"><?= $icons->renderHtml('layers', 'text-accent-text', 18, 18, ['aria-hidden' => 'true']) ?><?= $escaper->escapeHtml(__('Détail des ventes en dropshipping')) ?></h2>
+            <p class="mb-3 myca-caption text-fg-secondary"><?= $escaper->escapeHtml(__('Indiquez ce que votre client vous a payé HT : ce montant remplace votre grille de prix pour cette commande. Laissez vide pour revenir à la grille.')) ?></p>
+            <?php $orders = $margins->getPeriodOrders(); ?>
+            <?php if ($orders): ?>
+                <div class="relative md:overflow-x-auto">
+                    <table class="w-full myca-body-s">
+                        <thead class="hidden md:table-header-group">
+                            <tr class="bg-surface-subtle text-left myca-caption-strong text-fg-secondary">
+                                <th scope="col" class="px-2.5 py-2"><?= $escaper->escapeHtml(__('Commande')) ?></th>
+                                <th scope="col" class="px-2.5 py-2"><?= $escaper->escapeHtml(__('Date')) ?></th>
+                                <th scope="col" class="px-2.5 py-2 text-right"><?= $escaper->escapeHtml(__('Qté')) ?></th>
+                                <th scope="col" class="px-2.5 py-2 text-right"><?= $escaper->escapeHtml(__('Achat MYCA HT')) ?></th>
+                                <th scope="col" class="px-2.5 py-2 text-right"><?= $escaper->escapeHtml(__('Vente HT')) ?></th>
+                                <th scope="col" class="px-2.5 py-2"><?= $escaper->escapeHtml(__('Origine du prix')) ?></th>
+                                <th scope="col" class="px-2.5 py-2"><?= $escaper->escapeHtml(__('Déclarer le prix de vente HT')) ?></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($orders as $order): ?>
+                                <tr class="grid grid-cols-[1fr_auto] gap-x-3 gap-y-1 border-b border-line py-3 md:table-row md:py-0">
+                                    <td class="font-semibold text-fg md:px-2.5 md:py-3"><?= $escaper->escapeHtml($order['increment_id']) ?></td>
+                                    <td class="text-fg-secondary md:px-2.5 md:py-3 md:text-fg"><?= $escaper->escapeHtml($block->formatDate(date('Y-m-d H:i:s', $order['time']), IntlDateFormatter::MEDIUM)) ?></td>
+                                    <td class="text-fg md:px-2.5 md:py-3 md:text-right"><?= $escaper->escapeHtml(__('%1 pcs', $order['qty'])) ?></td>
+                                    <td class="text-fg md:px-2.5 md:py-3 md:text-right"><?= $escaper->escapeHtml($margins->formatPrice($order['cost'])) ?></td>
+                                    <td class="font-semibold text-fg md:px-2.5 md:py-3 md:text-right"><?= $escaper->escapeHtml($margins->formatPrice($order['sale'])) ?></td>
+                                    <td class="md:px-2.5 md:py-3"><span class="myca-badge <?= $order['source'] === null ? 'myca-badge-warning' : 'myca-badge-neutral' ?>"><?= $escaper->escapeHtml($margins->getSourceLabel($order['source'])) ?></span></td>
+                                    <td class="col-span-2 md:px-2.5 md:py-2">
+                                        <form method="post" action="<?= $escaper->escapeUrl($block->getUrl('partenaire/marges/declarer')) ?>" class="flex items-center gap-2">
+                                            <?= $block->getBlockHtml('formkey') ?>
+                                            <input type="hidden" name="order_id" value="<?= (int) $order['order_id'] ?>">
+                                            <input type="text" inputmode="decimal" name="amount" class="myca-field w-28"
+                                                   value="<?= $escaper->escapeHtmlAttr($order['source'] === 'order' ? number_format((float) $order['sale'], 2, ',', '') : '') ?>"
+                                                   aria-label="<?= $escaper->escapeHtmlAttr(__('Prix de vente HT de la commande %1', $order['increment_id'])) ?>">
+                                            <button type="submit" class="myca-btn myca-btn-secondary"><?= $escaper->escapeHtml(__('Enregistrer')) ?></button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            <?php endforeach ?>
+                        </tbody>
+                    </table>
+                </div>
+            <?php else: ?>
+                <p class="myca-body-s text-fg-secondary"><?= $escaper->escapeHtml(__('Aucune vente en dropshipping sur la période.')) ?></p>
+            <?php endif ?>
+        </section>
+    <?php else: ?>
+        <section class="myca-card p-4 shadow-card" aria-labelledby="myca-margins-prices">
+            <h2 id="myca-margins-prices" class="myca-card-title"><?= $icons->renderHtml('edit', 'text-accent-text', 18, 18, ['aria-hidden' => 'true']) ?><?= $escaper->escapeHtml(__('Mes prix de vente')) ?></h2>
+            <p class="mb-3 myca-caption text-fg-secondary"><?= $escaper->escapeHtml(__('Votre prix de vente HT habituel pour chaque modèle. Il sert à estimer vos ventes en dropshipping dont vous n’avez pas déclaré le montant.')) ?></p>
+            <?php $models = $margins->getModels(); $prices = $margins->getPrices(); $owner = $margins->isOwner(); ?>
+            <?php if ($models): ?>
+                <form method="post" action="<?= $escaper->escapeUrl($block->getUrl('partenaire/marges/prix')) ?>" class="flex flex-col gap-3">
+                    <?= $block->getBlockHtml('formkey') ?>
+                    <ul class="grid gap-x-6 gap-y-3 md:grid-cols-2">
+                        <?php foreach ($models as $productId => $name): ?>
+                            <li class="flex items-center justify-between gap-3">
+                                <label for="myca-price-<?= (int) $productId ?>" class="myca-body-s text-fg"><?= $escaper->escapeHtml($name) ?></label>
+                                <span class="flex items-center gap-1.5">
+                                    <input id="myca-price-<?= (int) $productId ?>" type="text" inputmode="decimal" name="price[<?= (int) $productId ?>]" class="myca-field w-28 text-right"
+                                           value="<?= $escaper->escapeHtmlAttr(isset($prices[$productId]) ? number_format($prices[$productId], 2, ',', '') : '') ?>" <?= $owner ? '' : 'disabled' ?>>
+                                    <span class="myca-caption text-fg-secondary"><?= $escaper->escapeHtml(__('€ HT')) ?></span>
+                                </span>
+                            </li>
+                        <?php endforeach ?>
+                    </ul>
+                    <?php if ($owner): ?>
+                        <button type="submit" class="myca-btn myca-btn-primary self-start"><?= $escaper->escapeHtml(__('Enregistrer mes prix')) ?></button>
+                    <?php else: ?>
+                        <p class="myca-caption text-fg-secondary"><?= $escaper->escapeHtml(__('Seul le titulaire du compte boutique peut modifier les prix de vente.')) ?></p>
+                    <?php endif ?>
+                </form>
+            <?php else: ?>
+                <p class="myca-body-s text-fg-secondary"><?= $escaper->escapeHtml(__('Vos modèles apparaîtront ici après votre première vente en dropshipping.')) ?></p>
+            <?php endif ?>
+        </section>
+    <?php endif ?>
+
+    <p class="flex gap-2 rounded-md bg-warning-bg p-3 myca-caption text-warning">
+        <?= $icons->renderHtml('alert', 'mt-px shrink-0', 16, 16, ['aria-hidden' => 'true']) ?>
+        <span>
+            <?= $escaper->escapeHtml(__('Le chiffre d’affaires provient des prix de vente déclarés par la boutique (commandes en dropshipping). La marge affichée est une estimation après prix MYCA et frais de port — ce n’est ni la marge MYCA ni un bénéfice net certain.')) ?>
+            <?php if ($margins->isPublicFallback()): ?>
+                <?= $escaper->escapeHtml(__('Sans prix déclaré, le prix public conseillé sert d’estimation.')) ?>
+            <?php endif ?>
+        </span>
+    </p>
+</div>

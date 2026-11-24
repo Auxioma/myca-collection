@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<page xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:noNamespaceSchemaLocation="urn:magento:framework:View/Layout/etc/page_configuration.xsd">
+    <update handle="myca_partner_space"/>
+    <body>
+        <referenceBlock name="myca.partner.banner">
+            <arguments>
+                <argument name="kicker" xsi:type="string" translate="true">MES MARGES &amp; VENTES</argument>
+                <argument name="title" xsi:type="string" translate="true">Mes marges &amp; ventes MYCA</argument>
+                <argument name="subtitle" xsi:type="string" translate="true">Suivez vos ventes déclarées, vos marges estimées, votre rentabilité et les performances de vos modèles.</argument>
+            </arguments>
+        </referenceBlock>
+        <referenceContainer name="content">
+            <block name="myca.partner.page" template="Myca_PartnerSales::margins.phtml" after="myca.partner.banner" cacheable="false">
+                <block name="myca.partner.margins.products" as="products.table" template="Myca_PartnerSales::products-table.phtml"/>
+            </block>
+        </referenceContainer>
+    </body>
+</page>

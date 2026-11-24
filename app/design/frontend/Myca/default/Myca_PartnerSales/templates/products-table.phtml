@@ -1,0 +1,59 @@
+<?php
+/**
+ * Tableau des marges par modèle (« Top ventes » et « Marges par produit » de M21). Données : « products ».
+ */
+
+declare(strict_types=1);
+
+use Hyva\Theme\Model\ViewModelRegistry;
+use Magento\Framework\Escaper;
+use Magento\Framework\View\Element\Template;
+use Myca\PartnerSales\ViewModel\Margins;
+
+/** @var Template $block */
+/** @var Escaper $escaper */
+/** @var ViewModelRegistry $viewModels */
+
+/** @var Margins $margins */
+$margins = $viewModels->require(Margins::class);
+/** @var array<int, array<string, mixed>> $products */
+$products = (array) $block->getData('products');
+?>
+<?php if ($products): ?>
+    <div class="relative md:overflow-x-auto">
+        <table class="w-full myca-body-s">
+            <thead class="hidden md:table-header-group">
+                <tr class="bg-surface-subtle text-left myca-caption-strong text-fg-secondary">
+                    <th scope="col" class="px-2.5 py-2">#</th>
+                    <th scope="col" class="px-2.5 py-2"><?= $escaper->escapeHtml(__('Produit (modèle)')) ?></th>
+                    <th scope="col" class="px-2.5 py-2 text-right whitespace-nowrap"><?= $escaper->escapeHtml(__('Qté')) ?></th>
+                    <th scope="col" class="px-2.5 py-2 text-right whitespace-nowrap"><?= $escaper->escapeHtml(__('Vente moy. HT')) ?></th>
+                    <th scope="col" class="px-2.5 py-2 text-right whitespace-nowrap"><?= $escaper->escapeHtml(__('Coût MYCA moy. HT')) ?></th>
+                    <th scope="col" class="px-2.5 py-2 text-right whitespace-nowrap"><?= $escaper->escapeHtml(__('Marge')) ?></th>
+                    <th scope="col" class="px-2.5 py-2 text-right whitespace-nowrap"><?= $escaper->escapeHtml(__('Taux')) ?></th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php foreach ($products as $rank => $product): ?>
+                    <tr class="grid grid-cols-[auto_1fr_auto] gap-x-3 gap-y-1 border-b border-line py-3 md:table-row md:py-0">
+                        <td class="text-fg-secondary md:px-2.5 md:py-3"><?= (int) $rank + 1 ?></td>
+                        <td class="font-semibold text-fg md:px-2.5 md:py-3"><?= $escaper->escapeHtml((string) $product['name']) ?></td>
+                        <td class="whitespace-nowrap text-fg md:px-2.5 md:py-3 md:text-right"><?= $escaper->escapeHtml(__('%1 pcs', (float) $product['qty'])) ?></td>
+                        <td class="col-span-3 text-fg-secondary md:px-2.5 md:py-3 md:text-right md:text-fg">
+                            <span class="md:hidden"><?= $escaper->escapeHtml(__('Vente')) ?> </span><?= $escaper->escapeHtml($margins->formatPrice($product['unit_sale'])) ?>
+                        </td>
+                        <td class="col-span-3 text-fg-secondary md:px-2.5 md:py-3 md:text-right md:text-fg">
+                            <span class="md:hidden"><?= $escaper->escapeHtml(__('Coût MYCA')) ?> </span><?= $escaper->escapeHtml($margins->formatPrice($product['unit_cost'])) ?>
+                        </td>
+                        <td class="col-span-2 font-semibold whitespace-nowrap text-fg md:px-2.5 md:py-3 md:text-right"><?= $escaper->escapeHtml($margins->formatPrice((float) $product['margin'])) ?></td>
+                        <td class="md:px-2.5 md:py-3 md:text-right">
+                            <span class="myca-badge <?= (float) $product['rate'] >= 0 ? 'myca-badge-success' : 'myca-badge-danger' ?>"><?= $escaper->escapeHtml($product['rate'] === null ? '—' : number_format((float) $product['rate'], 1, ',', '') . "\u{00A0}%") ?></span>
+                        </td>
+                    </tr>
+                <?php endforeach ?>
+            </tbody>
+        </table>
+    </div>
+<?php else: ?>
+    <p class="myca-body-s text-fg-secondary"><?= $escaper->escapeHtml(__('Aucune vente déclarée sur la période. Renseignez vos prix de vente pour voir vos marges.')) ?></p>
+<?php endif ?>
