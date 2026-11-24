@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<!--
+    Prix de vente HT pratiqués par chaque boutique, par modèle (« Ajuster mes prix de vente », M21). Ils servent à
+    estimer le chiffre d'affaires des commandes en dropshipping dont la boutique n'a pas déclaré le montant.
+-->
+<schema xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="urn:magento:framework:Setup/Declaration/Schema/etc/schema.xsd">
+    <table name="myca_partner_sale_price" resource="default" engine="innodb" comment="MYCA - Prix de vente des boutiques">
+        <column xsi:type="int" name="partner_id" unsigned="true" nullable="false"/>
+        <column xsi:type="int" name="product_id" unsigned="true" nullable="false" comment="Modèle (produit parent)"/>
+        <column xsi:type="decimal" name="price_excl_tax" scale="4" precision="20" unsigned="true" nullable="false"/>
+        <column xsi:type="timestamp" name="updated_at" nullable="false" default="CURRENT_TIMESTAMP" on_update="true"/>
+        <constraint xsi:type="primary" referenceId="PRIMARY">
+            <column name="partner_id"/>
+            <column name="product_id"/>
+        </constraint>
+        <constraint xsi:type="foreign" referenceId="MYCA_PARTNER_SALE_PRICE_PARTNER_ID_MYCA_PARTNER_PARTNER_ID"
+                    table="myca_partner_sale_price" column="partner_id" referenceTable="myca_partner" referenceColumn="partner_id" onDelete="CASCADE"/>
+        <constraint xsi:type="foreign" referenceId="MYCA_PARTNER_SALE_PRICE_PRODUCT_ID_CATALOG_PRODUCT_ENTITY_ENTITY_ID"
+                    table="myca_partner_sale_price" column="product_id" referenceTable="catalog_product_entity" referenceColumn="entity_id" onDelete="CASCADE"/>
+    </table>
+</schema>

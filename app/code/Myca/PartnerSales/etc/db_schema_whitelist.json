@@ -1,0 +1,15 @@
+{
+    "myca_partner_sale_price": {
+        "column": {
+            "partner_id": true,
+            "product_id": true,
+            "price_excl_tax": true,
+            "updated_at": true
+        },
+        "constraint": {
+            "PRIMARY": true,
+            "MYCA_PARTNER_SALE_PRICE_PARTNER_ID_MYCA_PARTNER_PARTNER_ID": true,
+            "MYCA_PARTNER_SALE_PRICE_PRD_ID_CAT_PRD_ENTT_ENTT_ID": true
+        }
+    }
+}

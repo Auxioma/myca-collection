@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Config:etc/system_file.xsd">
+    <system>
+        <section id="myca_partner_sales" translate="label" sortOrder="45" showInDefault="1">
+            <label>Marges des boutiques</label>
+            <tab>myca</tab>
+            <resource>Myca_PartnerSales::config</resource>
+            <group id="margin" translate="label comment" sortOrder="10" showInDefault="1">
+                <label>Estimation des ventes (M21)</label>
+                <comment>Ordre de priorité : montant déclaré sur la commande, puis prix de vente saisi par la boutique pour le modèle. Une vente sans prix connu est exclue des marges et comptée « non déclarée ».</comment>
+                <field id="public_price_fallback" translate="label comment" type="select" sortOrder="10" showInDefault="1" canRestore="1">
+                    <label>À défaut, estimer au prix public conseillé</label>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                    <comment>Désactivé : aucun chiffre n’est supposé. Activé : le prix public conseillé HT (ou le prix catalogue) sert d’estimation, signalée comme telle.</comment>
+                </field>
+            </group>
+        </section>
+    </system>
+</config>

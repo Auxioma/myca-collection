@@ -370,6 +370,7 @@ return [
         'Myca_Partner' => 1,
         'Myca_Dropship' => 1,
         'Myca_Rma' => 1,
+        'Myca_PartnerSales' => 1,
         'Myca_Passport' => 1,
         'Myca_Quote' => 1,
         'Myca_Loyalty' => 1,

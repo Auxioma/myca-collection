@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Store:etc/config.xsd">
+    <default>
+        <myca_partner_sales>
+            <margin>
+                <public_price_fallback>0</public_price_fallback>
+            </margin>
+        </myca_partner_sales>
+    </default>
+</config>

@@ -34,14 +34,15 @@ use Myca\Partner\Model\ResourceModel\Partner as PartnerResource;
 class PartnerSpace implements ArgumentInterface
 {
     /**
-     * Rubriques livrées, dans l'ordre de la maquette. « Passer une commande » (M17) et « Mes marges & ventes » (M21)
-     * apparaîtront avec le tunnel de commande. « Retours & SAV » (M23) est servi par Myca_Rma.
+     * Rubriques livrées, dans l'ordre de la maquette. « Passer une commande » (M17) apparaîtra avec le tunnel de
+     * commande. « Mes marges & ventes » (M21) est servi par Myca_PartnerSales, « Retours & SAV » (M23) par Myca_Rma.
      */
     private const NAVIGATION = [
         ['partenaire', 'partenaire_index_index', 'Tableau de bord', 'home'],
         ['__catalog__', '', 'Catalogue MYCA', 'shirt'],
         ['partenaire/commandes', 'partenaire_commandes_index', 'Mes commandes', 'layers'],
         ['partenaire/livraisons', 'partenaire_livraisons_index', 'Suivi des livraisons', 'truck'],
+        ['partenaire/marges', 'partenaire_marges_index', 'Mes marges & ventes', 'chart'],
         ['partenaire/factures', 'partenaire_factures_index', 'Mes factures', 'file'],
         ['partenaire/retours', 'partenaire_retours_index', 'Retours & SAV', 'refresh'],
         ['partenaire/clients', 'partenaire_clients_index', 'Mes clients', 'users'],
