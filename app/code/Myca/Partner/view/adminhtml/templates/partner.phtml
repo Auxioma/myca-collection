@@ -1,0 +1,174 @@
+<?php
+/**
+ * M01 — Fiche partenaire : informations de la boutique, statut (activer, suspendre), comptes rattachés
+ * (titulaire, collaborateurs), activité sur 30 jours et dernières commandes. Sans identifiant : création d'une
+ * boutique active et de son titulaire.
+ */
+
+declare(strict_types=1);
+
+use Magento\Backend\Block\Template;
+use Magento\Framework\Escaper;
+use Myca\Partner\ViewModel\Admin;
+
+/** @var Template $block */
+/** @var Escaper $escaper */
+
+/** @var Admin $viewModel */
+$viewModel = $block->getData('view_model');
+$management = $viewModel->getManagement();
+$partner = $viewModel->getPartner();
+$formKey = $block->getFormKey();
+$value = static fn (string $field) => $partner ? (string) $partner->getData($field) : '';
+$fields = [
+    'company_name' => [__('Raison sociale'), true],
+    'siret' => [__('SIRET'), true],
+    'vat_id' => [__('N° de TVA intracommunautaire'), false],
+    'email' => [$partner ? __('E-mail de la boutique') : __('E-mail du titulaire (identifiant de connexion)'), true],
+    'phone' => [__('Téléphone'), true],
+    'street' => [__('Adresse'), false],
+    'postcode' => [__('Code postal'), false],
+    'city' => [__('Ville'), false],
+];
+?>
+<p><a href="<?= $escaper->escapeUrl($viewModel->getUrl('myca_partner/partner/index')) ?>">&larr; <?= $escaper->escapeHtml(__('Tous les partenaires')) ?></a></p>
+
+<?php if ($partner): ?>
+    <?php $activity = $management->getActivity((int) $partner->getId()); ?>
+    <section class="admin__page-section">
+        <div class="admin__page-section-title"><span class="title"><?= $escaper->escapeHtml(__('%1 — %2 — %3', $partner->getCode(), $partner->getCompanyName(), $viewModel->getStatusLabel($partner->getStatus()))) ?></span></div>
+        <table class="admin__table-secondary">
+            <tbody>
+                <tr>
+                    <th><?= $escaper->escapeHtml(__('Commandes (30 jours)')) ?></th><td><?= (int) $activity['orders_30d'] ?></td>
+                    <th><?= $escaper->escapeHtml(__('Achats MYCA HT (30 jours)')) ?></th><td><?= $escaper->escapeHtml(number_format($activity['amount_30d'], 2, ',', ' ') . ' €') ?></td>
+                    <th><?= $escaper->escapeHtml(__('Commandes au total')) ?></th><td><?= (int) $activity['orders_total'] ?></td>
+                </tr>
+            </tbody>
+        </table>
+    </section>
+<?php endif ?>
+
+<section class="admin__page-section">
+    <div class="admin__page-section-title"><span class="title"><?= $escaper->escapeHtml($partner ? __('Informations de la boutique') : __('Nouvelle boutique partenaire')) ?></span></div>
+    <?php if (!$partner): ?>
+        <p><?= $escaper->escapeHtml(__('La boutique est créée active, dans le groupe « Partenaire MYCA ». Le titulaire reçoit un e-mail pour définir son mot de passe ; s’il a déjà un compte client avec cet e-mail, ce compte devient partenaire.')) ?></p>
+    <?php endif ?>
+    <form method="post" action="<?= $escaper->escapeUrl($viewModel->getUrl('myca_partner/partner/save')) ?>">
+        <input type="hidden" name="form_key" value="<?= $escaper->escapeHtmlAttr($formKey) ?>">
+        <?php if ($partner): ?>
+            <input type="hidden" name="id" value="<?= (int) $partner->getId() ?>">
+        <?php else: ?>
+            <div class="admin__field _required">
+                <label class="admin__field-label" for="myca-partner-contact"><span><?= $escaper->escapeHtml(__('Nom du titulaire')) ?></span></label>
+                <div class="admin__field-control"><input id="myca-partner-contact" name="partner[contact_name]" required class="admin__control-text"></div>
+            </div>
+        <?php endif ?>
+        <?php foreach ($fields as $field => [$label, $required]): ?>
+            <div class="admin__field <?= $required ? '_required' : '' ?>">
+                <label class="admin__field-label" for="myca-partner-<?= $escaper->escapeHtmlAttr($field) ?>"><span><?= $escaper->escapeHtml($label) ?></span></label>
+                <div class="admin__field-control">
+                    <input id="myca-partner-<?= $escaper->escapeHtmlAttr($field) ?>" name="partner[<?= $escaper->escapeHtmlAttr($field) ?>]" class="admin__control-text"
+                           value="<?= $escaper->escapeHtmlAttr($value($field)) ?>" <?= $required ? 'required' : '' ?> <?= $field === 'email' ? 'type="email"' : '' ?>>
+                </div>
+            </div>
+        <?php endforeach ?>
+        <div class="admin__field _required">
+            <label class="admin__field-label" for="myca-partner-country"><span><?= $escaper->escapeHtml(__('Pays')) ?></span></label>
+            <div class="admin__field-control">
+                <select id="myca-partner-country" name="partner[country_id]" class="admin__control-select" required>
+                    <?php foreach ($viewModel->getCountries() as $code): ?>
+                        <option value="<?= $escaper->escapeHtmlAttr($code) ?>" <?= $code === ($value('country_id') ?: 'FR') ? 'selected' : '' ?>><?= $escaper->escapeHtml($code) ?></option>
+                    <?php endforeach ?>
+                </select>
+            </div>
+        </div>
+        <div class="admin__field _required">
+            <label class="admin__field-label" for="myca-partner-modes"><span><?= $escaper->escapeHtml(__('Modes de vente')) ?></span></label>
+            <div class="admin__field-control">
+                <?php $choice = $partner ? $viewModel->getSalesModeChoice($partner->getSalesModes()) : ''; ?>
+                <select id="myca-partner-modes" name="partner[sales_mode]" class="admin__control-select" required>
+                    <?php foreach (['' => __('Choisir…'), 'dropship' => __('Dropshipping'), 'stock' => __('Achat de stock'), 'both' => __('Dropshipping et achat de stock')] as $code => $label): ?>
+                        <option value="<?= $escaper->escapeHtmlAttr($code) ?>" <?= $code === $choice ? 'selected' : '' ?>><?= $escaper->escapeHtml($label) ?></option>
+                    <?php endforeach ?>
+                </select>
+            </div>
+        </div>
+        <button type="submit" class="action-primary"><?= $escaper->escapeHtml($partner ? __('Enregistrer') : __('Créer la boutique et son titulaire')) ?></button>
+    </form>
+</section>
+
+<?php if ($partner): ?>
+    <section class="admin__page-section">
+        <div class="admin__page-section-title"><span class="title"><?= $escaper->escapeHtml(__('Statut')) ?></span></div>
+        <form method="post" action="<?= $escaper->escapeUrl($viewModel->getUrl('myca_partner/partner/status')) ?>">
+            <input type="hidden" name="form_key" value="<?= $escaper->escapeHtmlAttr($formKey) ?>">
+            <input type="hidden" name="id" value="<?= (int) $partner->getId() ?>">
+            <?php if ($partner->getStatus() === 'active'): ?>
+                <p><?= $escaper->escapeHtml(__('Une boutique suspendue n’a plus accès à l’espace partenaire ; ses données sont conservées.')) ?></p>
+                <input name="reason" required class="admin__control-text" placeholder="<?= $escaper->escapeHtmlAttr(__('Motif de la suspension')) ?>" aria-label="<?= $escaper->escapeHtmlAttr(__('Motif de la suspension')) ?>">
+                <button type="submit" name="status" value="suspended" class="action-secondary"><?= $escaper->escapeHtml(__('Suspendre')) ?></button>
+            <?php else: ?>
+                <button type="submit" name="status" value="active" class="action-primary"><?= $escaper->escapeHtml(__('Activer')) ?></button>
+            <?php endif ?>
+        </form>
+    </section>
+
+    <section class="admin__page-section">
+        <div class="admin__page-section-title"><span class="title"><?= $escaper->escapeHtml(__('Comptes de la boutique')) ?></span></div>
+        <table class="data-table admin__table-primary">
+            <thead><tr><th><?= $escaper->escapeHtml(__('Nom')) ?></th><th><?= $escaper->escapeHtml(__('E-mail')) ?></th><th><?= $escaper->escapeHtml(__('Rôle')) ?></th><th><?= $escaper->escapeHtml(__('Depuis')) ?></th><th></th></tr></thead>
+            <tbody>
+                <?php foreach ($management->getUsers((int) $partner->getId()) as $user): ?>
+                    <tr>
+                        <td><a href="<?= $escaper->escapeUrl($viewModel->getUrl('customer/index/edit', ['id' => $user['customer_id']])) ?>"><?= $escaper->escapeHtml(trim($user['firstname'] . ' ' . $user['lastname'])) ?></a></td>
+                        <td><?= $escaper->escapeHtml((string) $user['email']) ?></td>
+                        <td><?= $escaper->escapeHtml($user['role'] === 'owner' ? __('Titulaire') : __('Collaborateur')) ?></td>
+                        <td><?= $escaper->escapeHtml($block->formatDate((string) $user['created_at'], IntlDateFormatter::MEDIUM)) ?></td>
+                        <td>
+                            <form method="post" action="<?= $escaper->escapeUrl($viewModel->getUrl('myca_partner/partner/user')) ?>">
+                                <input type="hidden" name="form_key" value="<?= $escaper->escapeHtmlAttr($formKey) ?>">
+                                <input type="hidden" name="id" value="<?= (int) $partner->getId() ?>">
+                                <input type="hidden" name="customer_id" value="<?= (int) $user['customer_id'] ?>">
+                                <button type="submit" name="operation" value="remove" class="action-secondary"><?= $escaper->escapeHtml(__('Retirer')) ?></button>
+                            </form>
+                        </td>
+                    </tr>
+                <?php endforeach ?>
+            </tbody>
+        </table>
+        <form method="post" action="<?= $escaper->escapeUrl($viewModel->getUrl('myca_partner/partner/user')) ?>" style="margin-top:1rem">
+            <input type="hidden" name="form_key" value="<?= $escaper->escapeHtmlAttr($formKey) ?>">
+            <input type="hidden" name="id" value="<?= (int) $partner->getId() ?>">
+            <input name="name" class="admin__control-text" placeholder="<?= $escaper->escapeHtmlAttr(__('Prénom Nom')) ?>" aria-label="<?= $escaper->escapeHtmlAttr(__('Prénom Nom')) ?>">
+            <input type="email" name="email" required class="admin__control-text" placeholder="<?= $escaper->escapeHtmlAttr(__('E-mail')) ?>" aria-label="<?= $escaper->escapeHtmlAttr(__('E-mail')) ?>">
+            <select name="role" class="admin__control-select" aria-label="<?= $escaper->escapeHtmlAttr(__('Rôle')) ?>">
+                <option value="staff"><?= $escaper->escapeHtml(__('Collaborateur')) ?></option>
+                <option value="owner"><?= $escaper->escapeHtml(__('Titulaire')) ?></option>
+            </select>
+            <button type="submit" name="operation" value="add" class="action-secondary"><?= $escaper->escapeHtml(__('Ajouter un compte')) ?></button>
+        </form>
+    </section>
+
+    <section class="admin__page-section">
+        <div class="admin__page-section-title"><span class="title"><?= $escaper->escapeHtml(__('Dernières commandes')) ?></span></div>
+        <?php $orders = $management->getRecentOrders((int) $partner->getId()); ?>
+        <?php if ($orders): ?>
+            <table class="data-table admin__table-primary">
+                <thead><tr><th><?= $escaper->escapeHtml(__('N°')) ?></th><th><?= $escaper->escapeHtml(__('Date')) ?></th><th><?= $escaper->escapeHtml(__('Statut')) ?></th><th><?= $escaper->escapeHtml(__('Total TTC')) ?></th></tr></thead>
+                <tbody>
+                    <?php foreach ($orders as $order): ?>
+                        <tr>
+                            <td><a href="<?= $escaper->escapeUrl($viewModel->getUrl('sales/order/view', ['order_id' => $order['entity_id']])) ?>"><?= $escaper->escapeHtml((string) $order['increment_id']) ?></a></td>
+                            <td><?= $escaper->escapeHtml($block->formatDate((string) $order['created_at'], IntlDateFormatter::MEDIUM)) ?></td>
+                            <td><?= $escaper->escapeHtml((string) $order['status']) ?></td>
+                            <td><?= $escaper->escapeHtml(number_format((float) $order['base_grand_total'], 2, ',', ' ') . ' €') ?></td>
+                        </tr>
+                    <?php endforeach ?>
+                </tbody>
+            </table>
+        <?php else: ?>
+            <p><?= $escaper->escapeHtml(__('Aucune commande pour le moment.')) ?></p>
+        <?php endif ?>
+    </section>
+<?php endif ?>

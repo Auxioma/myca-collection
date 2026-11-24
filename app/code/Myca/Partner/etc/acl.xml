@@ -4,6 +4,13 @@
     <acl>
         <resources>
             <resource id="Magento_Backend::admin">
+                <resource id="Magento_Customer::customer">
+                    <resource id="Myca_Partner::partners" title="Partenaires B2B" translate="title" sortOrder="50">
+                        <resource id="Myca_Partner::manage" title="Créer, modifier, gérer les comptes" translate="title" sortOrder="10"/>
+                        <resource id="Myca_Partner::status" title="Activer, suspendre" translate="title" sortOrder="20"/>
+                        <resource id="Myca_Partner::applications" title="Candidatures (accepter, refuser)" translate="title" sortOrder="30"/>
+                    </resource>
+                </resource>
                 <resource id="Magento_Backend::stores">
                     <resource id="Magento_Backend::stores_settings">
                         <resource id="Magento_Config::config">

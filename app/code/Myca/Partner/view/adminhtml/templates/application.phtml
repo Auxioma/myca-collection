@@ -1,0 +1,72 @@
+<?php
+/**
+ * Candidature partenaire (P17) : informations déclarées, consentements, décision (accepter, refuser avec motif).
+ */
+
+declare(strict_types=1);
+
+use Magento\Backend\Block\Template;
+use Magento\Framework\Escaper;
+use Myca\Partner\ViewModel\Admin;
+
+/** @var Template $block */
+/** @var Escaper $escaper */
+
+/** @var Admin $viewModel */
+$viewModel = $block->getData('view_model');
+$application = $viewModel->getApplication();
+?>
+<p><a href="<?= $escaper->escapeUrl($viewModel->getUrl('myca_partner/application/index')) ?>">&larr; <?= $escaper->escapeHtml(__('Toutes les candidatures')) ?></a></p>
+<?php if ($application === null): ?>
+    <p><?= $escaper->escapeHtml(__('Cette candidature est introuvable.')) ?></p>
+    <?php return; ?>
+<?php endif ?>
+<section class="admin__page-section">
+    <div class="admin__page-section-title"><span class="title"><?= $escaper->escapeHtml(__('%1 — %2', $application['company_name'], $viewModel->getStatusLabel((string) $application['status']))) ?></span></div>
+    <table class="admin__table-secondary">
+        <tbody>
+            <?php foreach ([
+                [__('Reçue le'), $block->formatDate((string) $application['created_at'], IntlDateFormatter::MEDIUM, true)],
+                [__('SIRET'), $application['siret']],
+                [__('N° de TVA'), $application['vat_id'] ?: '—'],
+                [__('Contact'), $application['contact_name']],
+                [__('E-mail'), $application['email']],
+                [__('Téléphone'), $application['phone']],
+                [__('Adresse'), trim(implode(' ', array_filter([$application['street'], $application['postcode'], $application['city'], $application['country_id']])))],
+                [__('Site web'), $application['website'] ?: '—'],
+                [__('Mode souhaité'), $viewModel->getSalesModeLabel((string) $application['sales_modes'])],
+                [__('Volume annuel estimé'), $viewModel->getVolumeLabel($application['annual_volume'] ? (string) $application['annual_volume'] : null)],
+                [__('Conditions B2B acceptées le'), $application['terms_accepted_at'] ? $block->formatDate((string) $application['terms_accepted_at'], IntlDateFormatter::MEDIUM, true) : '—'],
+                [__('Accepte d’être recontacté'), (int) $application['contact_consent'] ? __('Oui') : __('Non')],
+            ] as [$label, $text]): ?>
+                <tr><th><?= $escaper->escapeHtml($label) ?></th><td><?= $escaper->escapeHtml((string) $text) ?></td></tr>
+            <?php endforeach ?>
+            <?php if ($application['message']): ?>
+                <tr><th><?= $escaper->escapeHtml(__('Présentation')) ?></th><td><?= /* @noEscape */ nl2br($escaper->escapeHtml((string) $application['message'])) ?></td></tr>
+            <?php endif ?>
+            <?php if ($application['rejection_reason']): ?>
+                <tr><th><?= $escaper->escapeHtml(__('Motif du refus')) ?></th><td><?= $escaper->escapeHtml((string) $application['rejection_reason']) ?></td></tr>
+            <?php endif ?>
+            <?php if ($application['partner_id']): ?>
+                <tr><th><?= $escaper->escapeHtml(__('Boutique créée')) ?></th><td><a href="<?= $escaper->escapeUrl($viewModel->getUrl('myca_partner/partner/edit', ['id' => $application['partner_id']])) ?>"><?= $escaper->escapeHtml(__('Ouvrir la fiche partenaire')) ?></a></td></tr>
+            <?php endif ?>
+        </tbody>
+    </table>
+</section>
+<?php if ($application['status'] === 'pending'): ?>
+    <section class="admin__page-section">
+        <div class="admin__page-section-title"><span class="title"><?= $escaper->escapeHtml(__('Décision')) ?></span></div>
+        <p><?= $escaper->escapeHtml(__('Vérifiez l’identité de la société (SIRET, TVA) et son activité avant d’accepter. L’acceptation crée la boutique active et le compte du contact, qui reçoit un e-mail pour définir son mot de passe.')) ?></p>
+        <form method="post" action="<?= $escaper->escapeUrl($viewModel->getUrl('myca_partner/application/decide')) ?>">
+            <input type="hidden" name="form_key" value="<?= $escaper->escapeHtmlAttr($block->getFormKey()) ?>">
+            <input type="hidden" name="id" value="<?= (int) $application['application_id'] ?>">
+            <button type="submit" name="decision" value="approve" class="action-primary"><?= $escaper->escapeHtml(__('Accepter et créer le compte partenaire')) ?></button>
+        </form>
+        <form method="post" action="<?= $escaper->escapeUrl($viewModel->getUrl('myca_partner/application/decide')) ?>" style="margin-top:1rem">
+            <input type="hidden" name="form_key" value="<?= $escaper->escapeHtmlAttr($block->getFormKey()) ?>">
+            <input type="hidden" name="id" value="<?= (int) $application['application_id'] ?>">
+            <input name="reason" required class="admin__control-text" placeholder="<?= $escaper->escapeHtmlAttr(__('Motif du refus')) ?>" aria-label="<?= $escaper->escapeHtmlAttr(__('Motif du refus')) ?>">
+            <button type="submit" name="decision" value="reject" class="action-secondary"><?= $escaper->escapeHtml(__('Refuser')) ?></button>
+        </form>
+    </section>
+<?php endif ?>

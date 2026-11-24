@@ -5,5 +5,9 @@
         <route id="partenaire" frontName="partenaire">
             <module name="Myca_Partner"/>
         </route>
+        <!-- P17 « Devenir partenaire » : page publique, servie à l'adresse /devenir-partenaire (réécriture d'URL). -->
+        <route id="candidature" frontName="candidature-partenaire">
+            <module name="Myca_Partner"/>
+        </route>
     </router>
 </config>

@@ -3,4 +3,27 @@
         xsi:noNamespaceSchemaLocation="urn:magento:framework:ObjectManager/etc/config.xsd">
     <preference for="Myca\Partner\Api\PartnerRepositoryInterface" type="Myca\Partner\Model\PartnerRepository"/>
     <preference for="Myca\Partner\Api\Data\PartnerInterface" type="Myca\Partner\Model\Partner"/>
+    <!-- Grilles d'administration : partenaires (M01) et candidatures (P17). -->
+    <virtualType name="Myca\Partner\Model\ResourceModel\Partner\Grid\Collection"
+                 type="Magento\Framework\View\Element\UiComponent\DataProvider\SearchResult">
+        <arguments>
+            <argument name="mainTable" xsi:type="string">myca_partner</argument>
+            <argument name="resourceModel" xsi:type="string">Myca\Partner\Model\ResourceModel\Partner</argument>
+        </arguments>
+    </virtualType>
+    <virtualType name="Myca\Partner\Model\ResourceModel\Application\Grid\Collection"
+                 type="Magento\Framework\View\Element\UiComponent\DataProvider\SearchResult">
+        <arguments>
+            <argument name="mainTable" xsi:type="string">myca_partner_application</argument>
+            <argument name="resourceModel" xsi:type="string">Myca\Partner\Model\ResourceModel\Application</argument>
+        </arguments>
+    </virtualType>
+    <type name="Magento\Framework\View\Element\UiComponent\DataProvider\CollectionFactory">
+        <arguments>
+            <argument name="collections" xsi:type="array">
+                <item name="myca_partner_listing_data_source" xsi:type="string">Myca\Partner\Model\ResourceModel\Partner\Grid\Collection</item>
+                <item name="myca_partner_application_listing_data_source" xsi:type="string">Myca\Partner\Model\ResourceModel\Application\Grid\Collection</item>
+            </argument>
+        </arguments>
+    </type>
 </config>

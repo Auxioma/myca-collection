@@ -80,6 +80,14 @@
         <column xsi:type="varchar" name="city" length="128" nullable="true"/>
         <column xsi:type="varchar" name="country_id" length="2" nullable="true"/>
         <column xsi:type="text" name="message" nullable="true"/>
+        <column xsi:type="varchar" name="street" length="255" nullable="true"/>
+        <column xsi:type="varchar" name="postcode" length="16" nullable="true"/>
+        <column xsi:type="varchar" name="website" length="255" nullable="true"/>
+        <column xsi:type="varchar" name="sales_modes" length="32" nullable="true" comment="dropship, stock ou les deux"/>
+        <column xsi:type="varchar" name="annual_volume" length="32" nullable="true" comment="Tranche de volume annuel estimé"/>
+        <column xsi:type="timestamp" name="terms_accepted_at" nullable="true" comment="Acceptation des conditions B2B"/>
+        <column xsi:type="smallint" name="contact_consent" unsigned="true" nullable="false" default="0"/>
+        <column xsi:type="text" name="rejection_reason" nullable="true"/>
         <column xsi:type="varchar" name="status" length="16" nullable="false" default="pending"
                 comment="pending, approved, rejected"/>
         <column xsi:type="int" name="reviewed_by" unsigned="true" nullable="true" comment="Administrateur"/>

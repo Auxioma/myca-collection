@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Backend:etc/menu.xsd">
+    <menu>
+        <add id="Myca_Partner::partners" title="Partenaires B2B" translate="title" module="Myca_Partner" sortOrder="50"
+             parent="Magento_Customer::customer" action="myca_partner/partner/index" resource="Myca_Partner::partners"/>
+        <add id="Myca_Partner::applications" title="Candidatures partenaires" translate="title" module="Myca_Partner" sortOrder="51"
+             parent="Magento_Customer::customer" action="myca_partner/application/index" resource="Myca_Partner::applications"/>
+    </menu>
+</config>

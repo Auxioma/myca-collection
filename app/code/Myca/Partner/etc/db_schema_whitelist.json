@@ -69,7 +69,15 @@
             "reviewed_by": true,
             "reviewed_at": true,
             "partner_id": true,
-            "created_at": true
+            "created_at": true,
+            "street": true,
+            "postcode": true,
+            "website": true,
+            "sales_modes": true,
+            "annual_volume": true,
+            "terms_accepted_at": true,
+            "contact_consent": true,
+            "rejection_reason": true
         },
         "index": {
             "MYCA_PARTNER_APPLICATION_STATUS": true
