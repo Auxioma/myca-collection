@@ -1,0 +1,41 @@
+<!--@subject {{trans "Nouvelle candidature partenaire : %company" company=$data.company_name}} @-->
+<!--@vars {
+"var data.company_name":"Raison sociale",
+"var data.contact_name":"Nom du contact",
+"var data.email":"E-mail",
+"var data.phone":"Téléphone",
+"var data.siret":"SIRET",
+"var data.vat_id":"N° de TVA",
+"var data.city":"Code postal, ville, pays",
+"var data.website":"Site web",
+"var data.sales_modes":"Mode souhaité",
+"var data.annual_volume":"Volume annuel estimé",
+"var data.message":"Présentation",
+"var data.admin_url":"Lien vers la candidature dans l’administration"
+} @-->
+{{template config_path="design/email/header_template"}}
+
+<p>{{trans "Une nouvelle candidature partenaire attend votre examen."}}</p>
+
+<table class="order-details" style="width:100%;border-collapse:collapse">
+    <tr><td style="padding:4px 0;color:#5b6475;width:40%">{{trans "Société"}}</td><td style="padding:4px 0"><strong>{{var data.company_name}}</strong></td></tr>
+    <tr><td style="padding:4px 0;color:#5b6475">{{trans "SIRET"}}</td><td style="padding:4px 0">{{var data.siret}}</td></tr>
+    {{depend data.vat_id}}<tr><td style="padding:4px 0;color:#5b6475">{{trans "N° de TVA"}}</td><td style="padding:4px 0">{{var data.vat_id}}</td></tr>{{/depend}}
+    <tr><td style="padding:4px 0;color:#5b6475">{{trans "Contact"}}</td><td style="padding:4px 0">{{var data.contact_name}}</td></tr>
+    <tr><td style="padding:4px 0;color:#5b6475">{{trans "E-mail"}}</td><td style="padding:4px 0">{{var data.email}}</td></tr>
+    <tr><td style="padding:4px 0;color:#5b6475">{{trans "Téléphone"}}</td><td style="padding:4px 0">{{var data.phone}}</td></tr>
+    <tr><td style="padding:4px 0;color:#5b6475">{{trans "Localisation"}}</td><td style="padding:4px 0">{{var data.city}}</td></tr>
+    {{depend data.website}}<tr><td style="padding:4px 0;color:#5b6475">{{trans "Site web"}}</td><td style="padding:4px 0">{{var data.website}}</td></tr>{{/depend}}
+    <tr><td style="padding:4px 0;color:#5b6475">{{trans "Mode souhaité"}}</td><td style="padding:4px 0">{{var data.sales_modes}}</td></tr>
+    <tr><td style="padding:4px 0;color:#5b6475">{{trans "Volume annuel estimé"}}</td><td style="padding:4px 0">{{var data.annual_volume}}</td></tr>
+    {{depend data.message}}<tr><td style="padding:4px 0;color:#5b6475;vertical-align:top">{{trans "Présentation"}}</td><td style="padding:4px 0">{{var data.message}}</td></tr>{{/depend}}
+</table>
+
+<table class="button" width="100%" border="0" cellpadding="0" cellspacing="0" style="margin-top:16px">
+    <tr><td><table class="inner-wrapper" border="0" cellspacing="0" cellpadding="0" align="center"><tr><td align="center">
+        <a href="{{var data.admin_url}}" target="_blank">{{trans "Examiner la candidature"}}</a>
+    </td></tr></table></td></tr>
+</table>
+<p style="color:#5b6475">{{trans "Répondre à cet e-mail écrit directement au contact de la boutique."}}</p>
+
+{{template config_path="design/email/footer_template"}}

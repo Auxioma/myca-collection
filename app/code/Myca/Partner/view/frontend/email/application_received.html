@@ -1,0 +1,25 @@
+<!--@subject {{trans "MYCA – Nous avons bien reçu votre candidature partenaire"}} @-->
+<!--@vars {
+"var data.contact_name":"Nom du contact",
+"var data.company_name":"Raison sociale",
+"var data.siret":"SIRET",
+"var data.sales_modes":"Mode souhaité",
+"var data.annual_volume":"Volume annuel estimé"
+} @-->
+{{template config_path="design/email/header_template"}}
+
+<p>{{trans "Bonjour %name," name=$data.contact_name}}</p>
+<p>{{trans "Merci pour l’intérêt que vous portez à MYCA. Nous avons bien reçu la candidature de %company pour devenir boutique partenaire." company=$data.company_name}}</p>
+<p>{{trans "Le Service Partenaire B2B vérifie vos informations (identifiants de la société, activité) et vous recontacte rapidement. Votre compte sera activé après cette vérification : vous recevrez alors un e-mail pour accéder à votre espace partenaire."}}</p>
+
+<table class="order-details" style="width:100%;border-collapse:collapse">
+    <tr><td style="padding:4px 0;color:#5b6475">{{trans "Société"}}</td><td style="padding:4px 0">{{var data.company_name}}</td></tr>
+    <tr><td style="padding:4px 0;color:#5b6475">{{trans "SIRET"}}</td><td style="padding:4px 0">{{var data.siret}}</td></tr>
+    <tr><td style="padding:4px 0;color:#5b6475">{{trans "Mode souhaité"}}</td><td style="padding:4px 0">{{var data.sales_modes}}</td></tr>
+    <tr><td style="padding:4px 0;color:#5b6475">{{trans "Volume annuel estimé"}}</td><td style="padding:4px 0">{{var data.annual_volume}}</td></tr>
+</table>
+
+<p>{{trans "Une question ? Répondez simplement à cet e-mail."}}</p>
+<p>{{trans "L’équipe MYCA"}}</p>
+
+{{template config_path="design/email/footer_template"}}

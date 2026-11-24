@@ -1,0 +1,16 @@
+<!--@subject {{trans "MYCA – Votre candidature partenaire"}} @-->
+<!--@vars {
+"var data.contact_name":"Nom du contact",
+"var data.company_name":"Raison sociale",
+"var data.reason":"Motif du refus"
+} @-->
+{{template config_path="design/email/header_template"}}
+
+<p>{{trans "Bonjour %name," name=$data.contact_name}}</p>
+<p>{{trans "Merci pour la candidature de %company et pour l’intérêt que vous portez à MYCA." company=$data.company_name}}</p>
+<p>{{trans "Après examen, nous ne pouvons pas y donner une suite favorable pour le moment."}}</p>
+<p><strong>{{trans "Motif :"}}</strong> {{var data.reason}}</p>
+<p>{{trans "Si votre situation évolue, vous pourrez déposer une nouvelle candidature. Pour toute question, répondez simplement à cet e-mail."}}</p>
+<p>{{trans "L’équipe MYCA"}}</p>
+
+{{template config_path="design/email/footer_template"}}

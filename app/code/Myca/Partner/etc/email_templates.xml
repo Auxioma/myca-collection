@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Email:etc/email_templates.xsd">
+    <template id="myca_partner_applications_received_template" label="MYCA – Candidature partenaire reçue (boutique)" file="application_received.html" type="html" module="Myca_Partner" area="frontend"/>
+    <template id="myca_partner_applications_team_template" label="MYCA – Nouvelle candidature partenaire (équipe MYCA)" file="application_team.html" type="html" module="Myca_Partner" area="frontend"/>
+    <template id="myca_partner_applications_approved_template" label="MYCA – Candidature partenaire acceptée" file="application_approved.html" type="html" module="Myca_Partner" area="frontend"/>
+    <template id="myca_partner_applications_rejected_template" label="MYCA – Candidature partenaire refusée" file="application_rejected.html" type="html" module="Myca_Partner" area="frontend"/>
+    <template id="myca_partner_applications_invitation_template" label="MYCA – Invitation à l’espace partenaire" file="account_invitation.html" type="html" module="Myca_Partner" area="frontend"/>
+</config>

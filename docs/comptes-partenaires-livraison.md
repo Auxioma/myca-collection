@@ -76,9 +76,60 @@ Dans les deux cas, la boutique reçoit un code `PART-NNNNNN`. Son titulaire pass
   - connexion de la nouvelle partenaire et accès à `/partenaire`.
 - **Captures** : `comptes-partenaires/` (P17 à 375 et 1280 px, fiche candidature, fiche partenaire). La page ne défile pas horizontalement à 375, 768, 1280 et 1600 px.
 
-## 5. Points à valider
+## 5. Complément du 24/11/2026 : e-mails dédiés, alerte MYCA, conditions B2B
 
-1. **E-mails** : la boutique ne reçoit pour l'instant aucun e-mail quand sa candidature est reçue, acceptée ou refusée. Seul part l'e-mail Magento de création de compte. Faut-il des modèles d'e-mail dédiés ?
-2. **Notification de l'équipe MYCA** à chaque nouvelle candidature : à quelle adresse ?
-3. **Conditions de vente B2B** : la case renvoie à des conditions qui n'ont pas encore de page. Il faut fournir le texte, ou l'adresse de la page.
-4. **Pays acceptés** : la France est proposée en premier, mais tous les pays sont acceptés. Faut-il se limiter à l'Union européenne ?
+### E-mails dédiés (cinq modèles en français)
+
+| E-mail | Destinataire | Envoyé quand |
+|---|---|---|
+| Candidature reçue | la boutique | elle dépose sa candidature |
+| Nouvelle candidature | **l’équipe MYCA** | à chaque candidature, avec un bouton « Examiner la candidature » ; répondre à l’e-mail écrit directement au contact de la boutique |
+| Candidature acceptée | la boutique | MYCA accepte la candidature ; contient le code partenaire et le lien **« Définir mon mot de passe »** |
+| Candidature refusée | la boutique | MYCA refuse la candidature ; contient le motif saisi |
+| Invitation | le compte ajouté | MYCA crée une boutique ou ajoute un compte depuis la fiche partenaire |
+
+- **Un seul e-mail par événement.** L’e-mail d’acceptation porte lui-même le lien pour définir le mot de passe, donc l’e-mail Magento « compte créé » n’est plus envoyé en plus. Si le compte client existait déjà, l’e-mail propose « Me connecter » à la place.
+- **Modifier un e-mail** :
+  1. dans **Marketing › Modèles d’e-mails**, cliquez sur « Ajouter un modèle » ;
+  2. chargez un modèle « MYCA – … » et modifiez-le ;
+  3. choisissez-le ensuite dans la configuration (voir plus bas).
+- **Pied de page** : tous les e-mails du site affichent désormais « MYCA – L’élégance sportive » au lieu de « Thank you, Main Website Store! ».
+- **Sécurité** : les valeurs saisies par les candidats sont toujours échappées dans les e-mails. Un e-mail qui ne part pas est journalisé et ne bloque jamais l’action.
+
+### Alerte à MYCA pour chaque nouvelle candidature
+
+- **Adresse** : réglable dans **Magasins › Configuration › MYCA › Espace partenaire › Candidatures et e-mails**. Valeur par défaut : `partenaires@myca.fr`. Plusieurs adresses sont possibles, séparées par des virgules.
+- **Même écran** : l’expéditeur et le modèle utilisé pour chacun des cinq e-mails.
+- **Lien « Examiner la candidature »** : il ouvre directement la candidature après connexion à l’administration. Cette page de consultation est la seule dispensée de clé secrète d’URL, car la clé ne peut pas figurer dans un e-mail. La connexion et le droit « candidatures » restent exigés, et les boutons Accepter et Refuser gardent leur protection.
+
+### Page « Conditions de vente professionnelles »
+
+- **Page CMS** `/conditions-vente-professionnelles`, modifiable dans **Contenu › Pages** avec Page Builder.
+- **Lien** : la case « J’accepte les conditions de vente professionnelles (B2B) » du formulaire ouvre cette page dans un nouvel onglet. Une autre page peut être choisie dans la configuration (champ « Page des conditions de vente professionnelles »).
+- **Contenu** : un **modèle de 13 articles** (objet, compte, modèles de vente, commandes, prix, paiement avec les mentions légales de retard, livraison, réserve de propriété, retours, image de marque, responsabilité, données, durée et litiges). Les valeurs propres à MYCA sont entre crochets **[à compléter]**. La mention « Modèle à faire valider par votre conseil juridique » est à retirer après validation.
+- **Mise en forme** : nouvelle classe `myca-pb-legal` (titres, paragraphes aérés). Elle se pose dans le champ « Classes CSS » d’un élément Texte et sert aussi pour les CGV, les mentions légales, etc.
+
+### Pays
+
+Tous les pays restent acceptés dans le formulaire, comme convenu.
+
+### Vérifications
+
+- **Tests unitaires** : 83 réussis.
+- **PHPStan niveau 8** : 0 erreur.
+- **PHPCS** : 0 erreur.
+- **Les cinq e-mails générés** (l’envoi est désactivé en local) : textes, liens et cas « compte existant » ou « compte créé » corrects. Un nom de société contenant du HTML reste bien échappé.
+- **Parcours testé dans le navigateur** :
+  - candidature, puis ouverture par le lien de l’e-mail admin ;
+  - acceptation : la boutique PART-000162 est créée, son compte sans mot de passe avec un jeton ;
+  - invitation d’un collaborateur ;
+  - le lien « Définir mon mot de passe » ouvre bien le formulaire de Magento ;
+  - écran de configuration ;
+  - page des conditions sans débordement à 375 et 1280 px.
+- **Captures** : `comptes-partenaires/conditions-b2b-1280.png`, `comptes-partenaires/configuration-emails.png`.
+
+## 6. Points à valider
+
+1. **Durée de validité du lien « Définir mon mot de passe »** : 2 heures, le réglage Magento par défaut (Magasins › Configuration › Clients › Configuration client › Mot de passe). C’est court pour une invitation, mais l’allonger vaut aussi pour les liens « mot de passe oublié ». Proposition : 24 heures.
+2. **Envoi réel des e-mails** : il est désactivé dans cet environnement local. Le serveur de production doit avoir un envoi SMTP configuré, et l’expéditeur « Contact général » doit porter une adresse MYCA.
+3. **Texte des conditions B2B** : compléter les valeurs entre crochets et faire valider le texte par votre conseil juridique.

@@ -20,6 +20,44 @@
                     <validate>validate-email</validate>
                 </field>
             </group>
+            <group id="applications" translate="label comment" sortOrder="20" showInDefault="1" showInWebsite="1" showInStore="1">
+                <label>Candidatures et e-mails</label>
+                <comment>Les modèles se personnalisent dans Marketing &gt; Modèles d’e-mails (« Charger un modèle » puis choisir un modèle « MYCA – … »), puis se sélectionnent ici.</comment>
+                <field id="team_email" translate="label comment" type="text" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1" canRestore="1">
+                    <label>Adresse(s) MYCA prévenue(s) à chaque candidature</label>
+                    <comment>Plusieurs adresses possibles, séparées par des virgules.</comment>
+                    <validate>required-entry</validate>
+                </field>
+                <field id="sender" translate="label" type="select" sortOrder="20" showInDefault="1" showInWebsite="1" showInStore="1" canRestore="1">
+                    <label>Expéditeur des e-mails</label>
+                    <source_model>Magento\Config\Model\Config\Source\Email\Identity</source_model>
+                </field>
+                <field id="received_template" translate="label" type="select" sortOrder="30" showInDefault="1" showInWebsite="1" showInStore="1" canRestore="1">
+                    <label>Candidature reçue (à la boutique)</label>
+                    <source_model>Magento\Config\Model\Config\Source\Email\Template</source_model>
+                </field>
+                <field id="team_template" translate="label" type="select" sortOrder="40" showInDefault="1" showInWebsite="1" showInStore="1" canRestore="1">
+                    <label>Nouvelle candidature (à MYCA)</label>
+                    <source_model>Magento\Config\Model\Config\Source\Email\Template</source_model>
+                </field>
+                <field id="approved_template" translate="label" type="select" sortOrder="50" showInDefault="1" showInWebsite="1" showInStore="1" canRestore="1">
+                    <label>Candidature acceptée</label>
+                    <source_model>Magento\Config\Model\Config\Source\Email\Template</source_model>
+                </field>
+                <field id="rejected_template" translate="label" type="select" sortOrder="60" showInDefault="1" showInWebsite="1" showInStore="1" canRestore="1">
+                    <label>Candidature refusée</label>
+                    <source_model>Magento\Config\Model\Config\Source\Email\Template</source_model>
+                </field>
+                <field id="invitation_template" translate="label" type="select" sortOrder="70" showInDefault="1" showInWebsite="1" showInStore="1" canRestore="1">
+                    <label>Invitation (compte ajouté par MYCA)</label>
+                    <source_model>Magento\Config\Model\Config\Source\Email\Template</source_model>
+                </field>
+                <field id="terms_page" translate="label comment" type="select" sortOrder="80" showInDefault="1" showInWebsite="1" showInStore="1" canRestore="1">
+                    <label>Page des conditions de vente professionnelles</label>
+                    <comment>Page CMS liée à la case « J’accepte les conditions de vente professionnelles » du formulaire « Devenir partenaire ». Son contenu se modifie dans Contenu &gt; Pages.</comment>
+                    <source_model>Magento\Cms\Model\Config\Source\Page</source_model>
+                </field>
+            </group>
         </section>
     </system>
 </config>

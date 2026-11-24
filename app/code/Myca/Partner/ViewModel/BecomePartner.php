@@ -6,7 +6,10 @@ namespace Myca\Partner\ViewModel;
 
 use Magento\Directory\Api\CountryInformationAcquirerInterface;
 use Magento\Directory\Model\AllowedCountries;
+use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Framework\App\Request\DataPersistorInterface;
+use Magento\Framework\UrlInterface;
+use Magento\Store\Model\ScopeInterface;
 use Magento\Framework\View\Element\Block\ArgumentInterface;
 use Myca\Partner\Controller\Candidature\Envoyer;
 use Myca\Partner\Model\PartnerValidator;
@@ -22,8 +25,21 @@ class BecomePartner implements ArgumentInterface
     public function __construct(
         private readonly AllowedCountries $allowedCountries,
         private readonly CountryInformationAcquirerInterface $countryInformation,
-        private readonly DataPersistorInterface $session
+        private readonly DataPersistorInterface $session,
+        private readonly ScopeConfigInterface $scopeConfig,
+        private readonly UrlInterface $urlBuilder
     ) {
+    }
+
+    /**
+     * Page CMS des conditions de vente professionnelles (choisie dans la configuration), ou null si aucune.
+     */
+    public function getTermsUrl(): ?string
+    {
+        $identifier = (string) $this->scopeConfig->getValue('myca_partner/applications/terms_page', ScopeInterface::SCOPE_STORE);
+        $identifier = explode('|', $identifier)[0];
+
+        return $identifier !== '' ? $this->urlBuilder->getUrl(null, ['_direct' => $identifier]) : null;
     }
 
     /**

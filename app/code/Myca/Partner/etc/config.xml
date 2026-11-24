@@ -8,6 +8,16 @@
                 <phone>04 28 29 62 10</phone>
                 <email>partenaires@myca.fr</email>
             </contact>
+            <applications>
+                <team_email>partenaires@myca.fr</team_email>
+                <sender>general</sender>
+                <received_template>myca_partner_applications_received_template</received_template>
+                <team_template>myca_partner_applications_team_template</team_template>
+                <approved_template>myca_partner_applications_approved_template</approved_template>
+                <rejected_template>myca_partner_applications_rejected_template</rejected_template>
+                <invitation_template>myca_partner_applications_invitation_template</invitation_template>
+                <terms_page>conditions-vente-professionnelles</terms_page>
+            </applications>
         </myca_partner>
     </default>
 </config>

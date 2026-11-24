@@ -1,0 +1,34 @@
+<!--@subject {{trans "MYCA – Accès à l’espace partenaire de %company" company=$data.company_name}} @-->
+<!--@vars {
+"var data.name":"Nom",
+"var data.company_name":"Boutique",
+"var data.role_label":"Rôle (titulaire ou collaborateur)",
+"var data.email":"E-mail de connexion",
+"var data.set_password_url":"Lien pour définir le mot de passe (compte créé)",
+"var data.login_url":"Lien de connexion",
+"var data.partner_url":"Espace partenaire",
+"var data.forgot_url":"Mot de passe oublié",
+"var data.link_hours":"Validité du lien (heures)"
+} @-->
+{{template config_path="design/email/header_template"}}
+
+<p>{{trans "Bonjour %name," name=$data.name}}</p>
+<p>{{trans "MYCA vous a ouvert l’accès à l’espace partenaire de %company, en tant que %role." company=$data.company_name role=$data.role_label}}</p>
+
+{{depend data.set_password_url}}
+<p>{{trans "Pour vous connecter, définissez d’abord votre mot de passe :"}}</p>
+<table class="button" width="100%" border="0" cellpadding="0" cellspacing="0">
+    <tr><td><table class="inner-wrapper" border="0" cellspacing="0" cellpadding="0" align="center"><tr><td align="center">
+        <a href="{{var data.set_password_url}}" target="_blank">{{trans "Définir mon mot de passe"}}</a>
+    </td></tr></table></td></tr>
+</table>
+<p style="color:#5b6475">{{trans "Ce lien est valable %hours heure(s). Passé ce délai, utilisez « Mot de passe oublié » avec votre adresse %email :" hours=$data.link_hours email=$data.email}} <a href="{{var data.forgot_url}}">{{trans "réinitialiser mon mot de passe"}}</a></p>
+{{/depend}}
+
+{{depend data.existing_account}}
+<p>{{trans "Connectez-vous avec votre compte MYCA habituel (%email)." email=$data.email}}</p>
+{{/depend}}
+<p><a href="{{var data.partner_url}}">{{trans "Ouvrir l’espace partenaire"}}</a></p>
+<p>{{trans "L’équipe MYCA"}}</p>
+
+{{template config_path="design/email/footer_template"}}

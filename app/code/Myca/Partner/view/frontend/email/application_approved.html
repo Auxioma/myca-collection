@@ -1,0 +1,41 @@
+<!--@subject {{trans "Bienvenue chez MYCA : votre compte partenaire est activé"}} @-->
+<!--@vars {
+"var data.contact_name":"Nom du contact",
+"var data.company_name":"Raison sociale",
+"var data.partner_code":"Code partenaire",
+"var data.email":"E-mail de connexion",
+"var data.set_password_url":"Lien pour définir le mot de passe (compte créé)",
+"var data.existing_account":"Compte client déjà existant",
+"var data.login_url":"Lien de connexion",
+"var data.partner_url":"Espace partenaire",
+"var data.forgot_url":"Mot de passe oublié",
+"var data.link_hours":"Validité du lien (heures)"
+} @-->
+{{template config_path="design/email/header_template"}}
+
+<p>{{trans "Bonjour %name," name=$data.contact_name}}</p>
+<p>{{trans "Bonne nouvelle : la candidature de %company est acceptée. Votre boutique est désormais partenaire MYCA (code %code)." company=$data.company_name code=$data.partner_code}}</p>
+
+{{depend data.set_password_url}}
+<p>{{trans "Pour accéder à votre espace partenaire, définissez d’abord votre mot de passe :"}}</p>
+<table class="button" width="100%" border="0" cellpadding="0" cellspacing="0">
+    <tr><td><table class="inner-wrapper" border="0" cellspacing="0" cellpadding="0" align="center"><tr><td align="center">
+        <a href="{{var data.set_password_url}}" target="_blank">{{trans "Définir mon mot de passe"}}</a>
+    </td></tr></table></td></tr>
+</table>
+<p style="color:#5b6475">{{trans "Ce lien est valable %hours heure(s). Passé ce délai, utilisez « Mot de passe oublié » avec votre adresse %email :" hours=$data.link_hours email=$data.email}} <a href="{{var data.forgot_url}}">{{trans "réinitialiser mon mot de passe"}}</a></p>
+{{/depend}}
+{{depend data.existing_account}}
+<p>{{trans "Votre compte MYCA (%email) donne maintenant accès à l’espace partenaire." email=$data.email}} <a href="{{var data.login_url}}">{{trans "Me connecter"}}</a></p>
+{{/depend}}
+
+<p>{{trans "Dans votre"}} <a href="{{var data.partner_url}}">{{trans "espace partenaire"}}</a>{{trans ", vous trouverez :"}}</p>
+<ul>
+    <li>{{trans "le catalogue au tarif partenaire et vos commandes ;"}}</li>
+    <li>{{trans "vos factures MYCA, avoirs et marges estimées ;"}}</li>
+    <li>{{trans "la gestion des comptes de votre équipe."}}</li>
+</ul>
+<p>{{trans "Le Service Partenaire B2B reste à votre disposition : répondez simplement à cet e-mail."}}</p>
+<p>{{trans "L’équipe MYCA"}}</p>
+
+{{template config_path="design/email/footer_template"}}

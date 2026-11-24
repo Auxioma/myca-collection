@@ -134,7 +134,15 @@ $text = [
             </div>
             <label class="flex items-start gap-2 myca-body-s text-fg">
                 <input type="checkbox" name="application[terms]" value="1" required class="mt-0.5 size-4 rounded-sm accent-accent">
-                <span><?= $escaper->escapeHtml(__('J’accepte les conditions de vente professionnelles (B2B)')) ?> *</span>
+                <?php $termsUrl = $form->getTermsUrl(); ?>
+                <span>
+                    <?= $escaper->escapeHtml(__('J’accepte les')) ?>
+                    <?php if ($termsUrl): ?>
+                        <a href="<?= $escaper->escapeUrl($termsUrl) ?>" target="_blank" rel="noopener" class="underline hover:text-accent"><?= $escaper->escapeHtml(__('conditions de vente professionnelles (B2B)')) ?></a>
+                    <?php else: ?>
+                        <?= $escaper->escapeHtml(__('conditions de vente professionnelles (B2B)')) ?>
+                    <?php endif ?> *
+                </span>
             </label>
             <label class="flex items-start gap-2 myca-body-s text-fg">
                 <input type="checkbox" name="application[contact_consent]" value="1" required class="mt-0.5 size-4 rounded-sm accent-accent">

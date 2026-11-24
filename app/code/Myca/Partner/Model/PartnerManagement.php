@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Myca\Partner\Model;
 
-use Magento\Customer\Api\AccountManagementInterface;
 use Magento\Customer\Api\CustomerRepositoryInterface;
 use Magento\Customer\Api\Data\CustomerInterface;
 use Magento\Customer\Api\Data\CustomerInterfaceFactory;
+use Magento\Customer\Model\AccountManagement;
 use Magento\Directory\Model\AllowedCountries;
 use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Framework\App\ResourceConnection;
@@ -15,6 +15,7 @@ use Magento\Framework\DB\Adapter\AdapterInterface;
 use Magento\Framework\DB\Adapter\Pdo\Mysql;
 use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\Exception\NoSuchEntityException;
+use Magento\Framework\Math\Random;
 use Magento\Store\Model\StoreManagerInterface;
 use Myca\Partner\Api\Data\PartnerInterface;
 use Myca\Partner\Api\PartnerRepositoryInterface;
@@ -44,10 +45,12 @@ class PartnerManagement
         private readonly PartnerResource $partnerResource,
         private readonly CustomerRepositoryInterface $customerRepository,
         private readonly CustomerInterfaceFactory $customerFactory,
-        private readonly AccountManagementInterface $accountManagement,
+        private readonly AccountManagement $accountManagement,
         private readonly AllowedCountries $allowedCountries,
         private readonly StoreManagerInterface $storeManager,
-        private readonly ScopeConfigInterface $scopeConfig
+        private readonly ScopeConfigInterface $scopeConfig,
+        private readonly Random $random,
+        private readonly PartnerMailer $mailer
     ) {
     }
 
@@ -87,8 +90,12 @@ class PartnerManagement
             'status' => self::APPLICATION_PENDING,
         ];
         $row['sales_modes'] = implode(',', $row['sales_modes']);
+        $applicationId = $this->insert('myca_partner_application', $row);
+        $application = ['application_id' => $applicationId] + $row;
+        $this->mailer->sendApplicationReceived($application);
+        $this->mailer->notifyTeam($application);
 
-        return $this->insert('myca_partner_application', $row);
+        return $applicationId;
     }
 
     /**
@@ -105,7 +112,7 @@ class PartnerManagement
         $connection = $this->connection();
         $connection->beginTransaction();
         try {
-            $partnerId = $this->createPartner(
+            [$partnerId, $customerId, $token] = $this->createPartner(
                 array_merge($application, ['sales_modes' => explode(',', (string) $application['sales_modes'])]),
                 (string) $application['email'],
                 (string) $application['contact_name']
@@ -121,6 +128,7 @@ class PartnerManagement
             $connection->rollBack();
             throw $e;
         }
+        $this->mailer->sendApplicationApproved($application, $this->loadPartner($partnerId)->getCode(), $customerId, $token);
 
         return $partnerId;
     }
@@ -143,6 +151,7 @@ class PartnerManagement
             'reviewed_by' => $adminUserId ?: null,
             'reviewed_at' => gmdate('Y-m-d H:i:s'),
         ], ['application_id = ?' => $applicationId]);
+        $this->mailer->sendApplicationRejected($application, trim($reason));
     }
 
     /**
@@ -161,12 +170,13 @@ class PartnerManagement
         $connection = $this->connection();
         $connection->beginTransaction();
         try {
-            $partnerId = $this->createPartner($row, $row['email'], $contact);
+            [$partnerId, $customerId, $token] = $this->createPartner($row, $row['email'], $contact);
             $connection->commit();
         } catch (\Throwable $e) {
             $connection->rollBack();
             throw $e;
         }
+        $this->mailer->sendInvitation($row['email'], $contact, $row['company_name'], self::ROLE_OWNER, $customerId, $token);
 
         return $partnerId;
     }
@@ -229,7 +239,7 @@ class PartnerManagement
      */
     public function addUser(int $partnerId, string $email, string $name, string $role): int
     {
-        $this->loadPartner($partnerId);
+        $partner = $this->loadPartner($partnerId);
         if (!in_array($role, [self::ROLE_OWNER, self::ROLE_STAFF], true)) {
             throw new LocalizedException(__('Rôle inconnu.'));
         }
@@ -240,12 +250,13 @@ class PartnerManagement
         $connection = $this->connection();
         $connection->beginTransaction();
         try {
-            $customerId = $this->attachCustomer($partnerId, $email, trim($name) ?: $email, $role);
+            [$customerId, $token] = $this->attachCustomer($partnerId, $email, trim($name) ?: $email, $role);
             $connection->commit();
         } catch (\Throwable $e) {
             $connection->rollBack();
             throw $e;
         }
+        $this->mailer->sendInvitation($email, trim($name) ?: $email, (string) $partner->getCompanyName(), $role, $customerId, $token);
 
         return $customerId;
     }
@@ -366,8 +377,9 @@ class PartnerManagement
 
     /**
      * @param array<string, mixed> $data données validées (validateCompany) ou candidature
+     * @return array{0: int, 1: int, 2: ?string} boutique, compte du titulaire, jeton « définir le mot de passe »
      */
-    private function createPartner(array $data, string $ownerEmail, string $ownerName): int
+    private function createPartner(array $data, string $ownerEmail, string $ownerName): array
     {
         $partner = $this->partnerFactory->create();
         $partner->setData([
@@ -388,17 +400,21 @@ class PartnerManagement
         $partner->setSalesModes((array) $data['sales_modes']);
         $this->partnerRepository->save($partner);
         $partnerId = (int) $partner->getId();
-        $this->attachCustomer($partnerId, $ownerEmail, $ownerName, self::ROLE_OWNER);
+        [$customerId, $token] = $this->attachCustomer($partnerId, $ownerEmail, $ownerName, self::ROLE_OWNER);
 
-        return $partnerId;
+        return [$partnerId, $customerId, $token];
     }
 
     /**
      * Compte client du collaborateur : réutilisé s'il existe (et n'appartient à aucune autre boutique), créé sinon.
-     * Un compte créé reçoit l'e-mail Magento pour définir son mot de passe.
+     * Un compte créé n'a pas de mot de passe : le jeton renvoyé sert au lien « définir mon mot de passe » de l'e-mail
+     * MYCA (aucun e-mail Magento n'est envoyé en plus).
+     *
+     * @return array{0: int, 1: ?string} compte, jeton (null si le compte existait déjà)
      */
-    private function attachCustomer(int $partnerId, string $email, string $name, string $role): int
+    private function attachCustomer(int $partnerId, string $email, string $name, string $role): array
     {
+        $token = null;
         $websiteId = (int) $this->storeManager->getDefaultStoreView()?->getWebsiteId();
         $customer = null;
         try {
@@ -422,11 +438,14 @@ class PartnerManagement
             $newCustomer->setLastname(mb_substr($lastname, 0, 255));
             $newCustomer->setWebsiteId($websiteId);
             $newCustomer->setGroupId($this->getPartnerGroupId());
-            $customer = $this->accountManagement->createAccount($newCustomer);
+            $newCustomer->setStoreId((int) $this->storeManager->getDefaultStoreView()?->getId());
+            $customer = $this->customerRepository->save($newCustomer);
+            $token = $this->random->getUniqueHash();
+            $this->accountManagement->changeResetPasswordLinkToken($customer, $token);
         }
         $this->partnerResource->linkCustomer($partnerId, (int) $customer->getId(), $role);
 
-        return (int) $customer->getId();
+        return [(int) $customer->getId(), $token];
     }
 
     /**
