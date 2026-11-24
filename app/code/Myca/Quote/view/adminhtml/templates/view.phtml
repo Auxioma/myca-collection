@@ -1,0 +1,122 @@
+<?php
+/**
+ * Fiche d'un devis : demande du client, lignes avec prix catalogue, formulaire de proposition (prix unitaires TTC,
+ * validité, conditions) ou de refus, PDF figé et suivi. Mise en forme native de l'administration.
+ */
+
+declare(strict_types=1);
+
+use Magento\Backend\Block\Template;
+use Magento\Framework\Escaper;
+use Myca\Quote\ViewModel\Admin;
+
+/** @var Template $block */
+/** @var Escaper $escaper */
+
+/** @var Admin $viewModel */
+$viewModel = $block->getData('view_model');
+$quote = $viewModel->getQuote();
+if ($quote === null) {
+    return;
+}
+$items = $viewModel->getItems($quote);
+$canPropose = $viewModel->canPropose($quote);
+$formKey = $block->getFormKey();
+?>
+<p><a href="<?= $escaper->escapeUrl($viewModel->getBackUrl()) ?>">&larr; <?= $escaper->escapeHtml(__('Tous les devis')) ?></a></p>
+
+<section class="admin__page-section">
+    <div class="admin__page-section-title"><span class="title"><?= $escaper->escapeHtml(__('Devis %1 — %2', $quote->getIncrementId(), $viewModel->getStatusLabel($quote->getStatus()))) ?></span></div>
+    <table class="admin__table-secondary">
+        <tbody>
+            <tr><th><?= $escaper->escapeHtml(__('Client')) ?></th><td><?= $escaper->escapeHtml($viewModel->getCustomerLabel($quote)) ?></td></tr>
+            <tr><th><?= $escaper->escapeHtml(__('Demande du client')) ?></th><td><?= /* @noEscape */ nl2br($escaper->escapeHtml((string) $quote->getData('customer_note'))) ?></td></tr>
+            <?php if ($quote->getData('pdf_path')): ?>
+                <tr><th><?= $escaper->escapeHtml(__('Proposition')) ?></th><td><a href="<?= $escaper->escapeUrl($viewModel->getPdfUrl($quote)) ?>"><?= $escaper->escapeHtml(__('PDF version %1', (int) $quote->getData('version'))) ?></a> — <?= $escaper->escapeHtml(__('empreinte %1', substr((string) $quote->getData('pdf_sha256'), 0, 16))) ?>…</td></tr>
+            <?php endif ?>
+            <?php if ($quote->getData('order_increment_id')): ?>
+                <tr><th><?= $escaper->escapeHtml(__('Commande')) ?></th><td><?= $escaper->escapeHtml((string) $quote->getData('order_increment_id')) ?></td></tr>
+            <?php endif ?>
+        </tbody>
+    </table>
+</section>
+
+<section class="admin__page-section">
+    <div class="admin__page-section-title"><span class="title"><?= $escaper->escapeHtml($canPropose ? __('Proposition') : __('Articles')) ?></span></div>
+    <form method="post" action="<?= $escaper->escapeUrl($viewModel->getProcessUrl()) ?>">
+        <input type="hidden" name="form_key" value="<?= $escaper->escapeHtmlAttr($formKey) ?>">
+        <input type="hidden" name="id" value="<?= (int) $quote->getId() ?>">
+        <table class="data-table admin__table-primary">
+            <thead>
+                <tr>
+                    <th><?= $escaper->escapeHtml(__('Article')) ?></th>
+                    <th><?= $escaper->escapeHtml(__('Référence')) ?></th>
+                    <th><?= $escaper->escapeHtml(__('Quantité')) ?></th>
+                    <th><?= $escaper->escapeHtml(__('Prix catalogue TTC')) ?></th>
+                    <th><?= $escaper->escapeHtml(__('Prix unitaire TTC proposé')) ?></th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php foreach ($items as $item): ?>
+                    <tr>
+                        <td><?= $escaper->escapeHtml((string) $item['name']) ?></td>
+                        <td><?= $escaper->escapeHtml((string) $item['sku']) ?></td>
+                        <td><?= (float) $item['qty'] ?></td>
+                        <td><?= $escaper->escapeHtml(number_format((float) $item['catalog_price'], 2, ',', ' ')) ?> €</td>
+                        <td>
+                            <?php if ($canPropose): ?>
+                                <input type="text" inputmode="decimal" name="price[<?= (int) $item['item_id'] ?>]" required class="admin__control-text"
+                                       value="<?= $escaper->escapeHtmlAttr($item['unit_price_incl_tax'] !== null ? (string) (float) $item['unit_price_incl_tax'] : '') ?>"
+                                       aria-label="<?= $escaper->escapeHtmlAttr(__('Prix unitaire TTC de %1', $item['name'])) ?>">
+                            <?php else: ?>
+                                <?= $item['unit_price_incl_tax'] !== null ? $escaper->escapeHtml(number_format((float) $item['unit_price_incl_tax'], 2, ',', ' ') . ' €') : '—' ?>
+                            <?php endif ?>
+                        </td>
+                    </tr>
+                <?php endforeach ?>
+            </tbody>
+        </table>
+        <?php if ($canPropose): ?>
+            <div class="admin__field _required">
+                <label class="admin__field-label" for="myca-quote-valid"><span><?= $escaper->escapeHtml(__('Valable jusqu’au (inclus)')) ?></span></label>
+                <div class="admin__field-control">
+                    <input id="myca-quote-valid" type="date" name="valid_until" required class="admin__control-text"
+                           value="<?= $escaper->escapeHtmlAttr($quote->getData('valid_until') ? (string) $quote->getData('valid_until') : $viewModel->getDefaultValidity()) ?>">
+                </div>
+            </div>
+            <div class="admin__field">
+                <label class="admin__field-label" for="myca-quote-note"><span><?= $escaper->escapeHtml(__('Conditions (figurent sur le PDF)')) ?></span></label>
+                <div class="admin__field-control"><textarea id="myca-quote-note" name="note" rows="3" class="admin__control-textarea"><?= $escaper->escapeHtml((string) $quote->getData('proposal_note')) ?></textarea></div>
+            </div>
+            <p><?= $escaper->escapeHtml(__('Envoyer la proposition fige une nouvelle version du PDF. Le client l’accepte ou la refuse depuis « Mes devis » ; aucune facture n’est créée.')) ?></p>
+            <button type="submit" name="operation" value="propose" class="action-primary"><?= $escaper->escapeHtml(__('Envoyer la proposition')) ?></button>
+        <?php endif ?>
+        <?php if ($viewModel->canRefuse($quote)): ?>
+            <button type="submit" name="operation" value="refuse" class="action-secondary" formnovalidate><?= $escaper->escapeHtml(__('Refuser la demande')) ?></button>
+        <?php endif ?>
+    </form>
+</section>
+
+<section class="admin__page-section">
+    <div class="admin__page-section-title"><span class="title"><?= $escaper->escapeHtml(__('Suivi')) ?></span></div>
+    <table class="data-table admin__table-primary">
+        <thead>
+            <tr>
+                <th><?= $escaper->escapeHtml(__('Date')) ?></th>
+                <th><?= $escaper->escapeHtml(__('État')) ?></th>
+                <th><?= $escaper->escapeHtml(__('Auteur')) ?></th>
+                <th><?= $escaper->escapeHtml(__('Message')) ?></th>
+            </tr>
+        </thead>
+        <tbody>
+            <?php foreach ($viewModel->getHistory($quote) as $entry): ?>
+                <tr>
+                    <td><?= $escaper->escapeHtml($block->formatDate((string) $entry['created_at'], IntlDateFormatter::MEDIUM, true)) ?></td>
+                    <td><?= $escaper->escapeHtml($viewModel->getStatusLabel((string) $entry['status'])) ?></td>
+                    <td><?= $escaper->escapeHtml((string) $entry['author']) ?></td>
+                    <td><?= /* @noEscape */ nl2br($escaper->escapeHtml((string) $entry['message'])) ?></td>
+                </tr>
+            <?php endforeach ?>
+        </tbody>
+    </table>
+</section>

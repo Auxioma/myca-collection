@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="urn:magento:framework:Event/etc/events.xsd">
+    <!-- Panier issu d'un devis : prix convenus sur les lignes identiques au devis seulement. -->
+    <event name="sales_quote_collect_totals_before">
+        <observer name="myca_quote_agreed_prices" instance="Myca\Quote\Observer\ApplyAgreedPrices"/>
+    </event>
+    <event name="checkout_submit_all_after">
+        <observer name="myca_quote_ordered" instance="Myca\Quote\Observer\MarkQuoteOrdered"/>
+    </event>
+</config>

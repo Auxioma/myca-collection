@@ -1,0 +1,91 @@
+<?xml version="1.0"?>
+<listing xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Ui:etc/ui_configuration.xsd">
+    <argument name="data" xsi:type="array">
+        <item name="js_config" xsi:type="array">
+            <item name="provider" xsi:type="string">myca_quote_listing.myca_quote_listing_data_source</item>
+        </item>
+    </argument>
+    <settings>
+        <spinner>myca_quote_columns</spinner>
+        <deps>
+            <dep>myca_quote_listing.myca_quote_listing_data_source</dep>
+        </deps>
+    </settings>
+    <dataSource name="myca_quote_listing_data_source" component="Magento_Ui/js/grid/provider">
+        <settings>
+            <storageConfig>
+                <param name="indexField" xsi:type="string">quote_id</param>
+            </storageConfig>
+            <updateUrl path="mui/index/render"/>
+        </settings>
+        <aclResource>Myca_Quote::quote</aclResource>
+        <dataProvider class="Magento\Framework\View\Element\UiComponent\DataProvider\DataProvider" name="myca_quote_listing_data_source">
+            <settings>
+                <requestFieldName>id</requestFieldName>
+                <primaryFieldName>quote_id</primaryFieldName>
+            </settings>
+        </dataProvider>
+    </dataSource>
+    <listingToolbar name="listing_top">
+        <settings>
+            <sticky>true</sticky>
+        </settings>
+        <bookmark name="bookmarks"/>
+        <columnsControls name="columns_controls"/>
+        <filters name="listing_filters"/>
+        <paging name="listing_paging"/>
+    </listingToolbar>
+    <columns name="myca_quote_columns">
+        <column name="increment_id" sortOrder="10">
+            <settings>
+                <filter>text</filter>
+                <label translate="true">N° devis</label>
+            </settings>
+        </column>
+        <column name="created_at" class="Magento\Ui\Component\Listing\Columns\Date" component="Magento_Ui/js/grid/columns/date" sortOrder="20">
+            <settings>
+                <filter>dateRange</filter>
+                <dataType>date</dataType>
+                <label translate="true">Date</label>
+                <sorting>desc</sorting>
+            </settings>
+        </column>
+        <column name="customer_id" sortOrder="30">
+            <settings>
+                <filter>textRange</filter>
+                <label translate="true">ID client</label>
+            </settings>
+        </column>
+        <column name="status" component="Magento_Ui/js/grid/columns/select" sortOrder="40">
+            <settings>
+                <options class="Myca\Quote\Model\Source\Status"/>
+                <filter>select</filter>
+                <dataType>select</dataType>
+                <label translate="true">Statut</label>
+            </settings>
+        </column>
+        <column name="grand_total" sortOrder="50">
+            <settings>
+                <filter>textRange</filter>
+                <label translate="true">Total TTC</label>
+            </settings>
+        </column>
+        <column name="valid_until" sortOrder="60">
+            <settings>
+                <label translate="true">Validité</label>
+            </settings>
+        </column>
+        <column name="order_increment_id" sortOrder="70">
+            <settings>
+                <filter>text</filter>
+                <label translate="true">Commande</label>
+            </settings>
+        </column>
+        <actionsColumn name="actions" class="Myca\Quote\Ui\Component\Listing\Column\Actions" sortOrder="100">
+            <settings>
+                <indexField>quote_id</indexField>
+            </settings>
+        </actionsColumn>
+    </columns>
+</listing>

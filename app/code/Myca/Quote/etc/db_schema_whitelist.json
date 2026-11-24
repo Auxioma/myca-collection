@@ -1,0 +1,69 @@
+{
+    "myca_quote": {
+        "column": {
+            "quote_id": true,
+            "increment_id": true,
+            "customer_id": true,
+            "store_id": true,
+            "status": true,
+            "customer_note": true,
+            "proposal_note": true,
+            "valid_until": true,
+            "version": true,
+            "subtotal_excl_tax": true,
+            "tax_amount": true,
+            "grand_total": true,
+            "pdf_path": true,
+            "pdf_sha256": true,
+            "order_id": true,
+            "order_increment_id": true,
+            "created_at": true,
+            "updated_at": true
+        },
+        "index": {
+            "MYCA_QUOTE_CUSTOMER_ID_STATUS": true
+        },
+        "constraint": {
+            "PRIMARY": true,
+            "MYCA_QUOTE_INCREMENT_ID": true,
+            "MYCA_QUOTE_CUSTOMER_ID_CUSTOMER_ENTITY_ENTITY_ID": true
+        }
+    },
+    "myca_quote_item": {
+        "column": {
+            "item_id": true,
+            "quote_id": true,
+            "product_id": true,
+            "sku": true,
+            "name": true,
+            "buy_request": true,
+            "qty": true,
+            "catalog_price": true,
+            "unit_price_incl_tax": true,
+            "tax_percent": true
+        },
+        "constraint": {
+            "PRIMARY": true,
+            "MYCA_QUOTE_ITEM_QUOTE_ID_MYCA_QUOTE_QUOTE_ID": true
+        }
+    },
+    "myca_quote_history": {
+        "column": {
+            "history_id": true,
+            "quote_id": true,
+            "status": true,
+            "author": true,
+            "message": true,
+            "created_at": true
+        },
+        "constraint": {
+            "PRIMARY": true,
+            "MYCA_QUOTE_HISTORY_QUOTE_ID_MYCA_QUOTE_QUOTE_ID": true
+        }
+    },
+    "quote": {
+        "column": {
+            "myca_quote_id": true
+        }
+    }
+}
