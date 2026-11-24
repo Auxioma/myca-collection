@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "d85e04bc385a20d2f7813258e70729e6",
+    "content-hash": "91b3c94eb7e40cdaa7941246f1669b87",
     "packages": [
         {
             "name": "2tvenom/cborencode",
@@ -2713,6 +2713,46 @@
             "time": "2025-11-04T16:20:24+00:00"
         },
         {
+            "name": "hyva-themes/magento2-luma-checkout",
+            "version": "1.1.7",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/hyva-themes/magento2-luma-checkout.git",
+                "reference": "4a77fd88723415e64fbec10e2d40dc650a2e15d0"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/hyva-themes/magento2-luma-checkout/zipball/4a77fd88723415e64fbec10e2d40dc650a2e15d0",
+                "reference": "4a77fd88723415e64fbec10e2d40dc650a2e15d0",
+                "shasum": ""
+            },
+            "require": {
+                "hyva-themes/magento2-theme-fallback": "*",
+                "magento/framework": "*",
+                "magento/module-checkout": ">=100.3.0"
+            },
+            "type": "magento2-module",
+            "autoload": {
+                "files": [
+                    "src/registration.php"
+                ],
+                "psr-4": {
+                    "Hyva\\LumaCheckout\\": "src/"
+                }
+            },
+            "license": [
+                "OSL-3.0"
+            ],
+            "authors": [
+                {
+                    "name": "Hyvä Themes B.V.",
+                    "email": "info@hyva.io"
+                }
+            ],
+            "description": "Luma Fallback Checkout for Hyvä Themes",
+            "time": "2025-11-04T15:55:16+00:00"
+        },
+        {
             "name": "hyva-themes/magento2-order-cancellation-webapi",
             "version": "1.0.1",
             "source": {
@@ -2757,6 +2797,44 @@
             ],
             "description": "REST API for magento/module-order-cancellation.",
             "time": "2025-11-04T16:06:08+00:00"
+        },
+        {
+            "name": "hyva-themes/magento2-theme-fallback",
+            "version": "1.0.4",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/hyva-themes/magento2-theme-fallback.git",
+                "reference": "6673002d68b23c850b84808ca93b7c9ac7141c49"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/hyva-themes/magento2-theme-fallback/zipball/6673002d68b23c850b84808ca93b7c9ac7141c49",
+                "reference": "6673002d68b23c850b84808ca93b7c9ac7141c49",
+                "shasum": ""
+            },
+            "require": {
+                "magento/framework": "*"
+            },
+            "type": "magento2-module",
+            "autoload": {
+                "files": [
+                    "src/registration.php"
+                ],
+                "psr-4": {
+                    "Hyva\\ThemeFallback\\": "src/"
+                }
+            },
+            "license": [
+                "OSL-3.0"
+            ],
+            "authors": [
+                {
+                    "name": "Hyvä Themes B.V.",
+                    "email": "info@hyva.io"
+                }
+            ],
+            "description": "Allow for Hyvä Themes to fall back to regular Magento themes on specific routes.",
+            "time": "2025-11-04T15:59:50+00:00"
         },
         {
             "name": "hyva-themes/magento2-theme-module",

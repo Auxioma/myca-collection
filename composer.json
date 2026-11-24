@@ -20,6 +20,8 @@
     "version": "2.4.9",
     "require": {
         "hyva-themes/magento2-default-theme": "^1.5.4",
+        "hyva-themes/magento2-luma-checkout": "^1.1.7",
+        "hyva-themes/magento2-theme-fallback": "^1.0.4",
         "magento/composer": "^1.10.1-beta1",
         "magento/composer-dependency-version-audit-plugin": "~0.1",
         "magento/composer-root-update-plugin": "^2.0.4",
@@ -76,6 +78,18 @@
     "minimum-stability": "stable",
     "prefer-stable": true,
     "repositories": [
+        {
+            "name": "hyva-luma-checkout",
+            "type": "vcs",
+            "url": "https://github.com/hyva-themes/magento2-luma-checkout.git",
+            "no-api": true
+        },
+        {
+            "name": "hyva-theme-fallback",
+            "type": "vcs",
+            "url": "https://github.com/hyva-themes/magento2-theme-fallback.git",
+            "no-api": true
+        },
         {
             "type": "composer",
             "url": "https://repo.magento.com/"

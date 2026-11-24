@@ -362,8 +362,10 @@ return [
         'Magento_WishlistGraphQl' => 1,
         'Hyva_Theme' => 1,
         'Hyva_Email' => 1,
+        'Hyva_ThemeFallback' => 1,
         'Hyva_OrderCancellationWebapi' => 1,
         'Hyva_BaseLayoutReset' => 1,
+        'Hyva_LumaCheckout' => 1,
         'Myca_Core' => 1,
         'Myca_Catalog' => 1,
         'Myca_Content' => 1,
@@ -383,5 +385,14 @@ return [
         'PayPal_BraintreeGiftWrapping' => 1,
         'PayPal_BraintreeGraphQl' => 1,
         'PayPal_BraintreeReward' => 1
+    ],
+    'system' => [
+        'default' => [
+            'hyva_theme_fallback' => [
+                'general' => [
+                    'theme_full_path' => 'frontend/Myca/checkout'
+                ]
+            ]
+        ]
     ]
 ];
