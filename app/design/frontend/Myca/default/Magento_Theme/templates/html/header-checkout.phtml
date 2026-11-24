@@ -1,7 +1,8 @@
 <?php
 /**
  * En-tête épuré du tunnel de commande (Figma « En-tête/Tunnel de commande ») : logo, paiement sécurisé, aide.
- * Sans navigation, pour limiter les sorties du tunnel.
+ * Sans navigation, pour limiter les sorties du tunnel. Inclut la fenêtre de connexion Hyvä, indispensable au bouton
+ * « Passer la commande » du panier.
  */
 
 declare(strict_types=1);
@@ -31,4 +32,6 @@ $icons = $viewModels->require(SvgIcons::class);
             <?= $escaper->escapeHtml(__('Besoin d’aide ? Service client')) ?>
         </a>
     </div>
+    <?php /* Fenêtre de connexion Hyvä : c'est elle qui traite le clic sur « Passer la commande » (événement toggle-authentication). */ ?>
+    <?= $block->getChildHtml('authentication-popup') ?>
 </header>
