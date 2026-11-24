@@ -1,0 +1,150 @@
+// Habillage MYCA du tunnel : police Inter, en-tête marine avec logo, pied de page sobre, boutons arrondis.
+
+@font-face {
+    font-family: 'Inter';
+    font-style: normal;
+    font-weight: 100 900;
+    font-display: swap;
+    src: url('../fonts/inter-latin-wght-normal.woff2') format('woff2');
+    unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+    font-family: 'Inter';
+    font-style: normal;
+    font-weight: 100 900;
+    font-display: swap;
+    src: url('../fonts/inter-latin-ext-wght-normal.woff2') format('woff2');
+    unicode-range: U+0100-02AF, U+0304, U+0308, U+0329, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+body {
+    color: @myca-navy;
+}
+
+.checkout-index-index {
+    .page-header {
+        background: @myca-navy;
+        border: 0;
+        margin-bottom: 24px;
+
+        .header.content {
+            padding-top: 14px;
+            padding-bottom: 14px;
+        }
+    }
+
+    .page-footer,
+    .footer.content {
+        background: @myca-navy;
+        border: 0;
+        margin-top: 40px;
+    }
+
+    .copyright {
+        background: @myca-navy;
+        padding: 16px;
+    }
+
+    .opc-progress-bar-item {
+        > span:before,
+        &._active > span:before {
+            border-color: @myca-red;
+        }
+
+        &._active:before,
+        &._complete:before {
+            background: @myca-red;
+        }
+    }
+
+    .action.primary,
+    .action-select-shipping-item,
+    .action.continue {
+        border-radius: 8px;
+        font-weight: 600;
+    }
+
+    .opc-block-summary {
+        background: #f5f6f8;
+        border-radius: 12px;
+    }
+}
+
+.myca-logo {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: #fff;
+    text-decoration: none;
+
+    &:hover,
+    &:visited {
+        color: #fff;
+        text-decoration: none;
+    }
+}
+
+.myca-logo__m {
+    font-size: 32px;
+    line-height: 32px;
+    font-weight: 900;
+}
+
+.myca-logo__square {
+    display: inline-block;
+    width: 22px;
+    height: 20px;
+    border-radius: 2px;
+    background: @myca-red;
+}
+
+.myca-logo__words {
+    display: flex;
+    flex-direction: column;
+    white-space: nowrap;
+}
+
+.myca-logo__name {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 24px;
+    line-height: 24px;
+    font-weight: 700;
+}
+
+.myca-logo__tagline {
+    font-size: 7px;
+    line-height: 9px;
+    font-weight: 600;
+    letter-spacing: 0.28em;
+}
+
+.myca-checkout-footer {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px 24px;
+    color: #fff;
+    font-size: 13px;
+
+    a,
+    a:visited {
+        color: #fff;
+    }
+}
+
+.checkout-index-index {
+    .page-header .header.content {
+        display: flex;
+        align-items: center;
+        min-height: 48px;
+    }
+
+    .page-header .logo {
+        float: none;
+        margin: 0;
+    }
+
+    .opc-progress-bar-item > span:after {
+        font-family: @font-family__base;
+    }
+}

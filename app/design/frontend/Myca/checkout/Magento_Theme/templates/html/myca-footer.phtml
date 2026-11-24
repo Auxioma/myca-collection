@@ -1,0 +1,18 @@
+<?php
+/**
+ * Pied de page du tunnel : mentions utiles seulement (pas de copyright Magento).
+ */
+
+declare(strict_types=1);
+
+use Magento\Framework\Escaper;
+use Magento\Framework\View\Element\Template;
+
+/** @var Template $block */
+/** @var Escaper $escaper */
+?>
+<div class="myca-checkout-footer">
+    <span><?= $escaper->escapeHtml(__('© %1 MYCA – Tous droits réservés.', date('Y'))) ?></span>
+    <a href="<?= $escaper->escapeUrl($block->getUrl('', ['_direct' => 'cgv'])) ?>"><?= $escaper->escapeHtml(__('CGV')) ?></a>
+    <a href="<?= $escaper->escapeUrl($block->getUrl('', ['_direct' => 'contact'])) ?>"><?= $escaper->escapeHtml(__('Besoin d’aide ? Service client')) ?></a>
+</div>

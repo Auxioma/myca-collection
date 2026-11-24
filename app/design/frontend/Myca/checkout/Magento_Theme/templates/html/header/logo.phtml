@@ -1,0 +1,21 @@
+<?php
+/**
+ * Logo MYCA du tunnel de commande (même composition que l'en-tête du site : M, carré rouge, MYCA®, signature).
+ */
+
+declare(strict_types=1);
+
+use Magento\Framework\Escaper;
+use Magento\Theme\Block\Html\Header\Logo;
+
+/** @var Logo $block */
+/** @var Escaper $escaper */
+?>
+<a class="logo myca-logo" href="<?= $escaper->escapeUrl($block->getUrl('')) ?>" aria-label="<?= $escaper->escapeHtmlAttr(__('MYCA, retour à l’accueil')) ?>">
+    <span class="myca-logo__m" aria-hidden="true">M</span>
+    <span class="myca-logo__square" aria-hidden="true"></span>
+    <span class="myca-logo__words" aria-hidden="true">
+        <span class="myca-logo__name">MYCA®</span>
+        <span class="myca-logo__tagline">L’ÉLÉGANCE SPORTIVE</span>
+    </span>
+</a>

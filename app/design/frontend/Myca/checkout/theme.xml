@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+<!--
+    Thème du tunnel de commande uniquement : le module Hyvä de repli (hyva-themes/magento2-luma-checkout) bascule
+    /checkout vers ce thème, enfant de Luma, habillé aux couleurs MYCA. Le reste du site reste sur Myca/default.
+-->
+<theme xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:noNamespaceSchemaLocation="urn:magento:framework:Config/etc/theme.xsd">
+    <title>MYCA – tunnel de commande</title>
+    <parent>Magento/luma</parent>
+</theme>
