@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<page xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:noNamespaceSchemaLocation="urn:magento:framework:View/Layout/etc/page_configuration.xsd">
+    <body>
+        <!-- « Mes passeports MYCA », après « Mes avis & notes » comme dans la maquette. -->
+        <referenceBlock name="customer_account_navigation">
+            <block class="Magento\Customer\Block\Account\SortLink" name="customer-account-navigation-myca-passports-link">
+                <arguments>
+                    <argument name="path" xsi:type="string">passeport/mes</argument>
+                    <argument name="label" xsi:type="string" translate="true">Mes passeports MYCA</argument>
+                    <argument name="sortOrder" xsi:type="number">215</argument>
+                </arguments>
+            </block>
+        </referenceBlock>
+    </body>
+</page>

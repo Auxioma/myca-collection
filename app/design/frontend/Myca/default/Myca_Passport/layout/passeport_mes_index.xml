@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<page xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:noNamespaceSchemaLocation="urn:magento:framework:View/Layout/etc/page_configuration.xsd">
+    <update handle="customer_account"/>
+    <body>
+        <referenceBlock name="myca.account.banner">
+            <arguments>
+                <argument name="title" xsi:type="string" translate="true">Mes passeports MYCA</argument>
+                <argument name="subtitle" xsi:type="string" translate="true">Retrouvez le passeport de chacun de vos vêtements : lot, matière, origine et authenticité.</argument>
+            </arguments>
+        </referenceBlock>
+        <referenceContainer name="content">
+            <block name="myca.passport.mine" template="Myca_Passport::mine.phtml" after="myca.account.banner" cacheable="false"/>
+        </referenceContainer>
+    </body>
+</page>

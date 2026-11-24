@@ -1,0 +1,12 @@
+<?xml version="1.0"?>
+<!-- M50 — page publique d'un passeport (QR code). Données propres à chaque passeport : jamais en cache de page. -->
+<page xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      layout="1column"
+      xsi:noNamespaceSchemaLocation="urn:magento:framework:View/Layout/etc/page_configuration.xsd">
+    <body>
+        <referenceBlock name="page.main.title" display="false"/>
+        <referenceContainer name="content">
+            <block name="myca.passport.page" template="Myca_Passport::passport.phtml" cacheable="false"/>
+        </referenceContainer>
+    </body>
+</page>

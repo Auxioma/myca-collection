@@ -1,0 +1,74 @@
+<?php
+/**
+ * « Mes passeports MYCA » : passeports enregistrés depuis l'étiquette (QR ou numéro) et ajout d'un passeport.
+ * Pas d'écran Figma dédié : cartes de l'espace client.
+ */
+
+declare(strict_types=1);
+
+use Hyva\Theme\Model\ViewModelRegistry;
+use Hyva\Theme\ViewModel\SvgIcons;
+use Magento\Framework\Escaper;
+use Magento\Framework\View\Element\Template;
+use Myca\Passport\Model\PassportManagement;
+use Myca\Passport\ViewModel\Passport;
+
+/** @var Template $block */
+/** @var Escaper $escaper */
+/** @var ViewModelRegistry $viewModels */
+
+$icons = $viewModels->require(SvgIcons::class);
+/** @var Passport $view */
+$view = $viewModels->require(Passport::class);
+$passports = $view->getOwned();
+?>
+<div class="flex min-w-0 flex-col gap-4">
+    <section class="myca-card p-4" aria-labelledby="myca-passport-add">
+        <h2 id="myca-passport-add" class="myca-card-title"><?= $icons->renderHtml('qr', '', 18, 18, ['aria-hidden' => 'true']) ?><?= $escaper->escapeHtml(__('Ajouter un passeport')) ?></h2>
+        <form method="post" action="<?= $escaper->escapeUrl($block->getUrl('passeport/mes/ajouter')) ?>" class="flex flex-col gap-2 sm:flex-row sm:items-end">
+            <?= $block->getBlockHtml('formkey') ?>
+            <div class="flex-1">
+                <label for="myca-passport-code" class="myca-field-label"><?= $escaper->escapeHtml(__('Numéro de passeport (étiquette du vêtement)')) ?></label>
+                <input id="myca-passport-code" name="code" type="text" required autocomplete="off" class="myca-field" placeholder="MYCA-XXXX-XXXX-XXXX-XXXX-XXXX">
+            </div>
+            <button type="submit" class="myca-btn myca-btn-primary"><?= $icons->renderHtml('user-plus', '', 16, 16, ['aria-hidden' => 'true']) ?><?= $escaper->escapeHtml(__('Ajouter')) ?></button>
+        </form>
+        <p class="mt-2 myca-caption text-fg-secondary"><?= $escaper->escapeHtml(__('Vous pouvez aussi scanner le QR code de l’étiquette, puis choisir « Ajouter à mes passeports ».')) ?></p>
+    </section>
+
+    <section class="myca-card p-4" aria-labelledby="myca-passport-list">
+        <h2 id="myca-passport-list" class="myca-card-title"><?= $icons->renderHtml('book', '', 18, 18, ['aria-hidden' => 'true']) ?><?= $escaper->escapeHtml(__('Mes passeports')) ?></h2>
+        <?php if ($passports): ?>
+            <ul class="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                <?php foreach ($passports as $passport): ?>
+                    <?php
+                    $product = $view->getProduct(['product_id' => $passport['product_id']]);
+                    $active = $passport['status'] === PassportManagement::STATUS_ACTIVE;
+                    ?>
+                    <li class="flex gap-3 rounded-lg border border-line p-3">
+                        <?php if ($product): ?>
+                            <img src="<?= $escaper->escapeUrl($view->getImageUrl($product)) ?>" alt="" class="size-16 shrink-0 object-contain" width="64" height="64" loading="lazy">
+                        <?php endif ?>
+                        <div class="flex min-w-0 flex-1 flex-col gap-1">
+                            <span class="myca-body-s-strong text-fg"><?= $escaper->escapeHtml((string) ($passport['variant_label'] ?: ($product ? $product->getName() : ''))) ?></span>
+                            <span class="myca-caption text-fg-secondary"><?= $escaper->escapeHtml(__('Lot %1', $passport['lot_code'])) ?></span>
+                            <span class="myca-badge <?= $active ? 'myca-badge-success' : 'myca-badge-danger' ?> self-start"><?= $escaper->escapeHtml($active ? __('Passeport actif') : __('Révoqué')) ?></span>
+                            <div class="mt-1 flex flex-wrap items-center gap-3">
+                                <a href="<?= $escaper->escapeUrl($view->getPublicUrl((string) $passport['token'])) ?>" class="inline-flex min-h-11 items-center gap-1 myca-caption-strong text-fg underline md:min-h-0">
+                                    <?= $escaper->escapeHtml(__('Voir le passeport')) ?>
+                                </a>
+                                <form method="post" action="<?= $escaper->escapeUrl($block->getUrl('passeport/mes/retirer')) ?>">
+                                    <?= $block->getBlockHtml('formkey') ?>
+                                    <input type="hidden" name="id" value="<?= (int) $passport['passport_id'] ?>">
+                                    <button type="submit" class="inline-flex min-h-11 items-center myca-caption text-fg-secondary hover:text-fg md:min-h-0"><?= $escaper->escapeHtml(__('Retirer de ma liste')) ?></button>
+                                </form>
+                            </div>
+                        </div>
+                    </li>
+                <?php endforeach ?>
+            </ul>
+        <?php else: ?>
+            <p class="myca-body-s text-fg-secondary"><?= $escaper->escapeHtml(__('Aucun passeport enregistré. Ajoutez celui de vos vêtements MYCA avec le numéro ou le QR code de leur étiquette.')) ?></p>
+        <?php endif ?>
+    </section>
+</div>
