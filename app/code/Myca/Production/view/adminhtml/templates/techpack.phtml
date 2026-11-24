@@ -1,0 +1,73 @@
+<?php
+/**
+ * M11 — Fiche technique d'un modèle : composition (total 100 %), grammage, coupe, entretien, grille de mesures,
+ * tests qualité. Compositions à vérifier auprès du fabricant avant publication.
+ */
+
+declare(strict_types=1);
+
+use Magento\Backend\Block\Template;
+use Magento\Framework\Escaper;
+use Myca\Production\ViewModel\Production;
+
+/** @var Template $block */
+/** @var Escaper $escaper */
+
+/** @var Production $viewModel */
+$viewModel = $block->getData('view_model');
+$productId = $viewModel->getSelectedProductId();
+$form = $viewModel->getTechpackForm($productId);
+?>
+<form method="get" action="<?= $escaper->escapeUrl($viewModel->getUrl('myca_production/techpack/index')) ?>" class="admin__fieldset">
+    <div class="admin__field">
+        <label class="admin__field-label" for="myca-techpack-model"><span><?= $escaper->escapeHtml(__('Modèle')) ?></span></label>
+        <div class="admin__field-control">
+            <select id="myca-techpack-model" name="product_id" class="admin__control-select" required>
+                <option value=""><?= $escaper->escapeHtml(__('Choisir…')) ?></option>
+                <?php foreach ($viewModel->getModelOptions() as $id => $label): ?>
+                    <option value="<?= (int) $id ?>" <?= $id === $productId ? 'selected' : '' ?>><?= $escaper->escapeHtml($label) ?></option>
+                <?php endforeach ?>
+            </select>
+            <button type="submit" class="action-secondary"><?= $escaper->escapeHtml(__('Ouvrir la fiche')) ?></button>
+        </div>
+    </div>
+</form>
+<?php if ($productId > 0): ?>
+    <form method="post" action="<?= $escaper->escapeUrl($viewModel->getUrl('myca_production/techpack/save')) ?>" class="admin__fieldset">
+        <input type="hidden" name="form_key" value="<?= $escaper->escapeHtmlAttr($block->getFormKey()) ?>">
+        <input type="hidden" name="product_id" value="<?= (int) $productId ?>">
+        <?php foreach ([
+            'model_reference' => [__('Référence modèle'), __('Distincte de l’identifiant de pièce ou de lot porté par le QR du passeport.')],
+            'composition' => [__('Composition (%)'), __('Exemple : Coton=95, Élasthanne=5. Le total doit faire 100 %.')],
+            'grammage' => [__('Grammage'), __('Exemple : 240 g/m²')],
+            'cut' => [__('Coupe'), null],
+        ] as $field => [$label, $note]): ?>
+            <div class="admin__field">
+                <label class="admin__field-label" for="myca-techpack-<?= $escaper->escapeHtmlAttr($field) ?>"><span><?= $escaper->escapeHtml($label) ?></span></label>
+                <div class="admin__field-control">
+                    <input id="myca-techpack-<?= $escaper->escapeHtmlAttr($field) ?>" name="techpack[<?= $escaper->escapeHtmlAttr($field) ?>]" class="admin__control-text"
+                           value="<?= $escaper->escapeHtmlAttr($form[$field] ?? '') ?>" <?= $field === 'composition' ? 'required' : '' ?>>
+                    <?php if ($note): ?><div class="admin__field-note"><?= $escaper->escapeHtml($note) ?></div><?php endif ?>
+                </div>
+            </div>
+        <?php endforeach ?>
+        <?php foreach ([
+            'size_chart' => [__('Grille de mesures (cm)'), __('Une taille par ligne : taille ; poitrine ; longueur ; épaules. Exemple : S; 96; 68; 42'), 6],
+            'care' => [__('Instructions d’entretien'), null, 3],
+            'quality_tests' => [__('Tests qualité (lavage, solidité des couleurs…)'), null, 3],
+        ] as $field => [$label, $note, $rows]): ?>
+            <div class="admin__field">
+                <label class="admin__field-label" for="myca-techpack-<?= $escaper->escapeHtmlAttr($field) ?>"><span><?= $escaper->escapeHtml($label) ?></span></label>
+                <div class="admin__field-control">
+                    <textarea id="myca-techpack-<?= $escaper->escapeHtmlAttr($field) ?>" name="techpack[<?= $escaper->escapeHtmlAttr($field) ?>]" rows="<?= (int) $rows ?>" class="admin__control-textarea"><?= $escaper->escapeHtml($form[$field] ?? '') ?></textarea>
+                    <?php if ($note): ?><div class="admin__field-note"><?= $escaper->escapeHtml($note) ?></div><?php endif ?>
+                </div>
+            </div>
+        <?php endforeach ?>
+        <?php if (!empty($form['updated_by'])): ?>
+            <p><?= $escaper->escapeHtml(__('Dernière mise à jour : %1, par %2.', $block->formatDate($form['updated_at'], IntlDateFormatter::MEDIUM, true), $form['updated_by'])) ?></p>
+        <?php endif ?>
+        <p><strong><?= $escaper->escapeHtml(__('Compositions à vérifier auprès du fabricant avant publication.')) ?></strong></p>
+        <button type="submit" class="action-primary"><?= $escaper->escapeHtml(__('Enregistrer la fiche')) ?></button>
+    </form>
+<?php endif ?>

@@ -1,0 +1,168 @@
+<?xml version="1.0"?>
+<!--
+    Production (M10, M11) : fournisseurs, ordres de production (prévisionnel / engagé / reçu), répartition
+    tailles × couleurs, jalons usine, tolérances validées avant fabrication, réceptions partielles avec contrôle
+    qualité, fiches techniques. Seules les quantités acceptées au contrôle entrent dans le stock vendable.
+-->
+<schema xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="urn:magento:framework:Setup/Declaration/Schema/etc/schema.xsd">
+    <table name="myca_production_supplier" resource="default" engine="innodb" comment="MYCA - Fournisseurs et usines">
+        <column xsi:type="int" name="supplier_id" unsigned="true" nullable="false" identity="true"/>
+        <column xsi:type="varchar" name="name" length="255" nullable="false"/>
+        <column xsi:type="varchar" name="factory" length="255" nullable="true" comment="Usine ou atelier"/>
+        <column xsi:type="varchar" name="country" length="2" nullable="true"/>
+        <column xsi:type="varchar" name="contact_email" length="255" nullable="true"/>
+        <column xsi:type="int" name="default_moq" unsigned="true" nullable="false" default="0" comment="MOQ par couleur"/>
+        <column xsi:type="text" name="notes" nullable="true"/>
+        <column xsi:type="smallint" name="is_active" unsigned="true" nullable="false" default="1"/>
+        <column xsi:type="timestamp" name="created_at" nullable="false" default="CURRENT_TIMESTAMP"/>
+        <constraint xsi:type="primary" referenceId="PRIMARY">
+            <column name="supplier_id"/>
+        </constraint>
+    </table>
+
+    <table name="myca_production_order" resource="default" engine="innodb" comment="MYCA - Ordres de production">
+        <column xsi:type="int" name="order_id" unsigned="true" nullable="false" identity="true"/>
+        <column xsi:type="varchar" name="increment_id" length="32" nullable="true" comment="PRO-AAAA-NNNN"/>
+        <column xsi:type="int" name="supplier_id" unsigned="true" nullable="false"/>
+        <column xsi:type="int" name="product_id" unsigned="true" nullable="false" comment="Modèle (produit parent)"/>
+        <column xsi:type="varchar" name="model_name" length="255" nullable="false"/>
+        <column xsi:type="varchar" name="season" length="64" nullable="true"/>
+        <column xsi:type="varchar" name="status" length="24" nullable="false" default="planned"/>
+        <column xsi:type="date" name="planned_delivery" nullable="true"/>
+        <column xsi:type="int" name="moq_per_color" unsigned="true" nullable="false" default="0"/>
+        <column xsi:type="decimal" name="unit_factory_price" scale="4" precision="20" unsigned="true" nullable="false" default="0" comment="Prix usine HT par pièce"/>
+        <column xsi:type="decimal" name="extra_costs" scale="4" precision="20" unsigned="true" nullable="false" default="0" comment="Transport, douane, frais : total HT"/>
+        <column xsi:type="decimal" name="tolerance_cm" scale="2" precision="6" unsigned="true" nullable="true" comment="Tolérance dimensionnelle ±"/>
+        <column xsi:type="smallint" name="max_critical" unsigned="true" nullable="true"/>
+        <column xsi:type="smallint" name="max_major" unsigned="true" nullable="true"/>
+        <column xsi:type="smallint" name="max_minor" unsigned="true" nullable="true"/>
+        <column xsi:type="timestamp" name="tolerances_validated_at" nullable="true"/>
+        <column xsi:type="varchar" name="tolerances_validated_by" length="255" nullable="true"/>
+        <column xsi:type="text" name="notes" nullable="true"/>
+        <column xsi:type="timestamp" name="created_at" nullable="false" default="CURRENT_TIMESTAMP"/>
+        <column xsi:type="timestamp" name="updated_at" nullable="false" default="CURRENT_TIMESTAMP" on_update="true"/>
+        <constraint xsi:type="primary" referenceId="PRIMARY">
+            <column name="order_id"/>
+        </constraint>
+        <constraint xsi:type="unique" referenceId="MYCA_PRODUCTION_ORDER_INCREMENT_ID">
+            <column name="increment_id"/>
+        </constraint>
+        <constraint xsi:type="foreign" referenceId="MYCA_PRODUCTION_ORDER_SUPPLIER_ID_MYCA_PRODUCTION_SUPPLIER_SUPPLIER_ID"
+                    table="myca_production_order" column="supplier_id" referenceTable="myca_production_supplier" referenceColumn="supplier_id" onDelete="NO ACTION"/>
+        <constraint xsi:type="foreign" referenceId="MYCA_PRODUCTION_ORDER_PRODUCT_ID_CATALOG_PRODUCT_ENTITY_ENTITY_ID"
+                    table="myca_production_order" column="product_id" referenceTable="catalog_product_entity" referenceColumn="entity_id" onDelete="NO ACTION"/>
+    </table>
+
+    <table name="myca_production_line" resource="default" engine="innodb" comment="MYCA - Répartition tailles × couleurs">
+        <column xsi:type="int" name="line_id" unsigned="true" nullable="false" identity="true"/>
+        <column xsi:type="int" name="order_id" unsigned="true" nullable="false"/>
+        <column xsi:type="varchar" name="sku" length="64" nullable="false"/>
+        <column xsi:type="varchar" name="color" length="64" nullable="true"/>
+        <column xsi:type="varchar" name="size" length="32" nullable="true"/>
+        <column xsi:type="int" name="qty_planned" unsigned="true" nullable="false" default="0"/>
+        <column xsi:type="int" name="qty_received" unsigned="true" nullable="false" default="0"/>
+        <column xsi:type="int" name="qty_accepted" unsigned="true" nullable="false" default="0" comment="Entré en stock vendable"/>
+        <column xsi:type="int" name="qty_quarantine" unsigned="true" nullable="false" default="0"/>
+        <column xsi:type="int" name="qty_refused" unsigned="true" nullable="false" default="0"/>
+        <constraint xsi:type="primary" referenceId="PRIMARY">
+            <column name="line_id"/>
+        </constraint>
+        <constraint xsi:type="unique" referenceId="MYCA_PRODUCTION_LINE_ORDER_ID_SKU">
+            <column name="order_id"/>
+            <column name="sku"/>
+        </constraint>
+        <constraint xsi:type="foreign" referenceId="MYCA_PRODUCTION_LINE_ORDER_ID_MYCA_PRODUCTION_ORDER_ORDER_ID"
+                    table="myca_production_line" column="order_id" referenceTable="myca_production_order" referenceColumn="order_id" onDelete="CASCADE"/>
+    </table>
+
+    <table name="myca_production_milestone" resource="default" engine="innodb" comment="MYCA - Jalons usine">
+        <column xsi:type="int" name="milestone_id" unsigned="true" nullable="false" identity="true"/>
+        <column xsi:type="int" name="order_id" unsigned="true" nullable="false"/>
+        <column xsi:type="varchar" name="code" length="32" nullable="false" comment="sample, pattern, embroidery, colors, quality, launch"/>
+        <column xsi:type="varchar" name="status" length="16" nullable="false" default="pending" comment="pending, validated, rejected"/>
+        <column xsi:type="date" name="due_date" nullable="true"/>
+        <column xsi:type="text" name="note" nullable="true"/>
+        <column xsi:type="varchar" name="decided_by" length="255" nullable="true"/>
+        <column xsi:type="timestamp" name="decided_at" nullable="true"/>
+        <constraint xsi:type="primary" referenceId="PRIMARY">
+            <column name="milestone_id"/>
+        </constraint>
+        <constraint xsi:type="unique" referenceId="MYCA_PRODUCTION_MILESTONE_ORDER_ID_CODE">
+            <column name="order_id"/>
+            <column name="code"/>
+        </constraint>
+        <constraint xsi:type="foreign" referenceId="MYCA_PRODUCTION_MILESTONE_ORDER_ID_MYCA_PRODUCTION_ORDER_ORDER_ID"
+                    table="myca_production_milestone" column="order_id" referenceTable="myca_production_order" referenceColumn="order_id" onDelete="CASCADE"/>
+    </table>
+
+    <table name="myca_production_receipt" resource="default" engine="innodb" comment="MYCA - Réceptions et contrôle qualité">
+        <column xsi:type="int" name="receipt_id" unsigned="true" nullable="false" identity="true"/>
+        <column xsi:type="int" name="order_id" unsigned="true" nullable="false"/>
+        <column xsi:type="varchar" name="lot_code" length="64" nullable="false"/>
+        <column xsi:type="date" name="received_on" nullable="false"/>
+        <column xsi:type="varchar" name="controller" length="255" nullable="false" comment="Contrôleur qualité"/>
+        <column xsi:type="text" name="checklist" nullable="false" comment="JSON : point → ok, nok"/>
+        <column xsi:type="int" name="sample_size" unsigned="true" nullable="false" default="0"/>
+        <column xsi:type="smallint" name="defects_critical" unsigned="true" nullable="false" default="0"/>
+        <column xsi:type="smallint" name="defects_major" unsigned="true" nullable="false" default="0"/>
+        <column xsi:type="smallint" name="defects_minor" unsigned="true" nullable="false" default="0"/>
+        <column xsi:type="varchar" name="decision" length="16" nullable="false" comment="accepted, quarantine, refused"/>
+        <column xsi:type="text" name="report" nullable="true"/>
+        <column xsi:type="text" name="corrective_action" nullable="true"/>
+        <column xsi:type="text" name="photos" nullable="true" comment="JSON : fichiers dans var/myca_production"/>
+        <column xsi:type="timestamp" name="created_at" nullable="false" default="CURRENT_TIMESTAMP"/>
+        <constraint xsi:type="primary" referenceId="PRIMARY">
+            <column name="receipt_id"/>
+        </constraint>
+        <constraint xsi:type="foreign" referenceId="MYCA_PRODUCTION_RECEIPT_ORDER_ID_MYCA_PRODUCTION_ORDER_ORDER_ID"
+                    table="myca_production_receipt" column="order_id" referenceTable="myca_production_order" referenceColumn="order_id" onDelete="CASCADE"/>
+    </table>
+
+    <table name="myca_production_receipt_line" resource="default" engine="innodb" comment="MYCA - Quantités reçues par ligne">
+        <column xsi:type="int" name="receipt_id" unsigned="true" nullable="false"/>
+        <column xsi:type="int" name="line_id" unsigned="true" nullable="false"/>
+        <column xsi:type="int" name="qty_received" unsigned="true" nullable="false"/>
+        <column xsi:type="int" name="qty_in_stock" unsigned="true" nullable="false" default="0" comment="Déjà entré en stock vendable"/>
+        <constraint xsi:type="primary" referenceId="PRIMARY">
+            <column name="receipt_id"/>
+            <column name="line_id"/>
+        </constraint>
+        <constraint xsi:type="foreign" referenceId="MYCA_PRODUCTION_RECEIPT_LINE_RECEIPT_ID_MYCA_PRODUCTION_RECEIPT_RECEIPT_ID"
+                    table="myca_production_receipt_line" column="receipt_id" referenceTable="myca_production_receipt" referenceColumn="receipt_id" onDelete="CASCADE"/>
+        <constraint xsi:type="foreign" referenceId="MYCA_PRODUCTION_RECEIPT_LINE_LINE_ID_MYCA_PRODUCTION_LINE_LINE_ID"
+                    table="myca_production_receipt_line" column="line_id" referenceTable="myca_production_line" referenceColumn="line_id" onDelete="CASCADE"/>
+    </table>
+
+    <table name="myca_production_history" resource="default" engine="innodb" comment="MYCA - Historique de production">
+        <column xsi:type="int" name="history_id" unsigned="true" nullable="false" identity="true"/>
+        <column xsi:type="int" name="order_id" unsigned="true" nullable="false"/>
+        <column xsi:type="varchar" name="action" length="32" nullable="false"/>
+        <column xsi:type="text" name="message" nullable="true"/>
+        <column xsi:type="varchar" name="author" length="255" nullable="false"/>
+        <column xsi:type="timestamp" name="created_at" nullable="false" default="CURRENT_TIMESTAMP"/>
+        <constraint xsi:type="primary" referenceId="PRIMARY">
+            <column name="history_id"/>
+        </constraint>
+        <constraint xsi:type="foreign" referenceId="MYCA_PRODUCTION_HISTORY_ORDER_ID_MYCA_PRODUCTION_ORDER_ORDER_ID"
+                    table="myca_production_history" column="order_id" referenceTable="myca_production_order" referenceColumn="order_id" onDelete="CASCADE"/>
+    </table>
+
+    <table name="myca_production_techpack" resource="default" engine="innodb" comment="MYCA - Fiches techniques (M11)">
+        <column xsi:type="int" name="product_id" unsigned="true" nullable="false" comment="Modèle"/>
+        <column xsi:type="varchar" name="model_reference" length="64" nullable="true"/>
+        <column xsi:type="text" name="composition" nullable="false" comment="JSON : matière → %"/>
+        <column xsi:type="varchar" name="grammage" length="64" nullable="true"/>
+        <column xsi:type="varchar" name="cut" length="128" nullable="true"/>
+        <column xsi:type="text" name="care" nullable="true"/>
+        <column xsi:type="text" name="size_chart" nullable="false" comment="JSON : taille → mesures (cm)"/>
+        <column xsi:type="text" name="quality_tests" nullable="true"/>
+        <column xsi:type="varchar" name="updated_by" length="255" nullable="true"/>
+        <column xsi:type="timestamp" name="updated_at" nullable="false" default="CURRENT_TIMESTAMP" on_update="true"/>
+        <constraint xsi:type="primary" referenceId="PRIMARY">
+            <column name="product_id"/>
+        </constraint>
+        <constraint xsi:type="foreign" referenceId="MYCA_PRODUCTION_TECHPACK_PRODUCT_ID_CATALOG_PRODUCT_ENTITY_ENTITY_ID"
+                    table="myca_production_techpack" column="product_id" referenceTable="catalog_product_entity" referenceColumn="entity_id" onDelete="CASCADE"/>
+    </table>
+</schema>

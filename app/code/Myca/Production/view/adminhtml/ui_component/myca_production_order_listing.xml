@@ -1,0 +1,101 @@
+<?xml version="1.0"?>
+<listing xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Ui:etc/ui_configuration.xsd">
+    <argument name="data" xsi:type="array">
+        <item name="js_config" xsi:type="array">
+            <item name="provider" xsi:type="string">myca_production_order_listing.myca_production_order_listing_data_source</item>
+        </item>
+    </argument>
+    <settings>
+        <buttons>
+            <button name="add">
+                <url path="*/*/edit"/>
+                <class>primary</class>
+                <label translate="true">Nouvel ordre de production</label>
+            </button>
+        </buttons>
+        <spinner>myca_production_order_listing_columns</spinner>
+        <deps>
+            <dep>myca_production_order_listing.myca_production_order_listing_data_source</dep>
+        </deps>
+    </settings>
+    <dataSource name="myca_production_order_listing_data_source" component="Magento_Ui/js/grid/provider">
+        <settings>
+            <storageConfig>
+                <param name="indexField" xsi:type="string">order_id</param>
+            </storageConfig>
+            <updateUrl path="mui/index/render"/>
+        </settings>
+        <aclResource>Myca_Production::orders</aclResource>
+        <dataProvider class="Magento\Framework\View\Element\UiComponent\DataProvider\DataProvider" name="myca_production_order_listing_data_source">
+            <settings>
+                <requestFieldName>id</requestFieldName>
+                <primaryFieldName>order_id</primaryFieldName>
+            </settings>
+        </dataProvider>
+    </dataSource>
+    <listingToolbar name="listing_top">
+        <settings>
+            <sticky>true</sticky>
+        </settings>
+        <bookmark name="bookmarks"/>
+        <columnsControls name="columns_controls"/>
+        <filters name="listing_filters"/>
+        <paging name="listing_paging"/>
+    </listingToolbar>
+    <columns name="myca_production_order_listing_columns">
+        <column name="increment_id" sortOrder="10">
+            <settings>
+                <filter>text</filter>
+                <label translate="true">N° ordre</label>
+            </settings>
+        </column>
+        <column name="model_name" sortOrder="20">
+            <settings>
+                <filter>text</filter>
+                <label translate="true">Modèle</label>
+            </settings>
+        </column>
+        <column name="supplier_id" component="Magento_Ui/js/grid/columns/select" sortOrder="30">
+            <settings>
+                <options class="Myca\Production\Model\Source\Supplier"/>
+                <filter>select</filter>
+                <dataType>select</dataType>
+                <label translate="true">Fournisseur</label>
+            </settings>
+        </column>
+        <column name="season" sortOrder="40">
+            <settings>
+                <filter>text</filter>
+                <label translate="true">Saison</label>
+            </settings>
+        </column>
+        <column name="status" component="Magento_Ui/js/grid/columns/select" sortOrder="50">
+            <settings>
+                <options class="Myca\Production\Model\Source\Status"/>
+                <filter>select</filter>
+                <dataType>select</dataType>
+                <label translate="true">Statut</label>
+            </settings>
+        </column>
+        <column name="planned_delivery" sortOrder="60">
+            <settings>
+                <label translate="true">Livraison prévue</label>
+            </settings>
+        </column>
+        <column name="unit_factory_price" sortOrder="70">
+            <settings>
+                <filter>textRange</filter>
+                <label translate="true">Prix usine HT</label>
+            </settings>
+        </column>
+        <actionsColumn name="actions" class="Myca\Production\Ui\Component\Listing\Column\Actions" sortOrder="200">
+            <argument name="data" xsi:type="array">
+                <item name="editUrl" xsi:type="string">myca_production/order/edit</item>
+            </argument>
+            <settings>
+                <indexField>order_id</indexField>
+            </settings>
+        </actionsColumn>
+    </columns>
+</listing>

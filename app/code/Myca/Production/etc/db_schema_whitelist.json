@@ -1,0 +1,152 @@
+{
+    "myca_production_supplier": {
+        "column": {
+            "supplier_id": true,
+            "name": true,
+            "factory": true,
+            "country": true,
+            "contact_email": true,
+            "default_moq": true,
+            "notes": true,
+            "is_active": true,
+            "created_at": true
+        },
+        "constraint": {
+            "PRIMARY": true
+        }
+    },
+    "myca_production_order": {
+        "column": {
+            "order_id": true,
+            "increment_id": true,
+            "supplier_id": true,
+            "product_id": true,
+            "model_name": true,
+            "season": true,
+            "status": true,
+            "planned_delivery": true,
+            "moq_per_color": true,
+            "unit_factory_price": true,
+            "extra_costs": true,
+            "tolerance_cm": true,
+            "max_critical": true,
+            "max_major": true,
+            "max_minor": true,
+            "tolerances_validated_at": true,
+            "tolerances_validated_by": true,
+            "notes": true,
+            "created_at": true,
+            "updated_at": true
+        },
+        "constraint": {
+            "PRIMARY": true,
+            "MYCA_PRODUCTION_ORDER_INCREMENT_ID": true,
+            "MYCA_PRDION_ORDER_SUPPLIER_ID_MYCA_PRDION_SUPPLIER_SUPPLIER_ID": true,
+            "MYCA_PRDION_ORDER_PRD_ID_CAT_PRD_ENTT_ENTT_ID": true
+        }
+    },
+    "myca_production_line": {
+        "column": {
+            "line_id": true,
+            "order_id": true,
+            "sku": true,
+            "color": true,
+            "size": true,
+            "qty_planned": true,
+            "qty_received": true,
+            "qty_accepted": true,
+            "qty_quarantine": true,
+            "qty_refused": true
+        },
+        "constraint": {
+            "PRIMARY": true,
+            "MYCA_PRODUCTION_LINE_ORDER_ID_SKU": true,
+            "MYCA_PRODUCTION_LINE_ORDER_ID_MYCA_PRODUCTION_ORDER_ORDER_ID": true
+        }
+    },
+    "myca_production_milestone": {
+        "column": {
+            "milestone_id": true,
+            "order_id": true,
+            "code": true,
+            "status": true,
+            "due_date": true,
+            "note": true,
+            "decided_by": true,
+            "decided_at": true
+        },
+        "constraint": {
+            "PRIMARY": true,
+            "MYCA_PRODUCTION_MILESTONE_ORDER_ID_CODE": true,
+            "MYCA_PRDION_MILESTONE_ORDER_ID_MYCA_PRDION_ORDER_ORDER_ID": true
+        }
+    },
+    "myca_production_receipt": {
+        "column": {
+            "receipt_id": true,
+            "order_id": true,
+            "lot_code": true,
+            "received_on": true,
+            "controller": true,
+            "checklist": true,
+            "sample_size": true,
+            "defects_critical": true,
+            "defects_major": true,
+            "defects_minor": true,
+            "decision": true,
+            "report": true,
+            "corrective_action": true,
+            "photos": true,
+            "created_at": true
+        },
+        "constraint": {
+            "PRIMARY": true,
+            "MYCA_PRODUCTION_RECEIPT_ORDER_ID_MYCA_PRODUCTION_ORDER_ORDER_ID": true
+        }
+    },
+    "myca_production_receipt_line": {
+        "column": {
+            "receipt_id": true,
+            "line_id": true,
+            "qty_received": true,
+            "qty_in_stock": true
+        },
+        "constraint": {
+            "PRIMARY": true,
+            "FK_23E8FAE53162D8268E2DCFD3FCA14AAD": true,
+            "MYCA_PRDION_RECEIPT_LINE_LINE_ID_MYCA_PRDION_LINE_LINE_ID": true
+        }
+    },
+    "myca_production_history": {
+        "column": {
+            "history_id": true,
+            "order_id": true,
+            "action": true,
+            "message": true,
+            "author": true,
+            "created_at": true
+        },
+        "constraint": {
+            "PRIMARY": true,
+            "MYCA_PRODUCTION_HISTORY_ORDER_ID_MYCA_PRODUCTION_ORDER_ORDER_ID": true
+        }
+    },
+    "myca_production_techpack": {
+        "column": {
+            "product_id": true,
+            "model_reference": true,
+            "composition": true,
+            "grammage": true,
+            "cut": true,
+            "care": true,
+            "size_chart": true,
+            "quality_tests": true,
+            "updated_by": true,
+            "updated_at": true
+        },
+        "constraint": {
+            "PRIMARY": true,
+            "MYCA_PRDION_TECHPACK_PRD_ID_CAT_PRD_ENTT_ENTT_ID": true
+        }
+    }
+}

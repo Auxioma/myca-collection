@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Backend:etc/menu.xsd">
+    <menu>
+        <add id="Myca_Production::production" title="Production MYCA" translate="title" module="Myca_Production" sortOrder="60"
+             parent="Magento_Catalog::catalog" resource="Myca_Production::production"/>
+        <add id="Myca_Production::orders" title="Ordres de production" translate="title" module="Myca_Production" sortOrder="10"
+             parent="Myca_Production::production" action="myca_production/order/index" resource="Myca_Production::orders"/>
+        <add id="Myca_Production::suppliers" title="Fournisseurs" translate="title" module="Myca_Production" sortOrder="20"
+             parent="Myca_Production::production" action="myca_production/supplier/index" resource="Myca_Production::suppliers"/>
+        <add id="Myca_Production::techpacks" title="Fiches techniques" translate="title" module="Myca_Production" sortOrder="30"
+             parent="Myca_Production::production" action="myca_production/techpack/index" resource="Myca_Production::techpacks"/>
+    </menu>
+</config>

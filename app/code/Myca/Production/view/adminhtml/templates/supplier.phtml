@@ -1,0 +1,50 @@
+<?php
+/**
+ * Fiche fournisseur / usine.
+ */
+
+declare(strict_types=1);
+
+use Magento\Backend\Block\Template;
+use Magento\Framework\Escaper;
+use Myca\Production\ViewModel\Production;
+
+/** @var Template $block */
+/** @var Escaper $escaper */
+
+/** @var Production $viewModel */
+$viewModel = $block->getData('view_model');
+$supplier = $viewModel->getSupplier() ?? ['is_active' => 1];
+$fields = [
+    'name' => [__('Fournisseur'), 'text', true],
+    'factory' => [__('Usine / atelier'), 'text', false],
+    'country' => [__('Pays (code à deux lettres)'), 'text', false],
+    'contact_email' => [__('E-mail de contact'), 'email', false],
+    'default_moq' => [__('MOQ par couleur (pièces)'), 'number', false],
+];
+?>
+<p><a href="<?= $escaper->escapeUrl($viewModel->getUrl('myca_production/supplier/index')) ?>">&larr; <?= $escaper->escapeHtml(__('Tous les fournisseurs')) ?></a></p>
+<form method="post" action="<?= $escaper->escapeUrl($viewModel->getUrl('myca_production/supplier/save')) ?>" class="admin__fieldset">
+    <input type="hidden" name="form_key" value="<?= $escaper->escapeHtmlAttr($block->getFormKey()) ?>">
+    <?php if (!empty($supplier['supplier_id'])): ?>
+        <input type="hidden" name="id" value="<?= (int) $supplier['supplier_id'] ?>">
+    <?php endif ?>
+    <?php foreach ($fields as $field => [$label, $type, $required]): ?>
+        <div class="admin__field <?= $required ? '_required' : '' ?>">
+            <label class="admin__field-label" for="myca-supplier-<?= $escaper->escapeHtmlAttr($field) ?>"><span><?= $escaper->escapeHtml($label) ?></span></label>
+            <div class="admin__field-control">
+                <input id="myca-supplier-<?= $escaper->escapeHtmlAttr($field) ?>" type="<?= $escaper->escapeHtmlAttr($type) ?>" name="supplier[<?= $escaper->escapeHtmlAttr($field) ?>]"
+                       value="<?= $escaper->escapeHtmlAttr((string) ($supplier[$field] ?? '')) ?>" class="admin__control-text" <?= $required ? 'required' : '' ?> <?= $type === 'number' ? 'min="0"' : '' ?>>
+            </div>
+        </div>
+    <?php endforeach ?>
+    <div class="admin__field">
+        <label class="admin__field-label" for="myca-supplier-notes"><span><?= $escaper->escapeHtml(__('Notes')) ?></span></label>
+        <div class="admin__field-control"><textarea id="myca-supplier-notes" name="supplier[notes]" rows="3" class="admin__control-textarea"><?= $escaper->escapeHtml((string) ($supplier['notes'] ?? '')) ?></textarea></div>
+    </div>
+    <div class="admin__field admin__field-option">
+        <input id="myca-supplier-active" type="checkbox" name="supplier[is_active]" value="1" class="admin__control-checkbox" <?= (int) $supplier['is_active'] ? 'checked' : '' ?>>
+        <label for="myca-supplier-active" class="admin__field-label"><?= $escaper->escapeHtml(__('Actif (proposé pour les nouveaux ordres)')) ?></label>
+    </div>
+    <button type="submit" class="action-primary"><?= $escaper->escapeHtml(__('Enregistrer')) ?></button>
+</form>

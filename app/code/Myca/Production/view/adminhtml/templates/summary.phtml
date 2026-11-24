@@ -1,0 +1,36 @@
+<?php
+/**
+ * Indicateurs de M10 au-dessus de la grille des ordres.
+ */
+
+declare(strict_types=1);
+
+use Magento\Backend\Block\Template;
+use Magento\Framework\Escaper;
+use Myca\Production\ViewModel\Production;
+
+/** @var Template $block */
+/** @var Escaper $escaper */
+
+/** @var Production $viewModel */
+$viewModel = $block->getData('view_model');
+$summary = $viewModel->getSummary();
+$pcs = static fn (int $value) => number_format($value, 0, ',', ' ') . ' pcs';
+?>
+<section class="admin__page-section">
+    <table class="admin__table-secondary">
+        <tbody>
+            <tr>
+                <th><?= $escaper->escapeHtml(__('Ordres de production (hors annulés)')) ?></th><td><?= (int) $summary['orders'] ?></td>
+                <th><?= $escaper->escapeHtml(__('Pièces prévues')) ?></th><td><?= $escaper->escapeHtml($pcs($summary['planned'])) ?></td>
+                <th><?= $escaper->escapeHtml(__('En fabrication (à recevoir)')) ?></th><td><?= $escaper->escapeHtml($pcs($summary['in_production'])) ?></td>
+            </tr>
+            <tr>
+                <th><?= $escaper->escapeHtml(__('Reçues et acceptées')) ?></th><td><?= $escaper->escapeHtml($pcs($summary['received'])) ?></td>
+                <th><?= $escaper->escapeHtml(__('En quarantaine (vente bloquée)')) ?></th><td><?= $escaper->escapeHtml($pcs($summary['quarantine'])) ?></td>
+                <th><?= $escaper->escapeHtml(__('Prochaine livraison prévue')) ?></th><td><?= $escaper->escapeHtml($summary['next_delivery'] ? $block->formatDate($summary['next_delivery'], IntlDateFormatter::MEDIUM) : '—') ?></td>
+            </tr>
+        </tbody>
+    </table>
+    <p><?= $escaper->escapeHtml(__('Inspection qualité obligatoire avant réception conforme : matière, couleur, dimensions, logos, broderies, étiquettes, emballages. Distinction prévisionnel / engagé / reçu ; MOQ par modèle et couleur.')) ?></p>
+</section>

@@ -372,6 +372,7 @@ return [
         'Myca_Rma' => 1,
         'Myca_PartnerSales' => 1,
         'Myca_Passport' => 1,
+        'Myca_Production' => 1,
         'Myca_Quote' => 1,
         'Myca_Loyalty' => 1,
         'Myca_Shipping' => 1,

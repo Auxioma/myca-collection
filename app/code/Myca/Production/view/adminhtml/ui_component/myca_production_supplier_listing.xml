@@ -1,0 +1,92 @@
+<?xml version="1.0"?>
+<listing xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Ui:etc/ui_configuration.xsd">
+    <argument name="data" xsi:type="array">
+        <item name="js_config" xsi:type="array">
+            <item name="provider" xsi:type="string">myca_production_supplier_listing.myca_production_supplier_listing_data_source</item>
+        </item>
+    </argument>
+    <settings>
+        <buttons>
+            <button name="add">
+                <url path="*/*/edit"/>
+                <class>primary</class>
+                <label translate="true">Nouveau fournisseur</label>
+            </button>
+        </buttons>
+        <spinner>myca_production_supplier_listing_columns</spinner>
+        <deps>
+            <dep>myca_production_supplier_listing.myca_production_supplier_listing_data_source</dep>
+        </deps>
+    </settings>
+    <dataSource name="myca_production_supplier_listing_data_source" component="Magento_Ui/js/grid/provider">
+        <settings>
+            <storageConfig>
+                <param name="indexField" xsi:type="string">supplier_id</param>
+            </storageConfig>
+            <updateUrl path="mui/index/render"/>
+        </settings>
+        <aclResource>Myca_Production::suppliers</aclResource>
+        <dataProvider class="Magento\Framework\View\Element\UiComponent\DataProvider\DataProvider" name="myca_production_supplier_listing_data_source">
+            <settings>
+                <requestFieldName>id</requestFieldName>
+                <primaryFieldName>supplier_id</primaryFieldName>
+            </settings>
+        </dataProvider>
+    </dataSource>
+    <listingToolbar name="listing_top">
+        <settings>
+            <sticky>true</sticky>
+        </settings>
+        <bookmark name="bookmarks"/>
+        <columnsControls name="columns_controls"/>
+        <filters name="listing_filters"/>
+        <paging name="listing_paging"/>
+    </listingToolbar>
+    <columns name="myca_production_supplier_listing_columns">
+        <column name="name" sortOrder="10">
+            <settings>
+                <filter>text</filter>
+                <label translate="true">Fournisseur</label>
+            </settings>
+        </column>
+        <column name="factory" sortOrder="20">
+            <settings>
+                <filter>text</filter>
+                <label translate="true">Usine / atelier</label>
+            </settings>
+        </column>
+        <column name="country" sortOrder="30">
+            <settings>
+                <filter>text</filter>
+                <label translate="true">Pays</label>
+            </settings>
+        </column>
+        <column name="contact_email" sortOrder="40">
+            <settings>
+                <filter>text</filter>
+                <label translate="true">Contact</label>
+            </settings>
+        </column>
+        <column name="default_moq" sortOrder="50">
+            <settings>
+                <filter>textRange</filter>
+                <label translate="true">MOQ par couleur</label>
+            </settings>
+        </column>
+        <column name="is_active" sortOrder="60">
+            <settings>
+                <filter>textRange</filter>
+                <label translate="true">Actif (1/0)</label>
+            </settings>
+        </column>
+        <actionsColumn name="actions" class="Myca\Production\Ui\Component\Listing\Column\Actions" sortOrder="200">
+            <argument name="data" xsi:type="array">
+                <item name="editUrl" xsi:type="string">myca_production/supplier/edit</item>
+            </argument>
+            <settings>
+                <indexField>supplier_id</indexField>
+            </settings>
+        </actionsColumn>
+    </columns>
+</listing>

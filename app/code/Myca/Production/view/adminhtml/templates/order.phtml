@@ -1,0 +1,329 @@
+<?php
+/**
+ * M10 — Fiche d'un ordre de production : informations et coûts (prix usine / coût rendu entrepôt), répartition
+ * tailles × couleurs (prévu, reçu, accepté, quarantaine, refusé), tolérances, jalons usine, statut, réceptions avec
+ * contrôle qualité, historique. Sans identifiant : création d'un ordre prévisionnel.
+ */
+
+declare(strict_types=1);
+
+use Magento\Backend\Block\Template;
+use Magento\Framework\Escaper;
+use Myca\Production\Model\ProductionRules;
+use Myca\Production\ViewModel\Production;
+
+/** @var Template $block */
+/** @var Escaper $escaper */
+
+/** @var Production $viewModel */
+$viewModel = $block->getData('view_model');
+$management = $viewModel->getManagement();
+$order = $viewModel->getOrder();
+$formKey = $block->getFormKey();
+$money = static fn (?float $value) => $value === null ? '—' : number_format($value, 2, ',', ' ') . ' €';
+?>
+<p><a href="<?= $escaper->escapeUrl($viewModel->getUrl('myca_production/order/index')) ?>">&larr; <?= $escaper->escapeHtml(__('Tous les ordres')) ?></a></p>
+
+<?php if ($order === null): ?>
+    <form method="post" action="<?= $escaper->escapeUrl($viewModel->getUrl('myca_production/order/create')) ?>" class="admin__fieldset">
+        <input type="hidden" name="form_key" value="<?= $escaper->escapeHtmlAttr($formKey) ?>">
+        <div class="admin__field _required">
+            <label class="admin__field-label" for="myca-order-supplier"><span><?= $escaper->escapeHtml(__('Fournisseur')) ?></span></label>
+            <div class="admin__field-control">
+                <select id="myca-order-supplier" name="order[supplier_id]" class="admin__control-select" required>
+                    <option value=""><?= $escaper->escapeHtml(__('Choisir…')) ?></option>
+                    <?php foreach ($viewModel->getSupplierOptions() as $id => $name): ?>
+                        <option value="<?= (int) $id ?>"><?= $escaper->escapeHtml($name) ?></option>
+                    <?php endforeach ?>
+                </select>
+            </div>
+        </div>
+        <div class="admin__field _required">
+            <label class="admin__field-label" for="myca-order-model"><span><?= $escaper->escapeHtml(__('Modèle')) ?></span></label>
+            <div class="admin__field-control">
+                <select id="myca-order-model" name="order[product_id]" class="admin__control-select" required>
+                    <option value=""><?= $escaper->escapeHtml(__('Choisir…')) ?></option>
+                    <?php foreach ($viewModel->getModelOptions() as $id => $label): ?>
+                        <option value="<?= (int) $id ?>"><?= $escaper->escapeHtml($label) ?></option>
+                    <?php endforeach ?>
+                </select>
+            </div>
+        </div>
+        <div class="admin__field">
+            <label class="admin__field-label" for="myca-order-season"><span><?= $escaper->escapeHtml(__('Saison')) ?></span></label>
+            <div class="admin__field-control"><input id="myca-order-season" name="order[season]" class="admin__control-text" placeholder="<?= $escaper->escapeHtmlAttr(__('Printemps 2027')) ?>"></div>
+        </div>
+        <button type="submit" class="action-primary"><?= $escaper->escapeHtml(__('Créer l’ordre prévisionnel')) ?></button>
+    </form>
+    <?php return; ?>
+<?php endif ?>
+
+<?php
+$orderId = (int) $order['order_id'];
+$status = (string) $order['status'];
+$editable = $viewModel->isEditable($status);
+$lines = $management->getLines($orderId);
+$costs = $viewModel->getCosts($order);
+$supplier = $management->getSupplier((int) $order['supplier_id']);
+$blockers = $status === ProductionRules::PLANNED ? $viewModel->getCommitBlockers($order) : [];
+$statusUrl = $viewModel->getUrl('myca_production/order/status');
+?>
+<section class="admin__page-section">
+    <div class="admin__page-section-title"><span class="title"><?= $escaper->escapeHtml(__('%1 — %2 — %3', $order['increment_id'], $order['model_name'], $viewModel->getStatusLabel($status))) ?></span></div>
+    <form method="post" action="<?= $escaper->escapeUrl($viewModel->getUrl('myca_production/order/save')) ?>">
+        <input type="hidden" name="form_key" value="<?= $escaper->escapeHtmlAttr($formKey) ?>">
+        <input type="hidden" name="id" value="<?= (int) $orderId ?>">
+        <table class="admin__table-secondary">
+            <tbody>
+                <tr><th><?= $escaper->escapeHtml(__('Fournisseur')) ?></th><td><?= $escaper->escapeHtml(trim(($supplier['name'] ?? '') . ' — ' . ($supplier['factory'] ?? ''), ' —')) ?></td></tr>
+                <tr><th><label for="myca-season"><?= $escaper->escapeHtml(__('Saison')) ?></label></th><td><input id="myca-season" name="order[season]" class="admin__control-text" value="<?= $escaper->escapeHtmlAttr((string) $order['season']) ?>"></td></tr>
+                <tr><th><label for="myca-delivery"><?= $escaper->escapeHtml(__('Livraison prévue')) ?></label></th><td><input id="myca-delivery" type="date" name="order[planned_delivery]" class="admin__control-text" value="<?= $escaper->escapeHtmlAttr((string) $order['planned_delivery']) ?>"></td></tr>
+                <tr><th><label for="myca-moq"><?= $escaper->escapeHtml(__('MOQ par couleur')) ?></label></th><td><input id="myca-moq" type="number" min="0" name="order[moq_per_color]" class="admin__control-text" value="<?= (int) $order['moq_per_color'] ?>" <?= $editable ? '' : 'disabled' ?>></td></tr>
+                <tr><th><label for="myca-price"><?= $escaper->escapeHtml(__('Prix usine HT par pièce')) ?></label></th><td><input id="myca-price" name="order[unit_factory_price]" inputmode="decimal" class="admin__control-text" value="<?= $escaper->escapeHtmlAttr(number_format((float) $order['unit_factory_price'], 2, ',', '')) ?>" <?= $editable ? '' : 'disabled' ?>></td></tr>
+                <tr><th><label for="myca-extra"><?= $escaper->escapeHtml(__('Frais HT (transport, douane…) — total')) ?></label></th><td><input id="myca-extra" name="order[extra_costs]" inputmode="decimal" class="admin__control-text" value="<?= $escaper->escapeHtmlAttr(number_format((float) $order['extra_costs'], 2, ',', '')) ?>"></td></tr>
+                <tr><th><?= $escaper->escapeHtml(__('Montant usine prévu')) ?></th><td><?= $escaper->escapeHtml($money($costs['factory_total'])) ?></td></tr>
+                <tr><th><?= $escaper->escapeHtml(__('Coût rendu entrepôt par pièce acceptée')) ?></th><td><?= $escaper->escapeHtml($money($costs['landed_unit'])) ?> <?= $escaper->escapeHtml(__('(prix usine + frais répartis sur %1 pièces acceptées)', $costs['accepted'])) ?></td></tr>
+                <tr><th><label for="myca-notes"><?= $escaper->escapeHtml(__('Notes')) ?></label></th><td><textarea id="myca-notes" name="order[notes]" rows="2" class="admin__control-textarea"><?= $escaper->escapeHtml((string) $order['notes']) ?></textarea></td></tr>
+            </tbody>
+        </table>
+
+        <h3><?= $escaper->escapeHtml(__('Répartition tailles × couleurs')) ?></h3>
+        <?php foreach ($viewModel->getMoqShortfalls($order) as $color => $qty): ?>
+            <p class="message message-warning"><?= $escaper->escapeHtml(__('Couleur %1 : %2 pièces, sous le MOQ de %3.', $color, $qty, (int) $order['moq_per_color'])) ?></p>
+        <?php endforeach ?>
+        <table class="data-table admin__table-primary">
+            <thead>
+                <tr>
+                    <th><?= $escaper->escapeHtml(__('Variante')) ?></th>
+                    <th><?= $escaper->escapeHtml(__('Couleur')) ?></th>
+                    <th><?= $escaper->escapeHtml(__('Taille')) ?></th>
+                    <th><?= $escaper->escapeHtml($editable ? __('Prévisionnel') : __('Engagé')) ?></th>
+                    <th><?= $escaper->escapeHtml(__('Reçu')) ?></th>
+                    <th><?= $escaper->escapeHtml(__('Accepté (stock)')) ?></th>
+                    <th><?= $escaper->escapeHtml(__('Quarantaine')) ?></th>
+                    <th><?= $escaper->escapeHtml(__('Refusé')) ?></th>
+                    <th><?= $escaper->escapeHtml(__('Écart')) ?></th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php foreach ($lines as $line): ?>
+                    <?php $gap = (int) $line['qty_received'] - (int) $line['qty_planned']; ?>
+                    <tr>
+                        <td><?= $escaper->escapeHtml((string) $line['sku']) ?></td>
+                        <td><?= $escaper->escapeHtml((string) $line['color']) ?></td>
+                        <td><?= $escaper->escapeHtml((string) $line['size']) ?></td>
+                        <td>
+                            <?php if ($editable): ?>
+                                <input type="number" min="0" name="qty[<?= (int) $line['line_id'] ?>]" value="<?= (int) $line['qty_planned'] ?>" class="admin__control-text" style="width:6rem"
+                                       aria-label="<?= $escaper->escapeHtmlAttr(__('Quantité prévue de %1', $line['sku'])) ?>">
+                            <?php else: ?>
+                                <?= (int) $line['qty_planned'] ?>
+                            <?php endif ?>
+                        </td>
+                        <td><?= (int) $line['qty_received'] ?></td>
+                        <td><?= (int) $line['qty_accepted'] ?></td>
+                        <td><?= (int) $line['qty_quarantine'] ?></td>
+                        <td><?= (int) $line['qty_refused'] ?></td>
+                        <td><?= (int) $line['qty_received'] > 0 ? $escaper->escapeHtml(sprintf('%+d', $gap)) : '' ?></td>
+                    </tr>
+                <?php endforeach ?>
+            </tbody>
+        </table>
+        <?php if (!in_array($status, [ProductionRules::RECEIVED, ProductionRules::CANCELED], true)): ?>
+            <p><button type="submit" class="action-primary"><?= $escaper->escapeHtml(__('Enregistrer')) ?></button></p>
+        <?php endif ?>
+    </form>
+</section>
+
+<section class="admin__page-section">
+    <div class="admin__page-section-title"><span class="title"><?= $escaper->escapeHtml(__('Tolérances et seuils de défauts (avant fabrication)')) ?></span></div>
+    <?php if ($order['tolerances_validated_at']): ?>
+        <p><?= $escaper->escapeHtml(__(
+            'Validées le %1 par %2 : ±%3 cm ; défauts tolérés par contrôle — critiques %4, majeurs %5, mineurs %6.',
+            $block->formatDate((string) $order['tolerances_validated_at'], IntlDateFormatter::MEDIUM),
+            $order['tolerances_validated_by'],
+            (float) $order['tolerance_cm'],
+            (int) $order['max_critical'],
+            (int) $order['max_major'],
+            (int) $order['max_minor']
+        )) ?></p>
+    <?php endif ?>
+    <?php if ($editable): ?>
+        <form method="post" action="<?= $escaper->escapeUrl($viewModel->getUrl('myca_production/order/tolerances')) ?>">
+            <input type="hidden" name="form_key" value="<?= $escaper->escapeHtmlAttr($formKey) ?>">
+            <input type="hidden" name="id" value="<?= (int) $orderId ?>">
+            <?php foreach ([
+                'tolerance_cm' => [__('Tolérance dimensionnelle ± (cm)'), (string) $order['tolerance_cm']],
+                'max_critical' => [__('Défauts critiques tolérés'), (string) ($order['max_critical'] ?? '0')],
+                'max_major' => [__('Défauts majeurs tolérés'), (string) $order['max_major']],
+                'max_minor' => [__('Défauts mineurs tolérés'), (string) $order['max_minor']],
+            ] as $field => [$label, $value]): ?>
+                <div class="admin__field">
+                    <label class="admin__field-label" for="myca-tol-<?= $escaper->escapeHtmlAttr($field) ?>"><span><?= $escaper->escapeHtml($label) ?></span></label>
+                    <div class="admin__field-control"><input id="myca-tol-<?= $escaper->escapeHtmlAttr($field) ?>" name="tolerances[<?= $escaper->escapeHtmlAttr($field) ?>]" required class="admin__control-text" value="<?= $escaper->escapeHtmlAttr($value) ?>"></div>
+                </div>
+            <?php endforeach ?>
+            <button type="submit" class="action-secondary"><?= $escaper->escapeHtml(__('Valider les tolérances')) ?></button>
+        </form>
+    <?php endif ?>
+</section>
+
+<section class="admin__page-section">
+    <div class="admin__page-section-title"><span class="title"><?= $escaper->escapeHtml(__('Jalons usine')) ?></span></div>
+    <table class="data-table admin__table-primary">
+        <thead>
+            <tr>
+                <th><?= $escaper->escapeHtml(__('Jalon')) ?></th>
+                <th><?= $escaper->escapeHtml(__('État')) ?></th>
+                <th><?= $escaper->escapeHtml(__('Décision')) ?></th>
+                <th><?= $escaper->escapeHtml(__('Mettre à jour')) ?></th>
+            </tr>
+        </thead>
+        <tbody>
+            <?php $labels = $viewModel->getMilestoneLabels(); ?>
+            <?php foreach ($management->getMilestones($orderId) as $milestone): ?>
+                <tr>
+                    <td><?= $escaper->escapeHtml($labels[$milestone['code']] ?? (string) $milestone['code']) ?></td>
+                    <td><?= $escaper->escapeHtml(['pending' => __('À valider'), 'validated' => __('Validé'), 'rejected' => __('Refusé')][$milestone['status']] ?? '') ?></td>
+                    <td><?= $escaper->escapeHtml(trim(($milestone['decided_by'] ?? '') . ' ' . ($milestone['note'] ?? ''))) ?></td>
+                    <td>
+                        <form method="post" action="<?= $escaper->escapeUrl($viewModel->getUrl('myca_production/order/milestone')) ?>">
+                            <input type="hidden" name="form_key" value="<?= $escaper->escapeHtmlAttr($formKey) ?>">
+                            <input type="hidden" name="id" value="<?= (int) $orderId ?>">
+                            <input type="hidden" name="code" value="<?= $escaper->escapeHtmlAttr((string) $milestone['code']) ?>">
+                            <input name="note" class="admin__control-text" placeholder="<?= $escaper->escapeHtmlAttr(__('Commentaire')) ?>" aria-label="<?= $escaper->escapeHtmlAttr(__('Commentaire')) ?>">
+                            <button type="submit" name="status" value="validated" class="action-secondary"><?= $escaper->escapeHtml(__('Valider')) ?></button>
+                            <button type="submit" name="status" value="rejected" class="action-secondary"><?= $escaper->escapeHtml(__('Refuser')) ?></button>
+                        </form>
+                    </td>
+                </tr>
+            <?php endforeach ?>
+        </tbody>
+    </table>
+</section>
+
+<section class="admin__page-section">
+    <div class="admin__page-section-title"><span class="title"><?= $escaper->escapeHtml(__('Statut de l’ordre')) ?></span></div>
+    <?php foreach ($blockers as $blocker): ?>
+        <p class="message message-warning"><?= $escaper->escapeHtml($blocker) ?></p>
+    <?php endforeach ?>
+    <form method="post" action="<?= $escaper->escapeUrl($statusUrl) ?>">
+        <input type="hidden" name="form_key" value="<?= $escaper->escapeHtmlAttr($formKey) ?>">
+        <input type="hidden" name="id" value="<?= (int) $orderId ?>">
+        <?php if ($status === ProductionRules::PLANNED): ?>
+            <button type="submit" name="status" value="committed" class="action-primary" <?= $blockers ? 'disabled' : '' ?>><?= $escaper->escapeHtml(__('Engager (bon de commande à l’usine)')) ?></button>
+        <?php elseif ($status === ProductionRules::COMMITTED): ?>
+            <button type="submit" name="status" value="in_production" class="action-primary"><?= $escaper->escapeHtml(__('Lancer la fabrication')) ?></button>
+        <?php elseif ($status === ProductionRules::RECEIVING): ?>
+            <button type="submit" name="status" value="received" class="action-primary"><?= $escaper->escapeHtml(__('Clore la réception')) ?></button>
+        <?php endif ?>
+        <?php if (in_array($status, [ProductionRules::PLANNED, ProductionRules::COMMITTED], true)): ?>
+            <input name="message" class="admin__control-text" placeholder="<?= $escaper->escapeHtmlAttr(__('Motif d’annulation')) ?>" aria-label="<?= $escaper->escapeHtmlAttr(__('Motif d’annulation')) ?>">
+            <button type="submit" name="status" value="canceled" class="action-secondary"><?= $escaper->escapeHtml(__('Annuler l’ordre')) ?></button>
+        <?php endif ?>
+    </form>
+</section>
+
+<section class="admin__page-section">
+    <div class="admin__page-section-title"><span class="title"><?= $escaper->escapeHtml(__('Réceptions et contrôle qualité')) ?></span></div>
+    <?php foreach ($management->getReceipts($orderId) as $receipt): ?>
+        <?php $receiptId = (int) $receipt['receipt_id']; $checklist = $viewModel->getChecklist($receipt); ?>
+        <div style="border:1px solid #ccc;padding:1rem;margin-bottom:1rem">
+            <p><strong><?= $escaper->escapeHtml(__('Lot %1 — reçu le %2 — contrôleur : %3 — décision : %4', $receipt['lot_code'], $block->formatDate((string) $receipt['received_on'], IntlDateFormatter::MEDIUM), $receipt['controller'], $viewModel->getDecisionLabels()[$receipt['decision']] ?? $receipt['decision'])) ?></strong></p>
+            <p><?= $escaper->escapeHtml(__('Échantillon : %1 pièces ; défauts critiques %2, majeurs %3, mineurs %4.', (int) $receipt['sample_size'], (int) $receipt['defects_critical'], (int) $receipt['defects_major'], (int) $receipt['defects_minor'])) ?></p>
+            <p><?= $escaper->escapeHtml(implode(' · ', array_map(static fn ($point, $label) => $label . ' : ' . (($checklist[$point] ?? '') === 'ok' ? 'conforme' : 'NON CONFORME'), array_keys($viewModel->getChecklistLabels()), $viewModel->getChecklistLabels()))) ?></p>
+            <p><?= $escaper->escapeHtml(implode(' · ', array_map(static fn ($line) => $line['sku'] . ' × ' . $line['qty_received'], $management->getReceiptLines($receiptId)))) ?></p>
+            <?php if ($receipt['report']): ?><p><?= $escaper->escapeHtml(__('Rapport : %1', $receipt['report'])) ?></p><?php endif ?>
+            <?php if ($receipt['corrective_action']): ?><p><?= /* @noEscape */ nl2br($escaper->escapeHtml((string) __('Action corrective : %1', $receipt['corrective_action']))) ?></p><?php endif ?>
+            <?php foreach ($management->getPhotos($receiptId) as $photo): ?>
+                <a href="<?= $escaper->escapeUrl($viewModel->getUrl('myca_production/order/photo', ['receipt_id' => $receiptId, 'file' => $photo])) ?>" target="_blank" rel="noopener"><?= $escaper->escapeHtml($photo) ?></a>
+            <?php endforeach ?>
+            <?php if ($receipt['decision'] === ProductionRules::QUARANTINE): ?>
+                <form method="post" action="<?= $escaper->escapeUrl($viewModel->getUrl('myca_production/order/quarantine')) ?>" style="margin-top:.5rem">
+                    <input type="hidden" name="form_key" value="<?= $escaper->escapeHtmlAttr($formKey) ?>">
+                    <input type="hidden" name="receipt_id" value="<?= (int) $receiptId ?>">
+                    <input name="note" required class="admin__control-text" placeholder="<?= $escaper->escapeHtmlAttr(__('Résultat du nouveau contrôle')) ?>" aria-label="<?= $escaper->escapeHtmlAttr(__('Résultat du nouveau contrôle')) ?>">
+                    <button type="submit" name="decision" value="accepted" class="action-secondary"><?= $escaper->escapeHtml(__('Lever : accepter (mise en stock)')) ?></button>
+                    <button type="submit" name="decision" value="refused" class="action-secondary"><?= $escaper->escapeHtml(__('Lever : refuser')) ?></button>
+                </form>
+            <?php endif ?>
+        </div>
+    <?php endforeach ?>
+
+    <?php if ($viewModel->canReceive($status)): ?>
+        <h3><?= $escaper->escapeHtml(__('Nouvelle réception')) ?></h3>
+        <form method="post" enctype="multipart/form-data" action="<?= $escaper->escapeUrl($viewModel->getUrl('myca_production/order/receipt')) ?>">
+            <input type="hidden" name="form_key" value="<?= $escaper->escapeHtmlAttr($formKey) ?>">
+            <input type="hidden" name="id" value="<?= (int) $orderId ?>">
+            <table class="admin__table-secondary">
+                <tbody>
+                    <tr><th><label for="myca-r-lot"><?= $escaper->escapeHtml(__('N° de lot')) ?></label></th><td><input id="myca-r-lot" name="receipt[lot_code]" required class="admin__control-text"></td></tr>
+                    <tr><th><label for="myca-r-date"><?= $escaper->escapeHtml(__('Reçu le')) ?></label></th><td><input id="myca-r-date" type="date" name="receipt[received_on]" required class="admin__control-text" value="<?= $escaper->escapeHtmlAttr(date('Y-m-d')) ?>"></td></tr>
+                    <tr><th><label for="myca-r-controller"><?= $escaper->escapeHtml(__('Contrôleur qualité')) ?></label></th><td><input id="myca-r-controller" name="receipt[controller]" required class="admin__control-text"></td></tr>
+                </tbody>
+            </table>
+            <table class="data-table admin__table-primary">
+                <thead><tr><th><?= $escaper->escapeHtml(__('Variante')) ?></th><th><?= $escaper->escapeHtml(__('Reste à recevoir')) ?></th><th><?= $escaper->escapeHtml(__('Pièces reçues')) ?></th></tr></thead>
+                <tbody>
+                    <?php foreach ($lines as $line): ?>
+                        <tr>
+                            <td><?= $escaper->escapeHtml(trim($line['sku'] . ' ' . $line['color'] . ' ' . $line['size'])) ?></td>
+                            <td><?= (int) max(0, (int) $line['qty_planned'] - (int) $line['qty_received']) ?></td>
+                            <td><input type="number" min="0" name="qty[<?= (int) $line['line_id'] ?>]" value="0" class="admin__control-text" style="width:6rem" aria-label="<?= $escaper->escapeHtmlAttr(__('Pièces reçues de %1', $line['sku'])) ?>"></td>
+                        </tr>
+                    <?php endforeach ?>
+                </tbody>
+            </table>
+            <fieldset class="admin__fieldset">
+                <legend><?= $escaper->escapeHtml(__('Checklist de contrôle (cocher si conforme)')) ?></legend>
+                <?php foreach ($viewModel->getChecklistLabels() as $point => $label): ?>
+                    <div class="admin__field admin__field-option">
+                        <input id="myca-check-<?= $escaper->escapeHtmlAttr($point) ?>" type="checkbox" name="receipt[checklist][<?= $escaper->escapeHtmlAttr($point) ?>]" value="ok" class="admin__control-checkbox">
+                        <label for="myca-check-<?= $escaper->escapeHtmlAttr($point) ?>" class="admin__field-label"><?= $escaper->escapeHtml($label) ?></label>
+                    </div>
+                <?php endforeach ?>
+            </fieldset>
+            <table class="admin__table-secondary">
+                <tbody>
+                    <tr><th><label for="myca-r-sample"><?= $escaper->escapeHtml(__('Pièces contrôlées (échantillon)')) ?></label></th><td><input id="myca-r-sample" type="number" min="1" name="receipt[sample_size]" required class="admin__control-text"></td></tr>
+                    <?php foreach (['critical' => __('Défauts critiques'), 'major' => __('Défauts majeurs'), 'minor' => __('Défauts mineurs')] as $level => $label): ?>
+                        <tr><th><label for="myca-r-<?= $escaper->escapeHtmlAttr($level) ?>"><?= $escaper->escapeHtml($label) ?></label></th><td><input id="myca-r-<?= $escaper->escapeHtmlAttr($level) ?>" type="number" min="0" value="0" name="receipt[defects][<?= $escaper->escapeHtmlAttr($level) ?>]" class="admin__control-text"></td></tr>
+                    <?php endforeach ?>
+                    <tr><th><label for="myca-r-decision"><?= $escaper->escapeHtml(__('Décision')) ?></label></th><td>
+                        <select id="myca-r-decision" name="receipt[decision]" required class="admin__control-select">
+                            <?php foreach ($viewModel->getDecisionLabels() as $value => $label): ?>
+                                <option value="<?= $escaper->escapeHtmlAttr($value) ?>"><?= $escaper->escapeHtml($label) ?></option>
+                            <?php endforeach ?>
+                        </select>
+                    </td></tr>
+                    <tr><th><label for="myca-r-report"><?= $escaper->escapeHtml(__('Rapport de contrôle')) ?></label></th><td><textarea id="myca-r-report" name="receipt[report]" rows="3" class="admin__control-textarea"></textarea></td></tr>
+                    <tr><th><label for="myca-r-corrective"><?= $escaper->escapeHtml(__('Action corrective (obligatoire hors acceptation)')) ?></label></th><td><textarea id="myca-r-corrective" name="receipt[corrective_action]" rows="2" class="admin__control-textarea"></textarea></td></tr>
+                    <tr><th><label for="myca-r-photos"><?= $escaper->escapeHtml(__('Photos (JPG, PNG, WebP ; 5 maximum)')) ?></label></th><td>
+                        <?php for ($i = 0; $i < 3; $i++): ?>
+                            <input id="<?= $escaper->escapeHtmlAttr($i === 0 ? 'myca-r-photos' : 'myca-r-photos-' . $i) ?>" type="file" name="photos[<?= (int) $i ?>]" accept="image/jpeg,image/png,image/webp"><br>
+                        <?php endfor ?>
+                    </td></tr>
+                </tbody>
+            </table>
+            <p><?= $escaper->escapeHtml(__('Seule la décision « accepté » fait entrer les pièces dans le stock vendable. Elle exige une checklist entièrement conforme et des défauts dans les seuils validés.')) ?></p>
+            <button type="submit" class="action-primary"><?= $escaper->escapeHtml(__('Enregistrer la réception')) ?></button>
+        </form>
+    <?php endif ?>
+</section>
+
+<section class="admin__page-section">
+    <div class="admin__page-section-title"><span class="title"><?= $escaper->escapeHtml(__('Historique')) ?></span></div>
+    <table class="data-table admin__table-primary">
+        <thead><tr><th><?= $escaper->escapeHtml(__('Date')) ?></th><th><?= $escaper->escapeHtml(__('Action')) ?></th><th><?= $escaper->escapeHtml(__('Détail')) ?></th><th><?= $escaper->escapeHtml(__('Auteur')) ?></th></tr></thead>
+        <tbody>
+            <?php foreach ($management->getHistory($orderId) as $entry): ?>
+                <tr>
+                    <td><?= $escaper->escapeHtml($block->formatDate((string) $entry['created_at'], IntlDateFormatter::MEDIUM, true)) ?></td>
+                    <td><?= $escaper->escapeHtml((string) $entry['action']) ?></td>
+                    <td><?= $escaper->escapeHtml((string) $entry['message']) ?></td>
+                    <td><?= $escaper->escapeHtml((string) $entry['author']) ?></td>
+                </tr>
+            <?php endforeach ?>
+        </tbody>
+    </table>
+</section>
