@@ -1,0 +1,30 @@
+<?php
+/**
+ * Délais de retour appliqués par le portail (configuration MYCA > Retours & SAV).
+ */
+
+declare(strict_types=1);
+
+use Magento\Framework\Escaper;
+use Myca\Rma\Block\Widget\ReturnPolicy;
+
+/** @var ReturnPolicy $block */
+/** @var Escaper $escaper */
+?>
+<ul>
+    <li>
+        <strong><?= $escaper->escapeHtml(__('Droit de rétractation : 14 jours')) ?></strong>
+        <?= $escaper->escapeHtml(__('à compter de la réception de votre commande, sans avoir à vous justifier.')) ?>
+    </li>
+    <?php if ($block->isCommercial30DaysEnabled()): ?>
+        <li>
+            <strong><?= $escaper->escapeHtml(__('Retours MYCA : %1 jours', $block->getReturnDays())) ?></strong>
+            <?= $escaper->escapeHtml(__('pour les achats faits sur ce site, au-delà du délai légal.')) ?>
+        </li>
+    <?php endif ?>
+    <li>
+        <strong><?= $escaper->escapeHtml(__('Produit défectueux ou non conforme : %1', $block->getWarrantyLabel())) ?></strong>
+        <?= $escaper->escapeHtml(__('après la livraison, au titre des garanties légales.')) ?>
+    </li>
+</ul>
+<p><?= $escaper->escapeHtml(__('Les délais courent à partir de la livraison de la commande.')) ?></p>

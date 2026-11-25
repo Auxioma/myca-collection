@@ -3,6 +3,7 @@
         xsi:noNamespaceSchemaLocation="urn:magento:framework:Module/etc/module.xsd">
     <module name="Myca_Shipping">
         <sequence>
+            <module name="Magento_Widget"/>
             <module name="Magento_Shipping"/>
             <module name="Magento_Quote"/>
             <module name="Magento_Checkout"/>

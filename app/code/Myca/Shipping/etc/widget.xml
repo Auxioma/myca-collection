@@ -1,0 +1,8 @@
+<?xml version="1.0"?>
+<widgets xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Widget:etc/widget.xsd">
+    <widget id="myca_shipping_destinations" class="Myca\Shipping\Block\Widget\Destinations" is_email_compatible="false">
+        <label translate="true">MYCA – Destinations desservies</label>
+        <description translate="true">Pays et modes de livraison ouverts, lus dans Magasins &gt; Configuration &gt; MYCA &gt; Livraison.</description>
+    </widget>
+</widgets>

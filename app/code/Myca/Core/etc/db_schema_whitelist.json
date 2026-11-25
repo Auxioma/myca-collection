@@ -1,0 +1,20 @@
+{
+    "myca_cookie_consent": {
+        "column": {
+            "entity_id": true,
+            "consent_id": true,
+            "store_id": true,
+            "policy_version": true,
+            "analytics": true,
+            "marketing": true,
+            "action": true,
+            "created_at": true
+        },
+        "index": {
+            "MYCA_COOKIE_CONSENT_CONSENT_ID": true
+        },
+        "constraint": {
+            "PRIMARY": true
+        }
+    }
+}

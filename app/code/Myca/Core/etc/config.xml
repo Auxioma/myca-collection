@@ -7,5 +7,14 @@
                 <partner_groups/>
             </identity>
         </myca_core>
+        <myca_site>
+            <cookies>
+                <policy_version>1</policy_version>
+                <lifetime_days>180</lifetime_days>
+            </cookies>
+            <footer>
+                <payment_methods/>
+            </footer>
+        </myca_site>
     </default>
 </config>

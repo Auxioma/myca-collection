@@ -1,0 +1,8 @@
+<?xml version="1.0"?>
+<widgets xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Widget:etc/widget.xsd">
+    <widget id="myca_rma_return_policy" class="Myca\Rma\Block\Widget\ReturnPolicy" is_email_compatible="false">
+        <label translate="true">MYCA – Délais de retour</label>
+        <description translate="true">Délais lus dans Magasins &gt; Configuration &gt; MYCA &gt; Retours &amp; SAV.</description>
+    </widget>
+</widgets>

@@ -19,5 +19,52 @@
                 </field>
             </group>
         </section>
+        <section id="myca_site" translate="label" sortOrder="15" showInDefault="1" showInWebsite="1" showInStore="1">
+            <label>Site public</label>
+            <tab>myca</tab>
+            <resource>Myca_Core::config</resource>
+            <group id="cookies" translate="label comment" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1">
+                <label>Consentement aux cookies</label>
+                <comment>Chaque choix des visiteurs est enregistré (identifiant aléatoire, choix, date, version), sans adresse IP. Un traceur non essentiel ne se déclenche qu’après accord : déclarez-le avec &lt;script type="text/plain" data-myca-consent="analytics"&gt; (ou "marketing").</comment>
+                <field id="policy_version" translate="label comment" type="text" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1" canRestore="1">
+                    <label>Version de la politique cookies</label>
+                    <comment>Changez-la (2, 3…) après avoir ajouté un outil ou modifié la politique : le choix est alors redemandé à tous les visiteurs.</comment>
+                    <validate>required-entry validate-alphanum</validate>
+                </field>
+                <field id="lifetime_days" translate="label comment" type="text" sortOrder="20" showInDefault="1" showInWebsite="1" showInStore="1" canRestore="1">
+                    <label>Durée de validité du choix (jours)</label>
+                    <comment>180 jours (6 mois) recommandés par la CNIL ; 395 jours (13 mois) au plus.</comment>
+                    <validate>required-entry validate-digits validate-digits-range digits-range-1-395</validate>
+                </field>
+            </group>
+            <group id="footer" translate="label comment" sortOrder="20" showInDefault="1" showInWebsite="1" showInStore="1">
+                <label>Pied de page</label>
+                <comment>Une icône de réseau social n’est cliquable que si son adresse est renseignée.</comment>
+                <field id="facebook" translate="label" type="text" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Facebook (adresse https://…)</label>
+                    <validate>validate-url</validate>
+                </field>
+                <field id="instagram" translate="label" type="text" sortOrder="20" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Instagram</label>
+                    <validate>validate-url</validate>
+                </field>
+                <field id="tiktok" translate="label" type="text" sortOrder="30" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>TikTok</label>
+                    <validate>validate-url</validate>
+                </field>
+                <field id="youtube" translate="label" type="text" sortOrder="40" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>YouTube</label>
+                    <validate>validate-url</validate>
+                </field>
+                <field id="linkedin" translate="label" type="text" sortOrder="50" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>LinkedIn</label>
+                    <validate>validate-url</validate>
+                </field>
+                <field id="payment_methods" translate="label comment" type="text" sortOrder="60" showInDefault="1" showInWebsite="1" showInStore="1" canRestore="1">
+                    <label>Moyens de paiement affichés</label>
+                    <comment>Uniquement ceux réellement acceptés par le prestataire de paiement, séparés par des virgules (ex. : VISA, Mastercard, PayPal).</comment>
+                </field>
+            </group>
+        </section>
     </system>
 </config>

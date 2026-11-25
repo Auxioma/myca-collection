@@ -4,6 +4,9 @@
     <module name="Myca_Content">
         <sequence>
             <module name="Magento_Cms"/>
+            <module name="Magento_Sitemap"/>
+            <module name="Magento_UrlRewrite"/>
+            <module name="Magento_Search"/>
             <module name="Magento_PageBuilder"/>
             <module name="Magento_Newsletter"/>
             <module name="Magento_CatalogWidget"/>

@@ -9,12 +9,16 @@ use Hyva\Theme\Model\ViewModelRegistry;
 use Hyva\Theme\ViewModel\SvgIcons;
 use Magento\Checkout\Block\Onepage\Link;
 use Magento\Framework\Escaper;
+use Myca\Core\ViewModel\SitePrivacy;
 
 /** @var Escaper $escaper */
 /** @var Link $block */
 /** @var ViewModelRegistry $viewModels */
 
 $icons = $viewModels->require(SvgIcons::class);
+/** @var SitePrivacy $privacy */
+$privacy = $viewModels->require(SitePrivacy::class);
+$paymentMethods = $privacy->getPaymentMethods();
 ?>
 <?php if ($block->isPossibleOnepageCheckout()): ?>
     <div class="fixed inset-x-0 bottom-0 z-20 border-t border-line bg-surface p-3 md:static md:mt-3 md:border-0 md:p-0">
@@ -28,5 +32,5 @@ $icons = $viewModels->require(SvgIcons::class);
             <?= $escaper->escapeHtml(__('Passer la commande')) ?>
         </a>
     </div>
-    <p class="mt-2 text-center myca-caption text-fg-secondary"><?= $escaper->escapeHtml(__('Paiement sécurisé : CB, PayPal, Apple Pay')) ?></p>
+    <p class="mt-2 text-center myca-caption text-fg-secondary"><?= $escaper->escapeHtml($paymentMethods ? __('Paiement sécurisé : %1', implode(', ', $paymentMethods)) : __('Paiement sécurisé par un prestataire agréé')) ?></p>
 <?php endif ?>

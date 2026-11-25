@@ -3,6 +3,7 @@
         xsi:noNamespaceSchemaLocation="urn:magento:framework:Module/etc/module.xsd">
     <module name="Myca_Rma">
         <sequence>
+            <module name="Magento_Widget"/>
             <module name="Magento_Sales"/>
             <module name="Magento_Customer"/>
             <module name="Myca_Core"/>

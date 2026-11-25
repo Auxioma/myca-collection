@@ -32,6 +32,8 @@ $links = [
                 <?php endif ?>
                 <li><a class="block py-2 hover:underline lg:py-0" href="<?= $escaper->escapeUrl($block->getUrl('', ['_direct' => $path])) ?>"><?= $escaper->escapeHtml($label) ?></a></li>
             <?php endforeach ?>
+            <li class="text-xs" aria-hidden="true">|</li>
+            <li><button type="button" data-myca-consent-open class="block py-2 hover:underline lg:py-0"><?= $escaper->escapeHtml(__('Gérer les cookies')) ?></button></li>
         </ul>
         <div class="flex items-center gap-4 lg:ms-auto">
             <div class="flex" aria-hidden="true">

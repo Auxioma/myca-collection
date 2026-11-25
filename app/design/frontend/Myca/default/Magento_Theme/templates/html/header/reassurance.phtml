@@ -11,6 +11,7 @@ use Hyva\Theme\Model\ViewModelRegistry;
 use Hyva\Theme\ViewModel\SvgIcons;
 use Magento\Framework\Escaper;
 use Magento\Framework\View\Element\Template;
+use Myca\Core\ViewModel\SitePrivacy;
 
 /** @var Escaper $escaper */
 /** @var Template $block */
@@ -18,11 +19,14 @@ use Magento\Framework\View\Element\Template;
 
 /** @var SvgIcons $icons */
 $icons = $viewModels->require(SvgIcons::class);
+/** @var SitePrivacy $privacy */
+$privacy = $viewModels->require(SitePrivacy::class);
+$paymentMethods = $privacy->getPaymentMethods();
 
 $items = [
     ['icon' => 'truck', 'title' => __('Point relais offert dès 100 € TTC*'), 'text' => __('*après remise, destinations desservies')],
     ['icon' => 'refresh', 'title' => __('Retours & échanges'), 'text' => __('Rétractation 14 jours, conditions en ligne')],
-    ['icon' => 'shield-check', 'title' => __('Paiement sécurisé'), 'text' => __('CB, PayPal, Apple Pay')],
+    ['icon' => 'shield-check', 'title' => __('Paiement sécurisé'), 'text' => $paymentMethods ? implode(', ', $paymentMethods) : __('Prestataire de paiement agréé')],
 ];
 ?>
 <section

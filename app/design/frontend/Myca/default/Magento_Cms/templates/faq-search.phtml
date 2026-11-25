@@ -1,0 +1,64 @@
+<?php
+/**
+ * M46 — Recherche dans la FAQ : filtre les questions (contenu Page Builder, accordéons <details>) au fil de la
+ * saisie, ouvre les réponses trouvées et propose le formulaire de contact si rien ne correspond.
+ */
+
+declare(strict_types=1);
+
+use Hyva\Theme\Model\ViewModelRegistry;
+use Hyva\Theme\ViewModel\HyvaCsp;
+use Hyva\Theme\ViewModel\SvgIcons;
+use Magento\Framework\Escaper;
+use Magento\Framework\View\Element\Template;
+
+/** @var Template $block */
+/** @var Escaper $escaper */
+/** @var ViewModelRegistry $viewModels */
+/** @var HyvaCsp $hyvaCsp */
+
+$icons = $viewModels->require(SvgIcons::class);
+?>
+<script>
+    function mycaFaqSearch() {
+        const normalize = (text) => text.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+        return {
+            query: '',
+            found: null,
+            filter() {
+                const terms = normalize(this.query).split(/\s+/).filter(Boolean);
+                let total = 0;
+                document.querySelectorAll('[data-faq-group]').forEach((group) => {
+                    let visible = 0;
+                    group.querySelectorAll('[data-faq-item]').forEach((item) => {
+                        const match = terms.every((term) => normalize(item.textContent).includes(term));
+                        item.hidden = !match;
+                        item.open = terms.length > 0 && match;
+                        visible += match ? 1 : 0;
+                    });
+                    group.hidden = visible === 0;
+                    total += visible;
+                });
+                this.found = terms.length ? total : null;
+            }
+        };
+    }
+</script>
+<?php $hyvaCsp->registerInlineScript() ?>
+<div class="mx-auto mb-2 w-full max-w-[860px]" x-data="mycaFaqSearch()">
+    <label for="myca-faq-search" class="myca-field-label"><?= $escaper->escapeHtml(__('Rechercher une question')) ?></label>
+    <div class="relative">
+        <?= $icons->renderHtml('search', 'pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-fg-secondary', 18, 18, ['aria-hidden' => 'true']) ?>
+        <input id="myca-faq-search" type="search" class="myca-field pl-10" x-model="query" @input.debounce.150ms="filter()"
+               placeholder="<?= $escaper->escapeHtmlAttr(__('Ex. : retour, taille, point relais')) ?>" autocomplete="off" aria-describedby="myca-faq-result">
+    </div>
+    <p id="myca-faq-result" class="mt-2 myca-body-s text-fg-secondary" aria-live="polite">
+        <template x-if="found === 0">
+            <span>
+                <?= $escaper->escapeHtml(__('Aucune réponse ne correspond à votre recherche.')) ?>
+                <a class="underline" href="<?= $escaper->escapeUrl($block->getUrl('contact')) ?>"><?= $escaper->escapeHtml(__('Posez votre question au service client')) ?></a>
+            </span>
+        </template>
+        <template x-if="found > 0"><span x-text="found + ' <?= $escaper->escapeJs(__('réponse(s) trouvée(s)')) ?>'"></span></template>
+    </p>
+</div>

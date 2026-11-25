@@ -1,0 +1,158 @@
+<?php
+/**
+ * Bandeau de consentement aux cookies : « Tout refuser » aussi visible que « Tout accepter », choix par catégorie,
+ * retrait à tout moment (lien « Gérer les cookies » ou tout élément [data-myca-consent-open]). Les scripts
+ * <script type="text/plain" data-myca-consent="analytics|marketing"> ne s'exécutent qu'après accord.
+ * Le choix est gardé dans un cookie (sans valeur personnelle) et sa preuve est enregistrée côté serveur.
+ */
+
+declare(strict_types=1);
+
+use Hyva\Theme\ViewModel\HyvaCsp;
+use Magento\Framework\Escaper;
+use Magento\Framework\View\Element\Template;
+use Myca\Core\ViewModel\SitePrivacy;
+
+/** @var Template $block */
+/** @var Escaper $escaper */
+/** @var HyvaCsp $hyvaCsp */
+
+/** @var SitePrivacy $privacy */
+$privacy = $block->getData('view_model');
+$config = $privacy->getConsentConfig();
+$categories = [
+    'analytics' => [__('Mesure d’audience'), __('Statistiques de fréquentation pour améliorer le site.')],
+    'marketing' => [__('Marketing'), __('Mesure des campagnes et publicités personnalisées.')],
+];
+?>
+<script>
+    (() => {
+        const config = <?= /* @noEscape */ json_encode($config, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
+        const read = () => {
+            const raw = document.cookie.split('; ').find((c) => c.startsWith(config.cookieName + '='));
+            if (!raw) {
+                return null;
+            }
+            try {
+                const value = JSON.parse(decodeURIComponent(raw.split('=').slice(1).join('=')));
+                return value && value.v === config.version ? value : null;
+            } catch (e) {
+                return null;
+            }
+        };
+        const uuid = () => (window.crypto && crypto.randomUUID) ? crypto.randomUUID()
+            : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+                const r = Math.random() * 16 | 0;
+                return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+            });
+        const activate = (consent) => {
+            document.querySelectorAll('script[type="text/plain"][data-myca-consent]').forEach((original) => {
+                if (!consent || !consent[original.dataset.mycaConsent] || original.dataset.mycaActivated) {
+                    return;
+                }
+                const script = document.createElement('script');
+                [...original.attributes].forEach((attr) => {
+                    if (attr.name !== 'type' && attr.name !== 'data-myca-consent') {
+                        script.setAttribute(attr.name, attr.value);
+                    }
+                });
+                script.text = original.text;
+                original.dataset.mycaActivated = '1';
+                original.after(script);
+            });
+        };
+        window.mycaConsent = {
+            get: read,
+            has: (category) => !!(read() || {})[category],
+            save(action, choices) {
+                const previous = read();
+                const consent = {
+                    id: previous ? previous.id : uuid(),
+                    v: config.version,
+                    analytics: action === 'accept_all' || (action === 'custom' && !!choices.analytics),
+                    marketing: action === 'accept_all' || (action === 'custom' && !!choices.marketing),
+                    at: new Date().toISOString()
+                };
+                const secure = location.protocol === 'https:' ? '; Secure' : '';
+                document.cookie = config.cookieName + '=' + encodeURIComponent(JSON.stringify(consent))
+                    + '; Max-Age=' + (config.lifetimeDays * 86400) + '; Path=/; SameSite=Lax' + secure;
+                const body = new URLSearchParams({
+                    form_key: hyva.getFormKey(),
+                    consent_id: consent.id,
+                    action,
+                    analytics: consent.analytics ? '1' : '0',
+                    marketing: consent.marketing ? '1' : '0'
+                });
+                fetch(config.saveUrl, {method: 'POST', body, credentials: 'same-origin'}).catch(() => {});
+                activate(consent);
+                window.dispatchEvent(new CustomEvent('myca:consent', {detail: consent}));
+                return consent;
+            }
+        };
+        const start = () => activate(read());
+        document.readyState === 'loading' ? document.addEventListener('DOMContentLoaded', start) : start();
+
+        window.mycaConsentBanner = () => ({
+            open: false,
+            customize: false,
+            choices: {analytics: false, marketing: false},
+            init() {
+                const current = read();
+                this.open = !current;
+                if (current) {
+                    this.choices = {analytics: !!current.analytics, marketing: !!current.marketing};
+                }
+                document.addEventListener('click', (event) => {
+                    if (event.target.closest('[data-myca-consent-open]')) {
+                        event.preventDefault();
+                        this.show(true);
+                    }
+                });
+            },
+            show(customize) {
+                const current = read();
+                this.choices = {analytics: !!(current && current.analytics), marketing: !!(current && current.marketing)};
+                this.customize = customize;
+                this.open = true;
+                this.$nextTick(() => this.$refs.panel && this.$refs.panel.focus());
+            },
+            decide(action) {
+                window.mycaConsent.save(action, this.choices);
+                this.open = false;
+                this.customize = false;
+            }
+        });
+    })();
+</script>
+<?php $hyvaCsp->registerInlineScript() ?>
+<div x-data="mycaConsentBanner()" x-cloak>
+    <section x-show="open" x-ref="panel" tabindex="-1" role="dialog" aria-modal="false" aria-labelledby="myca-consent-title"
+             class="fixed inset-x-0 bottom-0 z-50 border-t border-line bg-surface px-4 py-4 text-fg shadow-[0_-4px_16px_rgb(15_27_53/0.12)] outline-none md:px-10">
+        <div class="mx-auto flex max-w-[1200px] flex-col gap-3">
+            <h2 id="myca-consent-title" class="text-base font-semibold"><?= $escaper->escapeHtml(__('Vos choix de cookies')) ?></h2>
+            <p class="myca-body-s">
+                <?= $escaper->escapeHtml(__('Nous utilisons des cookies nécessaires au fonctionnement du site (panier, connexion, sécurité). Avec votre accord, nous utilisons aussi des cookies de mesure d’audience et de marketing. Vous pouvez changer d’avis à tout moment.')) ?>
+                <a class="underline" href="<?= $escaper->escapeUrl($privacy->getCookiePolicyUrl()) ?>"><?= $escaper->escapeHtml(__('En savoir plus')) ?></a>
+            </p>
+            <fieldset x-show="customize" class="flex flex-col gap-2 rounded-lg border border-line p-3">
+                <legend class="px-1 myca-body-s font-semibold"><?= $escaper->escapeHtml(__('Choisir par catégorie')) ?></legend>
+                <label class="flex items-start gap-2 myca-body-s">
+                    <input type="checkbox" checked disabled class="mt-0.5 size-4">
+                    <span><strong><?= $escaper->escapeHtml(__('Strictement nécessaires')) ?></strong> — <?= $escaper->escapeHtml(__('toujours actifs, indispensables au site.')) ?></span>
+                </label>
+                <?php foreach ($categories as $code => [$label, $description]): ?>
+                    <label class="flex items-start gap-2 myca-body-s">
+                        <input type="checkbox" x-model="choices.<?= $escaper->escapeHtmlAttr($code) ?>" class="mt-0.5 size-4 accent-accent">
+                        <span><strong><?= $escaper->escapeHtml($label) ?></strong> — <?= $escaper->escapeHtml($description) ?></span>
+                    </label>
+                <?php endforeach ?>
+            </fieldset>
+            <div class="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
+                <button type="button" class="myca-btn myca-btn-primary" @click="decide('reject_all')"><?= $escaper->escapeHtml(__('Tout refuser')) ?></button>
+                <button type="button" class="myca-btn myca-btn-primary" @click="decide('accept_all')"><?= $escaper->escapeHtml(__('Tout accepter')) ?></button>
+                <button type="button" class="myca-btn myca-btn-secondary" x-show="!customize" @click="customize = true"><?= $escaper->escapeHtml(__('Personnaliser')) ?></button>
+                <button type="button" class="myca-btn myca-btn-secondary" x-show="customize" @click="decide('custom')"><?= $escaper->escapeHtml(__('Enregistrer mes choix')) ?></button>
+            </div>
+        </div>
+    </section>
+</div>

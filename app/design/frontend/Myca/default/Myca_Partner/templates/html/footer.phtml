@@ -17,6 +17,8 @@ use Myca\Partner\ViewModel\PartnerSpace;
 /** @var ViewModelRegistry $viewModels */
 
 $icons = $viewModels->require(SvgIcons::class);
+/** @var \Myca\Core\ViewModel\SitePrivacy $privacy */
+$privacy = $viewModels->require(\Myca\Core\ViewModel\SitePrivacy::class);
 /** @var PartnerSpace $space */
 $space = $viewModels->require(PartnerSpace::class);
 
@@ -46,7 +48,7 @@ $socials = [
     'youtube' => __('YouTube'),
 ];
 $legalLinks = [
-    [__('CGV Partenaire'), 'cgv-partenaire'],
+    [__('Conditions de vente B2B'), 'conditions-vente-professionnelles'],
     [__('CGU'), 'cgu'],
     [__('Politique de confidentialité'), 'confidentialite'],
     [__('Cookies'), 'cookies'],
@@ -103,10 +105,16 @@ $email = $space->getContact('email');
             <ul class="flex gap-1 md:gap-3">
                 <?php foreach ($socials as $icon => $label): ?>
                     <li>
-                        <?php /* Liens des réseaux à fournir : rendus inactifs tant que l'URL n'est pas connue. */ ?>
-                        <span class="inline-flex size-11 items-center justify-center md:size-5" role="img" aria-label="<?= $escaper->escapeHtmlAttr($label) ?>">
-                            <?= $icons->renderHtml($icon, '', 20, 20, ['aria-hidden' => 'true']) ?>
-                        </span>
+                        <?php $socialUrl = $privacy->getSocialUrl($icon); ?>
+                        <?php if ($socialUrl): ?>
+                            <a href="<?= $escaper->escapeUrl($socialUrl) ?>" target="_blank" rel="noopener" class="inline-flex size-11 items-center justify-center hover:opacity-80 md:size-5" aria-label="<?= $escaper->escapeHtmlAttr(__('%1 (nouvel onglet)', $label)) ?>">
+                                <?= $icons->renderHtml($icon, '', 20, 20, ['aria-hidden' => 'true']) ?>
+                            </a>
+                        <?php else: ?>
+                            <span class="inline-flex size-11 items-center justify-center opacity-60 md:size-5" role="img" aria-label="<?= $escaper->escapeHtmlAttr($label) ?>">
+                                <?= $icons->renderHtml($icon, '', 20, 20, ['aria-hidden' => 'true']) ?>
+                            </span>
+                        <?php endif ?>
                     </li>
                 <?php endforeach ?>
             </ul>
@@ -127,6 +135,8 @@ $email = $space->getContact('email');
                 <?php endif ?>
                 <li><a class="block py-2 hover:underline lg:py-0" href="<?= $escaper->escapeUrl($block->getUrl('', ['_direct' => $path])) ?>"><?= $escaper->escapeHtml($label) ?></a></li>
             <?php endforeach ?>
+            <li class="text-xs" aria-hidden="true">|</li>
+            <li><button type="button" data-myca-consent-open class="block py-2 hover:underline lg:py-0"><?= $escaper->escapeHtml(__('Gérer les cookies')) ?></button></li>
         </ul>
     </div>
 </footer>

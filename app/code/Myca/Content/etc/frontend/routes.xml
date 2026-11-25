@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="urn:magento:framework:App/etc/routes.xsd">
+    <router id="standard">
+        <!-- Plan du site (M51) : /plan-du-site -->
+        <route id="plandusite" frontName="plan-du-site">
+            <module name="Myca_Content"/>
+        </route>
+    </router>
+</config>

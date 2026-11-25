@@ -8,6 +8,8 @@ Audit du 24/11/2026 (J-37 avant l'échéance du 31/12/2026).
 
 **Légende** : ✅ conforme · 🟡 partiel · ❌ absent · ⏸ bloqué par une décision ou une donnée du commanditaire.
 
+**Suivi** : le lot de conformité 1 (pages publiques et juridiques, cookies, SEO) a été livré le 25/11/2026. Voir `docs/lot-conformite-1-livraison.md`.
+
 ## 1. Verdict
 
 **Le projet n'est pas encore conforme au cahier des charges.**
@@ -58,7 +60,7 @@ Audit du 24/11/2026 (J-37 avant l'échéance du 31/12/2026).
 | Parcours global de vente | 🟡 | Le parcours B2C fonctionne (avec un paiement de test seulement). Le parcours B2B n'est pas bouclé, car la boutique ne peut pas passer commande (M17). |
 | Design system | 🟡 | Jetons, composants et états : faits. Le bleu de l'administration est absent. |
 | Navigation et en-têtes | 🟡 | Menus par espace, fil d'Ariane et menu mobile : faits. La cloche de notifications et l'accès à l'aide sont absents. |
-| Pied de page | ❌ | **13 liens sur 22 renvoient une 404** : CGV, CGU, confidentialité, cookies, FAQ, livraison, mentions légales, nos engagements, notre histoire, passeport, plan du site, qualité & matières, retours & échanges. Le cahier exige que « tous les liens du footer conduisent vers une route publiée ». Les réseaux sociaux ne sont pas cliquables (⏸ adresses à fournir). |
+| Pied de page | ✅ | *Corrigé le 25/11 (lot de conformité 1) : 23 liens sur 23 répondent ; réseaux sociaux et moyens de paiement lus dans la configuration.* Avant : **13 liens sur 22 renvoyaient une 404** : CGV, CGU, confidentialité, cookies, FAQ, livraison, mentions légales, nos engagements, notre histoire, passeport, plan du site, qualité & matières, retours & échanges. Le cahier exige que « tous les liens du footer conduisent vers une route publiée ». Les réseaux sociaux ne sont pas cliquables (⏸ adresses à fournir). |
 
 ### Boutique B2C, commerce et paiements
 
@@ -124,13 +126,13 @@ Audit du 24/11/2026 (J-37 avant l'échéance du 31/12/2026).
 | Fiche | État | Constat |
 |---|---|---|
 | Support et tickets | ❌ | Il n'y a pas de système de tickets. |
-| FAQ et centre d'aide | ❌ | Il n'y a pas de page FAQ ni d'aide. |
+| FAQ et centre d'aide | 🟡 | *25/11 :* centre d'aide et FAQ par catégories, accordéons accessibles, recherche, renvoi vers le contact. Manquent la mesure des recherches sans réponse et le versionnage des réponses. |
 | Facturation B2C | 🟡 | Factures et avoirs Magento : faits. L'identité légale du vendeur est à renseigner (⏸). |
 | Facturation B2B et règlements | 🟡 | La boutique voit ses factures. Manquent les règlements, les impayés et le blocage selon le crédit. |
 | Taxes, devises et international | 🟡 | Seule la TVA française est configurée. Les régimes OSS et IOSS sont à valider avec le comptable (⏸). |
 | Multilingue (page renforcée) | ❌ | Il n'existe qu'une vue magasin, en français : ni anglais ni autre langue, pas de hreflang, pas d'URL par langue. Les e-mails Magento natifs ne sont pas traduits, faute de pack de langue. |
 | RGPD | ❌ | Il n'y a ni registre, ni durées de conservation, ni export ou suppression à la demande, notamment pour les clients finaux des boutiques. |
-| Cookies et consentement | ❌ | **Aucun bandeau de consentement.** La page « cookies » est en 404. |
+| Cookies et consentement | 🟡 | *25/11 :* bandeau « Tout refuser / Tout accepter / Personnaliser », preuve enregistrée, retrait par « Gérer les cookies », traceurs bloqués avant accord, politique cookies publiée. La liste des outils réellement utilisés reste à compléter. |
 | Sécurité des comptes et MFA | 🟡 | Hachage des mots de passe, verrouillage et CSRF natifs : faits. **La MFA admin est désactivée** (`Magento_TwoFactorAuth` est éteint). |
 | Rôles et audit | ❌ | Il n'y a ni rôles admin séparés, ni journal d'audit centralisé, ni revue des accès. |
 
@@ -142,7 +144,7 @@ Audit du 24/11/2026 (J-37 avant l'échéance du 31/12/2026).
 | Modèle de données | 🟡 | Le schéma déclaratif existe. Manquent les tables de consentements, de tickets et de colis, ainsi que le journal de stock. |
 | API et intégrations | ❌ | Aucune API REST MYCA (aucun `webapi.xml`) et aucun webhook. |
 | Performance et accessibilité | 🟡 | Les pages sont contrôlées de 375 à 1600 px. Lighthouse n'a pas été mesuré. |
-| SEO | 🟡 | URL propres. Pas de `sitemap.xml` (404), pas de hreflang, `robots.txt` vide. |
+| SEO | 🟡 | *25/11 :* `sitemap.xml` généré chaque jour, `robots.txt` complété, pages privées en `noindex`. Le hreflang reste à faire (multilingue). |
 | E-mails et communications | 🟡 | Les e-mails partenaires dédiés sont faits. Les autres e-mails Magento ne sont pas personnalisés ni traduits. L'envoi n'est pas configuré (⏸ SMTP). |
 | Marketing et campagnes | 🟡 | Les codes promo et la newsletter natifs existent. Il n'y a pas de segments fondés sur les consentements. |
 | Statistiques et marges | 🟡 | Les marges partenaires existent. Il n'y a pas de statistiques côté admin. |
@@ -159,7 +161,7 @@ Audit du 24/11/2026 (J-37 avant l'échéance du 31/12/2026).
 | Admin M01–M15 | M01, M10, M11 | M02–M09, M12–M14 : écrans Magento natifs, conformément à theme.md | M15 (tableau de bord) |
 | Partenaire M16–M27 | M16, M19, M21, M22, M23, M25 | M18 (catalogue sans tarif partenaire), M20 (pas de transporteur), M24 (consentements), M26 (rôles, MFA, intégrations) | **M17** (passer une commande). M27 n'a pas été arbitrée face à M16. |
 | Client M28–M40 | M28–M34, M36, M39, M40 | M35 (moyens de paiement : prestataire ⏸), M37 | M38 (Aide & FAQ) |
-| Public M41–M52 | M45 (fiche produit), M47 (onglet), M50 | — | **M41 Aide, M43 CGU, M44 CGV B2C, M46 FAQ, M48 Mentions légales, M49 Engagements, M51 Plan du site, M52 page Retours & échanges** |
+| Public M41–M52 | M41, M45, M46, M47, M50, M51, M52 | M43, M44, M48, M49 : pages publiées, textes juridiques et données réelles à compléter et à faire valider | — |
 
 ## 5. Recette obligatoire avant lancement (annexe F)
 

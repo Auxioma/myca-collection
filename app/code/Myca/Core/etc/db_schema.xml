@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+<schema xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="urn:magento:framework:Setup/Declaration/Schema/etc/schema.xsd">
+    <!-- Preuve des choix de cookies : un enregistrement par choix, en ajout seul, sans adresse IP. -->
+    <table name="myca_cookie_consent" resource="default" engine="innodb" comment="MYCA - preuves de consentement cookies">
+        <column xsi:type="int" name="entity_id" unsigned="true" nullable="false" identity="true"/>
+        <column xsi:type="varchar" name="consent_id" length="36" nullable="false" comment="Identifiant conservé dans le cookie du visiteur"/>
+        <column xsi:type="smallint" name="store_id" unsigned="true" nullable="false" default="0"/>
+        <column xsi:type="varchar" name="policy_version" length="16" nullable="false"/>
+        <column xsi:type="smallint" name="analytics" unsigned="true" nullable="false" default="0"/>
+        <column xsi:type="smallint" name="marketing" unsigned="true" nullable="false" default="0"/>
+        <column xsi:type="varchar" name="action" length="16" nullable="false" comment="accept_all, reject_all ou custom"/>
+        <column xsi:type="timestamp" name="created_at" nullable="false" default="CURRENT_TIMESTAMP"/>
+        <constraint xsi:type="primary" referenceId="PRIMARY">
+            <column name="entity_id"/>
+        </constraint>
+        <index referenceId="MYCA_COOKIE_CONSENT_CONSENT_ID" indexType="btree">
+            <column name="consent_id"/>
+        </index>
+    </table>
+</schema>

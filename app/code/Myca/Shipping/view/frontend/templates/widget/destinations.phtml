@@ -1,0 +1,47 @@
+<?php
+/**
+ * Destinations desservies et modes de livraison (configuration MYCA > Livraison).
+ */
+
+declare(strict_types=1);
+
+use Magento\Framework\Escaper;
+use Magento\Framework\Pricing\Helper\Data as PriceHelper;
+use Myca\Shipping\Block\Widget\Destinations;
+
+/** @var Destinations $block */
+/** @var Escaper $escaper */
+
+/** @var PriceHelper $priceHelper */
+$priceHelper = $this->helper(PriceHelper::class);
+$rows = $block->getRows();
+$yes = __('Oui');
+$no = __('Non');
+?>
+<?php if ($rows === []): ?>
+    <p><?= $escaper->escapeHtml(__('Aucune destination n’est ouverte pour le moment.')) ?></p>
+<?php else: ?>
+    <table class="myca-table">
+        <caption class="sr-only"><?= $escaper->escapeHtml(__('Destinations desservies')) ?></caption>
+        <thead>
+            <tr>
+                <th scope="col"><?= $escaper->escapeHtml(__('Destination')) ?></th>
+                <th scope="col"><?= $escaper->escapeHtml(__('Point relais')) ?></th>
+                <th scope="col"><?= $escaper->escapeHtml(__('Domicile')) ?></th>
+            </tr>
+        </thead>
+        <tbody>
+            <?php foreach ($rows as $row): ?>
+                <tr>
+                    <th scope="row"><?= $escaper->escapeHtml($row['country']) ?></th>
+                    <td><?= $escaper->escapeHtml($row['relay']
+                        ? __('Oui — offert dès %1 d’achats éligibles', $priceHelper->currency($block->getFreeRelayThreshold(), true, false))
+                        : $no) ?></td>
+                    <td><?= $escaper->escapeHtml($row['home']
+                        ? ($row['home_from'] !== null ? __('Oui — à partir de %1', $priceHelper->currency($row['home_from'], true, false)) : $yes)
+                        : $no) ?></td>
+                </tr>
+            <?php endforeach ?>
+        </tbody>
+    </table>
+<?php endif ?>

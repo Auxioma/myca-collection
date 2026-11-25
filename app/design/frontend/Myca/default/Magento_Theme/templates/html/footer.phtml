@@ -10,6 +10,7 @@ use Hyva\Theme\Model\ViewModelRegistry;
 use Hyva\Theme\ViewModel\SvgIcons;
 use Magento\Framework\Escaper;
 use Magento\Framework\View\Element\Template;
+use Myca\Core\ViewModel\SitePrivacy;
 
 /** @var Template $block */
 /** @var Escaper $escaper */
@@ -17,8 +18,9 @@ use Magento\Framework\View\Element\Template;
 
 /** @var SvgIcons $icons */
 $icons = $viewModels->require(SvgIcons::class);
+/** @var SitePrivacy $privacy */
+$privacy = $viewModels->require(SitePrivacy::class);
 
-// Adresses provisoires : les pages cibles seront créées aux étapes 2 et 4 (voir registre des questions).
 $columns = [
     ['title' => __('Collections'), 'links' => [
         [__('España – Hidalgo'), 'collections/espana-hidalgo.html'],
@@ -31,9 +33,10 @@ $columns = [
         [__('Notre histoire'), 'notre-histoire'],
         [__('Nos engagements'), 'nos-engagements'],
         [__('Qualité & matières'), 'qualite-matieres'],
-        [__('Passeport du vêtement'), 'passeport'],
+        [__('Passeport du vêtement'), 'passeport-du-vetement'],
     ]],
     ['title' => __('Aide & Services'), 'links' => [
+        [__('Centre d’aide'), 'aide'],
         [__('Contact / Service client'), 'contact'],
         [__('Livraison'), 'livraison'],
         [__('Retours & échanges'), 'retours-echanges'],
@@ -60,7 +63,7 @@ $legalLinks = [
     [__('Plan du site'), 'plan-du-site'],
 ];
 
-$paymentMethods = ['VISA', 'Mastercard', 'PayPal', 'Apple Pay'];
+$paymentMethods = $privacy->getPaymentMethods();
 ?>
 <footer class="bg-shell text-white">
     <div class="mx-auto flex max-w-[1600px] flex-col gap-6 px-4 py-7 md:flex-row md:flex-wrap md:gap-x-16 md:gap-y-8 md:px-10 2xl:px-[120px]">
@@ -111,14 +114,16 @@ $paymentMethods = ['VISA', 'Mastercard', 'PayPal', 'Apple Pay'];
             <ul class="flex gap-1 md:gap-3">
                 <?php foreach ($socials as $icon => $label): ?>
                     <li>
-                        <?php /* Liens des réseaux à fournir : rendus inactifs tant que l'URL n'est pas connue. */ ?>
-                        <span
-                            class="inline-flex size-11 items-center justify-center md:size-5"
-                            role="img"
-                            aria-label="<?= $escaper->escapeHtmlAttr($label) ?>"
-                        >
-                            <?= $icons->renderHtml($icon, '', 20, 20, ['aria-hidden' => 'true']) ?>
-                        </span>
+                        <?php $socialUrl = $privacy->getSocialUrl($icon); ?>
+                        <?php if ($socialUrl): ?>
+                            <a href="<?= $escaper->escapeUrl($socialUrl) ?>" target="_blank" rel="noopener" class="inline-flex size-11 items-center justify-center hover:opacity-80 md:size-5" aria-label="<?= $escaper->escapeHtmlAttr(__('%1 (nouvel onglet)', $label)) ?>">
+                                <?= $icons->renderHtml($icon, '', 20, 20, ['aria-hidden' => 'true']) ?>
+                            </a>
+                        <?php else: ?>
+                            <span class="inline-flex size-11 items-center justify-center opacity-60 md:size-5" role="img" aria-label="<?= $escaper->escapeHtmlAttr($label) ?>">
+                                <?= $icons->renderHtml($icon, '', 20, 20, ['aria-hidden' => 'true']) ?>
+                            </span>
+                        <?php endif ?>
                     </li>
                 <?php endforeach ?>
             </ul>
@@ -139,8 +144,11 @@ $paymentMethods = ['VISA', 'Mastercard', 'PayPal', 'Apple Pay'];
                         ><?= $escaper->escapeHtml($label) ?></a>
                     </li>
                 <?php endforeach ?>
+                <li class="text-xs leading-4" aria-hidden="true">|</li>
+                <li><button type="button" data-myca-consent-open class="block py-2 hover:underline xl:py-0"><?= $escaper->escapeHtml(__('Gérer les cookies')) ?></button></li>
             </ul>
 
+            <?php if ($paymentMethods !== []): ?>
             <ul class="flex flex-wrap gap-2 xl:ms-auto" aria-label="<?= $escaper->escapeHtmlAttr(__('Moyens de paiement acceptés')) ?>">
                 <?php foreach ($paymentMethods as $method): ?>
                     <li class="rounded-sm bg-white px-2.5 py-1 text-xs leading-4 font-semibold text-navy-900">
@@ -148,6 +156,7 @@ $paymentMethods = ['VISA', 'Mastercard', 'PayPal', 'Apple Pay'];
                     </li>
                 <?php endforeach ?>
             </ul>
+            <?php endif ?>
 
             <p class="text-xs leading-4">
                 <?= $escaper->escapeHtml(__('© %1 MYCA – Tous droits réservés.', date('Y'))) ?>
