@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="urn:magento:framework:App/etc/routes.xsd">
+    <router id="standard">
+        <!-- M17 « Passer une commande » : /partenaire/commander (contrôleurs Controller/Commander). -->
+        <route id="partenaire">
+            <module name="Myca_Dropship" after="Myca_Partner"/>
+        </route>
+    </router>
+</config>

@@ -1,0 +1,41 @@
+<?php
+/**
+ * Fiche commande : commande de boutique partenaire (canal, mode, vendeur au client final, bon de livraison sans prix).
+ */
+
+declare(strict_types=1);
+
+use Magento\Backend\Block\Template;
+use Magento\Framework\Escaper;
+use Myca\Dropship\ViewModel\AdminOrder;
+
+/** @var Template $block */
+/** @var Escaper $escaper */
+
+/** @var AdminOrder $viewModel */
+$viewModel = $block->getData('view_model');
+$order = $viewModel->getOrder();
+$info = $order ? $viewModel->getPartnerInfo($order) : null;
+if ($info === null) {
+    return;
+}
+$dropship = $info['mode'] === 'dropship';
+?>
+<section class="admin__page-section">
+    <div class="admin__page-section-title"><span class="title"><?= $escaper->escapeHtml(__('Commande partenaire')) ?></span></div>
+    <div class="admin__page-section-content">
+        <p>
+            <strong><?= $escaper->escapeHtml($dropship ? __('Dropshipping : expédition au client final, sans prix, au nom de la boutique') : __('Achat de stock : livraison à la boutique')) ?></strong>
+        </p>
+        <p>
+            <?= $escaper->escapeHtml(__('Boutique :')) ?>
+            <a href="<?= $escaper->escapeUrl($info['partner_url']) ?>"><?= $escaper->escapeHtml($info['company'] . ' (' . $info['code'] . ')') ?></a>
+            <?php if ($dropship): ?>
+                — <?= $escaper->escapeHtml(__('vendeuse au client final et responsable de son remboursement.')) ?>
+            <?php endif ?>
+        </p>
+        <?php if ($dropship): ?>
+            <p><a class="action-default" href="<?= $escaper->escapeUrl($info['slip_url']) ?>" target="_blank" rel="noopener"><?= $escaper->escapeHtml(__('Imprimer le bon de livraison sans prix')) ?></a></p>
+        <?php endif ?>
+    </div>
+</section>

@@ -43,6 +43,30 @@ class DropshipOrder
     }
 
     /**
+     * Commande partenaire complète (mode, boutique, prix de vente déclaré), ou null pour une commande B2C.
+     *
+     * @return array{partner_id: int, mode: string, ship_to_end_customer: bool, packing_slip_hide_prices: bool, declared_sale_amount: float|null}|null
+     */
+    public function getForOrder(int $orderId): ?array
+    {
+        $connection = $this->resource->getConnection();
+        $row = $connection->fetchRow(
+            $connection->select()->from($this->resource->getTableName('myca_dropship_order'))->where('order_id = ?', $orderId)
+        );
+        if (!is_array($row)) {
+            return null;
+        }
+
+        return [
+            'partner_id' => (int) $row['partner_id'],
+            'mode' => (string) $row['mode'],
+            'ship_to_end_customer' => (bool) $row['ship_to_end_customer'],
+            'packing_slip_hide_prices' => (bool) $row['packing_slip_hide_prices'],
+            'declared_sale_amount' => $row['declared_sale_amount'] !== null ? (float) $row['declared_sale_amount'] : null,
+        ];
+    }
+
+    /**
      * Mode de vente d'une commande, ou null s'il n'a pas été déclaré.
      */
     public function getMode(int $orderId): ?string

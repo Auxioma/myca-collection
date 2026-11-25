@@ -78,12 +78,12 @@ $rankColors = ['bg-gold-400', 'bg-gray-300', 'bg-[#e8a86b]'];
 
     <ul class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <li>
-            <a href="<?= $escaper->escapeUrl($space->getCatalogUrl()) ?>"
+            <a href="<?= $escaper->escapeUrl($space->getOrderUrl()) ?>"
                class="flex h-full items-center gap-2.5 rounded-lg border border-brand-red bg-brand-red px-5 py-6 text-white shadow-card hover:brightness-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-red">
                 <?= $icons->renderHtml('cart', 'shrink-0', 18, 18, ['aria-hidden' => 'true']) ?>
                 <span class="flex flex-1 flex-col">
                     <span class="myca-body-s-strong"><?= $escaper->escapeHtml(__('Passer une commande client')) ?></span>
-                    <span class="myca-caption text-white/85"><?= $escaper->escapeHtml(__('Choisissez vos articles dans le catalogue, au tarif partenaire.')) ?></span>
+                    <span class="myca-caption text-white/85"><?= $escaper->escapeHtml(__('Dropshipping ou achat de stock, au tarif partenaire.')) ?></span>
                 </span>
                 <?= $icons->renderHtml('chevron-right', 'shrink-0', 16, 16, ['aria-hidden' => 'true']) ?>
             </a>

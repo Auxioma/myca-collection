@@ -1,0 +1,476 @@
+<?php
+/**
+ * M17 — Passer une commande : 1. sélection des produits, 2. quantités par taille, 3. livraison (destinataire final
+ * en dropshipping, boutique en achat de stock), 4. validation et paiement. Récapitulatif à droite, recalculé par le
+ * serveur à chaque action (tarifs partenaires, minimums, stock vendable). Les prix affichés sur les cartes sont
+ * indicatifs ; seuls ceux du récapitulatif font foi.
+ */
+
+declare(strict_types=1);
+
+use Hyva\Theme\Model\ViewModelRegistry;
+use Hyva\Theme\ViewModel\HyvaCsp;
+use Hyva\Theme\ViewModel\SvgIcons;
+use Magento\Framework\Escaper;
+use Magento\Framework\View\Element\Template;
+use Myca\Dropship\ViewModel\OrderForm;
+
+/** @var Template $block */
+/** @var Escaper $escaper */
+/** @var ViewModelRegistry $viewModels */
+/** @var HyvaCsp $hyvaCsp */
+
+$icons = $viewModels->require(SvgIcons::class);
+/** @var OrderForm $form */
+$form = $block->getData('view_model');
+$urls = $form->getUrls();
+$data = [
+    'models' => $form->getModels(),
+    'state' => $form->getState(),
+    'conditions' => $form->getConditions(),
+    'urls' => $urls,
+];
+$steps = [
+    1 => ['check-circle', __('Sélection des produits')],
+    2 => ['layers', __('Détails & quantités')],
+    3 => ['truck', __('Livraison (destinataire final)')],
+    4 => ['card', __('Validation & paiement')],
+];
+$recipientFields = [
+    'firstname' => [__('Prénom'), 'given-name', 'text'],
+    'lastname' => [__('Nom'), 'family-name', 'text'],
+    'street' => [__('Adresse'), 'street-address', 'text'],
+    'postcode' => [__('Code postal'), 'postal-code', 'text'],
+    'city' => [__('Ville'), 'address-level2', 'text'],
+    'telephone' => [__('Téléphone'), 'tel', 'tel'],
+];
+$countries = $form->getServedCountries();
+?>
+<script>
+    function mycaPartnerOrder(config) {
+        const money = new Intl.NumberFormat('fr-FR', {style: 'currency', currency: 'EUR'});
+        return {
+            models: config.models,
+            state: config.state,
+            conditions: config.conditions,
+            urls: config.urls,
+            step: 1,
+            filters: {collection: '', category: '', availability: 'stock', q: ''},
+            selectedId: null,
+            colorId: null,
+            quantities: {},
+            busy: false,
+            submitting: false,
+            message: null,
+            recipient: Object.assign({firstname: '', lastname: '', street: '', postcode: '', city: '', country_id: 'FR', telephone: ''}, config.state.recipient || {}),
+            declared: config.state.declared_sale_amount ?? '',
+            payment: '',
+            terms: false,
+            init() {
+                if (location.hash === '#validation') {
+                    this.step = 4;
+                }
+                if (this.state.payment_methods.length === 1) {
+                    this.payment = this.state.payment_methods[0].code;
+                }
+            },
+            money(value) {
+                return money.format(value || 0);
+            },
+            get collections() {
+                return [...new Set(this.models.map((m) => m.collection).filter(Boolean))].sort();
+            },
+            get categories() {
+                return [...new Set(this.models.map((m) => m.category).filter(Boolean))].sort();
+            },
+            get visibleModels() {
+                const q = this.filters.q.trim().toLowerCase();
+                return this.models.filter((m) => (!this.filters.collection || m.collection === this.filters.collection)
+                    && (!this.filters.category || m.category === this.filters.category)
+                    && (this.filters.availability !== 'stock' || m.available > 0)
+                    && (!q || (m.name + ' ' + m.sku + ' ' + m.collection).toLowerCase().includes(q)));
+            },
+            get selected() {
+                return this.models.find((m) => m.id === this.selectedId) || null;
+            },
+            get selectedTotal() {
+                return Object.values(this.quantities).reduce((sum, qty) => sum + (parseInt(qty, 10) || 0), 0);
+            },
+            get discount() {
+                const contract = this.conditions.contract[this.state.mode];
+                if (contract !== null && contract !== undefined) {
+                    return contract;
+                }
+                if (this.state.mode === 'dropship') {
+                    return this.conditions.dropship;
+                }
+                const tiers = this.conditions.stock_tiers.slice().sort((a, b) => a.min_qty - b.min_qty);
+                return tiers.length && tiers[0].min_qty <= 1 ? tiers[0].discount : 0;
+            },
+            partnerPrice(model) {
+                return model.public_price_excl_tax * (1 - this.discount / 100);
+            },
+            stockFor(sizeId) {
+                const byColor = this.selected && this.selected.stock[this.colorId];
+                return byColor && byColor[sizeId] !== undefined ? byColor[sizeId] : 0;
+            },
+            select(model) {
+                this.selectedId = model.id;
+                const firstAvailable = model.colors.find((c) => Object.values(model.stock[c.id] || {}).some((q) => q > 0));
+                this.colorId = (firstAvailable || model.colors[0]).id;
+                this.quantities = {};
+                this.step = 2;
+                this.$nextTick(() => this.$refs.quantities && this.$refs.quantities.scrollIntoView({behavior: 'smooth', block: 'start'}));
+            },
+            async post(url, payload) {
+                this.busy = true;
+                this.message = null;
+                const body = new URLSearchParams({form_key: hyva.getFormKey()});
+                const append = (key, value) => {
+                    if (value !== null && typeof value === 'object') {
+                        Object.entries(value).forEach(([k, v]) => append(key + '[' + k + ']', v));
+                    } else {
+                        body.append(key, value ?? '');
+                    }
+                };
+                Object.entries(payload).forEach(([key, value]) => append(key, value));
+                try {
+                    const response = await fetch(url, {method: 'POST', body, credentials: 'same-origin', headers: {'X-Requested-With': 'XMLHttpRequest'}});
+                    const json = await response.json();
+                    if (json.state) {
+                        this.state = json.state;
+                    }
+                    if (json.message) {
+                        this.message = {type: json.ok ? 'success' : 'error', text: json.message};
+                    }
+                    return json.ok;
+                } catch (e) {
+                    this.message = {type: 'error', text: '<?= $escaper->escapeJs(__('Connexion interrompue : réessayez.')) ?>'};
+                    return false;
+                } finally {
+                    this.busy = false;
+                }
+            },
+            setMode(mode) {
+                return mode !== this.state.mode ? this.post(this.urls.mode, {mode}) : Promise.resolve(true);
+            },
+            async add() {
+                if (await this.post(this.urls.ajouter, {product_id: this.selectedId, color_id: this.colorId, sizes: this.quantities})) {
+                    this.quantities = {};
+                }
+            },
+            remove(line) {
+                this.post(this.urls.retirer, {product_id: line.product_id, color_id: line.color_id});
+            },
+            async saveDelivery() {
+                if (await this.post(this.urls.livraison, {recipient: this.recipient, declared_sale_amount: this.declared})) {
+                    this.step = 4;
+                }
+            }
+        };
+    }
+</script>
+<?php $hyvaCsp->registerInlineScript() ?>
+<div class="flex flex-col gap-4" x-data="mycaPartnerOrder(<?= $escaper->escapeHtmlAttr((string) json_encode($data, JSON_UNESCAPED_UNICODE)) ?>)">
+    <nav aria-label="<?= $escaper->escapeHtmlAttr(__('Étapes de la commande')) ?>">
+        <ol class="flex flex-wrap gap-2">
+            <?php foreach ($steps as $number => [$icon, $label]): ?>
+                <li>
+                    <button type="button" class="myca-btn" @click="step = <?= (int) $number ?>"
+                            :class="step === <?= (int) $number ?> ? 'myca-btn-primary' : 'myca-btn-secondary'"
+                            :aria-current="step === <?= (int) $number ?> ? 'step' : null">
+                        <?= $icons->renderHtml($icon, '', 16, 16, ['aria-hidden' => 'true']) ?>
+                        <span><?= (int) $number ?></span> <?= $escaper->escapeHtml($label) ?>
+                    </button>
+                </li>
+            <?php endforeach ?>
+        </ol>
+    </nav>
+
+    <div role="status" aria-live="polite">
+        <template x-if="message">
+            <p class="rounded-lg px-3 py-2 myca-body-s" :class="message.type === 'error' ? 'bg-red-50 text-red-800' : 'bg-green-50 text-green-800'" x-text="message.text"></p>
+        </template>
+    </div>
+
+    <div class="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_380px]">
+        <div class="flex min-w-0 flex-col gap-4">
+            <!-- Étapes 1 et 2 -->
+            <section class="myca-card p-4 shadow-card" x-show="step <= 2" aria-labelledby="myca-order-mode">
+                <h2 id="myca-order-mode" class="myca-card-title"><?= $icons->renderHtml('layers', 'text-accent', 18, 18, ['aria-hidden' => 'true']) ?><?= $escaper->escapeHtml(__('Mode de commande')) ?></h2>
+                <div class="flex flex-wrap gap-2" role="radiogroup" aria-labelledby="myca-order-mode">
+                    <template x-if="state.modes.includes('dropship')">
+                        <button type="button" role="radio" class="myca-btn" :aria-checked="state.mode === 'dropship'" :disabled="busy"
+                                :class="state.mode === 'dropship' ? 'myca-btn-primary' : 'myca-btn-secondary'" @click="setMode('dropship')">
+                            <?= $icons->renderHtml('truck', '', 16, 16, ['aria-hidden' => 'true']) ?><?= $escaper->escapeHtml(__('Dropshipping (client final)')) ?>
+                        </button>
+                    </template>
+                    <template x-if="state.modes.includes('stock')">
+                        <button type="button" role="radio" class="myca-btn" :aria-checked="state.mode === 'stock'" :disabled="busy"
+                                :class="state.mode === 'stock' ? 'myca-btn-primary' : 'myca-btn-secondary'" @click="setMode('stock')">
+                            <?= $icons->renderHtml('box', '', 16, 16, ['aria-hidden' => 'true']) ?><?= $escaper->escapeHtml(__('Achat de stock (livraison boutique)')) ?>
+                        </button>
+                    </template>
+                </div>
+                <p class="mt-3 myca-caption text-fg-secondary"><?= $escaper->escapeHtml(__('Dropshipping : le destinataire final est votre client ; MYCA expédie en votre nom, sans prix sur le colis. Achat de stock : livraison à l’adresse de votre boutique.')) ?></p>
+            </section>
+
+            <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-[repeat(4,minmax(0,1fr))_minmax(0,1.5fr)]" x-show="step <= 2">
+                <div>
+                    <label for="myca-order-collection" class="myca-field-label"><?= $escaper->escapeHtml(__('Collection')) ?></label>
+                    <select id="myca-order-collection" class="myca-field" x-model="filters.collection">
+                        <option value=""><?= $escaper->escapeHtml(__('Toutes les collections')) ?></option>
+                        <template x-for="name in collections" :key="name"><option :value="name" x-text="name"></option></template>
+                    </select>
+                </div>
+                <div>
+                    <label for="myca-order-category" class="myca-field-label"><?= $escaper->escapeHtml(__('Catégorie')) ?></label>
+                    <select id="myca-order-category" class="myca-field" x-model="filters.category">
+                        <option value=""><?= $escaper->escapeHtml(__('Tous les produits')) ?></option>
+                        <template x-for="name in categories" :key="name"><option :value="name" x-text="name"></option></template>
+                    </select>
+                </div>
+                <div>
+                    <label for="myca-order-availability" class="myca-field-label"><?= $escaper->escapeHtml(__('Disponibilité')) ?></label>
+                    <select id="myca-order-availability" class="myca-field" x-model="filters.availability">
+                        <option value="stock"><?= $escaper->escapeHtml(__('En stock')) ?></option>
+                        <option value="all"><?= $escaper->escapeHtml(__('Tous les modèles')) ?></option>
+                    </select>
+                </div>
+                <div class="sm:col-span-2 xl:col-span-2">
+                    <label for="myca-order-search" class="myca-field-label"><?= $escaper->escapeHtml(__('Rechercher')) ?></label>
+                    <input id="myca-order-search" type="search" class="myca-field" x-model.debounce.200ms="filters.q" placeholder="<?= $escaper->escapeHtmlAttr(__('Nom, référence, collection…')) ?>">
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3 xl:grid-cols-3" x-show="step <= 2">
+                <template x-for="model in visibleModels" :key="model.id">
+                    <article class="myca-card flex flex-col gap-2 p-3 shadow-card" :class="selectedId === model.id && 'ring-2 ring-accent'">
+                        <span class="myca-badge self-start" x-show="model.category" x-text="model.category"></span>
+                        <img :src="model.image" :alt="model.name" class="mx-auto aspect-square w-full max-w-[180px] object-contain" loading="lazy" width="180" height="180">
+                        <h3 class="myca-body-s-strong" x-text="model.name"></h3>
+                        <p class="myca-caption text-fg-secondary" x-text="[model.collection, '<?= $escaper->escapeJs(__('Réf.')) ?> ' + model.sku].filter(Boolean).join(' · ')"></p>
+                        <p class="myca-caption" x-show="model.tagline" x-text="model.tagline"></p>
+                        <div class="flex items-center gap-1" aria-hidden="true">
+                            <template x-for="color in model.colors" :key="color.id">
+                                <span class="size-3.5 rounded-full border border-line" :style="color.hex ? 'background:' + color.hex : ''" :title="color.label"></span>
+                            </template>
+                        </div>
+                        <p class="myca-caption text-fg-secondary">
+                            <?= $escaper->escapeHtml(__('Prix public conseillé HT :')) ?> <span x-text="money(model.public_price_excl_tax)"></span><br>
+                            <strong class="text-fg"><?= $escaper->escapeHtml(__('Votre tarif HT :')) ?> <span x-text="money(partnerPrice(model))"></span></strong>
+                            <template x-if="state.mode === 'stock' && conditions.stock_tiers.length && conditions.contract.stock === null">
+                                <span><?= $escaper->escapeHtml(__('(dégressif selon volumes)')) ?></span>
+                            </template>
+                        </p>
+                        <p class="myca-caption" :class="model.available > 0 ? 'text-success' : 'text-fg-secondary'"
+                           x-text="model.available > 0 ? model.available + ' <?= $escaper->escapeJs(__('pièces disponibles')) ?>' : '<?= $escaper->escapeJs(__('Épuisé')) ?>'"></p>
+                        <button type="button" class="myca-btn mt-auto" :disabled="model.available === 0"
+                                :class="selectedId === model.id ? 'myca-btn-primary' : 'myca-btn-secondary'" @click="select(model)">
+                            <?= $icons->renderHtml('check', '', 16, 16, ['aria-hidden' => 'true']) ?>
+                            <span x-text="selectedId === model.id ? '<?= $escaper->escapeJs(__('Sélectionné')) ?>' : '<?= $escaper->escapeJs(__('Sélectionner')) ?>'"></span>
+                        </button>
+                    </article>
+                </template>
+                <p class="col-span-2 myca-body-s text-fg-secondary xl:col-span-3" x-show="visibleModels.length === 0"><?= $escaper->escapeHtml(__('Aucun modèle ne correspond à ces critères.')) ?></p>
+            </div>
+
+            <section class="myca-card scroll-mt-4 p-4 shadow-card" x-ref="quantities" x-show="step <= 2 && selected" aria-labelledby="myca-order-quantities">
+                <template x-if="selected">
+                    <div class="flex flex-col gap-3">
+                        <h2 id="myca-order-quantities" class="myca-card-title">
+                            <?= $icons->renderHtml('tag', 'text-accent', 18, 18, ['aria-hidden' => 'true']) ?>
+                            <span x-text="'<?= $escaper->escapeJs(__('Quantités par taille')) ?> — ' + selected.name"></span>
+                        </h2>
+                        <fieldset>
+                            <legend class="myca-field-label"><?= $escaper->escapeHtml(__('Couleur')) ?></legend>
+                            <div class="flex flex-wrap gap-2">
+                                <template x-for="color in selected.colors" :key="color.id">
+                                    <label class="flex min-h-11 cursor-pointer items-center gap-2 rounded-lg border px-3 myca-body-s"
+                                           :class="colorId === color.id ? 'border-accent' : 'border-line'">
+                                        <input type="radio" class="sr-only" name="myca-order-color" :value="color.id" @change="colorId = color.id; quantities = {}" :checked="colorId === color.id">
+                                        <span class="size-4 rounded-full border border-line" :style="color.hex ? 'background:' + color.hex : ''" aria-hidden="true"></span>
+                                        <span x-text="color.label"></span>
+                                    </label>
+                                </template>
+                            </div>
+                        </fieldset>
+                        <div class="grid grid-cols-3 gap-3 sm:grid-cols-6">
+                            <template x-for="size in selected.sizes" :key="size.id">
+                                <div>
+                                    <label class="myca-field-label" :for="'myca-qty-' + size.id" x-text="size.label"></label>
+                                    <input type="number" min="0" :max="stockFor(size.id)" inputmode="numeric" class="myca-field" :id="'myca-qty-' + size.id"
+                                           x-model.number="quantities[size.id]" :disabled="stockFor(size.id) === 0" placeholder="0">
+                                    <p class="mt-1 myca-caption text-fg-secondary" x-text="stockFor(size.id) + ' <?= $escaper->escapeJs(__('dispo.')) ?>'"></p>
+                                </div>
+                            </template>
+                        </div>
+                        <div class="flex flex-wrap items-center justify-between gap-3">
+                            <span class="myca-badge myca-badge-premium" x-text="'<?= $escaper->escapeJs(__('Total modèle :')) ?> ' + selectedTotal + ' <?= $escaper->escapeJs(__('pcs')) ?>'"></span>
+                            <button type="button" class="myca-btn myca-btn-primary" :disabled="busy || selectedTotal === 0" @click="add()">
+                                <?= $icons->renderHtml('cart', '', 16, 16, ['aria-hidden' => 'true']) ?><?= $escaper->escapeHtml(__('Ajouter à la commande')) ?>
+                            </button>
+                        </div>
+                    </div>
+                </template>
+            </section>
+
+            <!-- Étape 3 -->
+            <section class="myca-card p-4 shadow-card" x-show="step === 3" aria-labelledby="myca-order-delivery">
+                <h2 id="myca-order-delivery" class="myca-card-title"><?= $icons->renderHtml('truck', 'text-accent', 18, 18, ['aria-hidden' => 'true']) ?><?= $escaper->escapeHtml(__('Livraison')) ?></h2>
+                <form class="flex flex-col gap-3" @submit.prevent="saveDelivery()">
+                    <template x-if="state.mode === 'dropship'">
+                        <div class="flex flex-col gap-3">
+                            <p class="myca-body-s"><?= $escaper->escapeHtml(__('Destinataire final : MYCA expédie directement à votre client, en votre nom et sans prix. Ces données servent uniquement à la livraison et au service après-vente : informez votre client que vous les transmettez à MYCA à cette fin.')) ?></p>
+                            <div class="grid gap-3 md:grid-cols-2">
+                                <?php foreach ($recipientFields as $field => [$label, $autocomplete, $type]): ?>
+                                    <div class="<?= $field === 'street' ? 'md:col-span-2' : '' ?>">
+                                        <label class="myca-field-label" for="myca-recipient-<?= $escaper->escapeHtmlAttr($field) ?>"><?= $escaper->escapeHtml($label) ?> *</label>
+                                        <input id="myca-recipient-<?= $escaper->escapeHtmlAttr($field) ?>" type="<?= $escaper->escapeHtmlAttr($type) ?>" class="myca-field"
+                                               x-model="recipient.<?= $escaper->escapeHtmlAttr($field) ?>" autocomplete="shipping <?= $escaper->escapeHtmlAttr($autocomplete) ?>" maxlength="255"
+                                               required>
+                                    </div>
+                                <?php endforeach ?>
+                                <div>
+                                    <label class="myca-field-label" for="myca-recipient-country"><?= $escaper->escapeHtml(__('Pays')) ?> *</label>
+                                    <select id="myca-recipient-country" class="myca-field" x-model="recipient.country_id" required autocomplete="shipping country">
+                                        <?php foreach ($countries as $code => $name): ?>
+                                            <option value="<?= $escaper->escapeHtmlAttr($code) ?>"><?= $escaper->escapeHtml($name) ?></option>
+                                        <?php endforeach ?>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="md:w-1/2">
+                                <label class="myca-field-label" for="myca-declared"><?= $escaper->escapeHtml(__('Prix de vente HT à votre client (facultatif)')) ?></label>
+                                <input id="myca-declared" class="myca-field" inputmode="decimal" x-model="declared" placeholder="0,00">
+                                <p class="mt-1 myca-caption text-fg-secondary"><?= $escaper->escapeHtml(__('Sert uniquement au calcul de votre marge estimée (« Mes marges & ventes ») ; jamais communiqué au destinataire.')) ?></p>
+                            </div>
+                        </div>
+                    </template>
+                    <template x-if="state.mode === 'stock'">
+                        <div class="flex flex-col gap-2">
+                            <p class="myca-body-s"><?= $escaper->escapeHtml(__('Livraison à votre boutique :')) ?> <strong><?= $escaper->escapeHtml($form->getBoutiqueAddress() ?: __('adresse à compléter')) ?></strong></p>
+                            <a class="myca-caption underline" href="<?= $escaper->escapeUrl($urls['profile']) ?>"><?= $escaper->escapeHtml(__('Modifier l’adresse dans mon profil boutique')) ?></a>
+                        </div>
+                    </template>
+                    <button type="submit" class="myca-btn myca-btn-primary self-start" :disabled="busy || state.lines.length === 0">
+                        <?= $icons->renderHtml('arrow-right', '', 16, 16, ['aria-hidden' => 'true']) ?><?= $escaper->escapeHtml(__('Enregistrer et continuer')) ?>
+                    </button>
+                </form>
+            </section>
+
+            <!-- Étape 4 -->
+            <section id="validation" class="myca-card scroll-mt-4 p-4 shadow-card" x-show="step === 4" aria-labelledby="myca-order-validation">
+                <h2 id="myca-order-validation" class="myca-card-title"><?= $icons->renderHtml('card', 'text-accent', 18, 18, ['aria-hidden' => 'true']) ?><?= $escaper->escapeHtml(__('Validation & paiement')) ?></h2>
+                <form method="post" action="<?= $escaper->escapeUrl($urls['valider']) ?>" class="flex flex-col gap-3" @submit="submitting = true">
+                    <?= $block->getBlockHtml('formkey') ?>
+                    <template x-if="state.issues.length">
+                        <ul class="list-disc rounded-lg bg-red-50 py-2 pr-3 pl-7 myca-body-s text-red-800">
+                            <template x-for="issue in state.issues" :key="issue"><li x-text="issue"></li></template>
+                        </ul>
+                    </template>
+                    <fieldset>
+                        <legend class="myca-field-label"><?= $escaper->escapeHtml(__('Moyen de paiement')) ?></legend>
+                        <template x-for="method in state.payment_methods" :key="method.code">
+                            <label class="flex min-h-11 items-center gap-2 myca-body-s">
+                                <input type="radio" name="payment_method" :value="method.code" x-model="payment" required class="size-4 accent-accent">
+                                <span x-text="method.title"></span>
+                            </label>
+                        </template>
+                        <p class="myca-body-s text-fg-secondary" x-show="state.payment_methods.length === 0"><?= $escaper->escapeHtml(__('Aucun moyen de paiement n’est ouvert aux partenaires : contactez le Service Partenaire.')) ?></p>
+                    </fieldset>
+                    <label class="flex items-start gap-2 myca-body-s">
+                        <input type="checkbox" name="terms" value="1" x-model="terms" required class="mt-0.5 size-4 accent-accent">
+                        <span><?= $escaper->escapeHtml(__('J’accepte les')) ?> <a class="underline" href="<?= $escaper->escapeUrl($urls['terms']) ?>" target="_blank" rel="noopener"><?= $escaper->escapeHtml(__('conditions de vente professionnelles')) ?></a> *</span>
+                    </label>
+                    <button type="submit" class="myca-btn myca-btn-primary self-start" :disabled="submitting || busy || state.issues.length > 0 || !payment || !terms">
+                        <?= $icons->renderHtml('check', '', 16, 16, ['aria-hidden' => 'true']) ?>
+                        <span x-text="submitting ? '<?= $escaper->escapeJs(__('Validation en cours…')) ?>' : '<?= $escaper->escapeJs(__('Valider et payer ma commande')) ?>'"></span>
+                    </button>
+                    <p class="rounded-lg bg-blue-50 px-3 py-2 myca-caption text-blue-900"><?= $escaper->escapeHtml(__('La commande est préparée après validation du paiement. Un second clic ne crée jamais une seconde commande.')) ?></p>
+                </form>
+            </section>
+        </div>
+
+        <!-- Récapitulatif -->
+        <aside id="recapitulatif" class="myca-card scroll-mt-4 p-4 shadow-card lg:sticky lg:top-4" aria-labelledby="myca-order-summary">
+            <h2 id="myca-order-summary" class="myca-card-title"><?= $icons->renderHtml('cart', 'text-accent', 18, 18, ['aria-hidden' => 'true']) ?><?= $escaper->escapeHtml(__('Récapitulatif de commande')) ?></h2>
+            <p class="myca-caption text-fg-secondary" x-text="state.mode === 'stock' ? '<?= $escaper->escapeJs(__('Achat de stock — livraison à la boutique')) ?>' : '<?= $escaper->escapeJs(__('Dropshipping — expédition au client final')) ?>'"></p>
+            <ul class="mt-2 flex flex-col divide-y divide-line">
+                <template x-for="line in state.lines" :key="line.product_id + '-' + line.color_id">
+                    <li class="flex items-start justify-between gap-2 py-2">
+                        <div class="min-w-0">
+                            <p class="myca-body-s-strong" x-text="line.name"></p>
+                            <p class="myca-caption text-fg-secondary" x-text="line.color + ' · ' + line.qty + ' <?= $escaper->escapeJs(__('pcs')) ?>'"></p>
+                            <p class="myca-caption text-fg-secondary" x-text="line.sizes.join(', ')"></p>
+                        </div>
+                        <div class="flex shrink-0 items-center gap-1">
+                            <span class="myca-body-s-strong" x-text="money(line.total_excl_tax)"></span>
+                            <button type="button" class="inline-flex size-11 items-center justify-center text-red-700 lg:size-8" :disabled="busy" @click="remove(line)"
+                                    :aria-label="'<?= $escaper->escapeJs(__('Retirer')) ?> ' + line.name + ' ' + line.color">
+                                <?= $icons->renderHtml('trash', '', 16, 16, ['aria-hidden' => 'true']) ?>
+                            </button>
+                        </div>
+                    </li>
+                </template>
+            </ul>
+            <p class="py-3 myca-body-s text-fg-secondary" x-show="state.lines.length === 0"><?= $escaper->escapeHtml(__('Votre commande est vide : sélectionnez un modèle.')) ?></p>
+            <dl class="flex flex-col gap-1.5 border-t border-line pt-3 myca-body-s" x-show="state.lines.length">
+                <div class="flex justify-between"><dt><?= $escaper->escapeHtml(__('Prix public conseillé HT')) ?></dt><dd x-text="money(state.totals.public_excl_tax)"></dd></div>
+                <div class="flex justify-between text-success" x-show="state.totals.discount > 0"><dt><?= $escaper->escapeHtml(__('Remise partenaire')) ?></dt><dd x-text="'− ' + money(state.totals.discount)"></dd></div>
+                <div class="flex justify-between"><dt><?= $escaper->escapeHtml(__('Total produits HT')) ?></dt><dd x-text="money(state.totals.subtotal_excl_tax)"></dd></div>
+                <div class="flex justify-between"><dt><?= $escaper->escapeHtml(__('Livraison professionnelle')) ?></dt>
+                    <dd x-text="state.totals.shipping_known ? money(state.totals.shipping) : '<?= $escaper->escapeJs(__('à l’étape 3')) ?>'"></dd></div>
+                <div class="flex justify-between"><dt><?= $escaper->escapeHtml(__('TVA — régime à valider')) ?></dt><dd x-text="money(state.totals.tax)"></dd></div>
+                <div class="mt-1 flex justify-between rounded-lg bg-gold-100 px-3 py-2 text-base font-semibold"><dt><?= $escaper->escapeHtml(__('Total TTC')) ?></dt><dd x-text="money(state.totals.grand_total)"></dd></div>
+            </dl>
+            <div class="mt-3 flex flex-col gap-2">
+                <button type="button" class="myca-btn myca-btn-primary w-full" :disabled="state.lines.length === 0" @click="step = step < 3 ? 3 : 4">
+                    <?= $icons->renderHtml('arrow-right', '', 16, 16, ['aria-hidden' => 'true']) ?><?= $escaper->escapeHtml(__('Continuer')) ?>
+                </button>
+                <p class="myca-caption text-fg-secondary"><?= $escaper->escapeHtml(__('Votre commande en cours est enregistrée automatiquement : vous pouvez la reprendre plus tard.')) ?></p>
+            </div>
+        </aside>
+    </div>
+
+    <!-- Mobile et tablette : total toujours visible, accès direct au récapitulatif. -->
+    <div class="fixed inset-x-0 bottom-0 z-30 flex items-center justify-between gap-3 border-t border-line bg-surface px-4 py-2 shadow-[0_-4px_16px_rgb(15_27_53/0.12)] lg:hidden"
+         x-show="state.lines.length">
+        <p class="myca-body-s"><span x-text="state.lines.reduce((n, l) => n + l.qty, 0)"></span> <?= $escaper->escapeHtml(__('pcs')) ?> · <strong x-text="money(state.totals.grand_total)"></strong> <?= $escaper->escapeHtml(__('TTC')) ?></p>
+        <a href="#recapitulatif" class="myca-btn myca-btn-primary"><?= $escaper->escapeHtml(__('Récapitulatif')) ?></a>
+    </div>
+
+    <ul class="mb-16 grid gap-3 sm:grid-cols-2 lg:mb-0 xl:grid-cols-4">
+        <li class="myca-card flex items-start gap-3 p-4 shadow-card">
+            <?= $icons->renderHtml('box', 'shrink-0 text-accent', 20, 20, ['aria-hidden' => 'true']) ?>
+            <div>
+                <p class="myca-body-s-strong"><?= $escaper->escapeHtml(__('Minimum de commande')) ?></p>
+                <p class="myca-caption text-fg-secondary" x-text="conditions.stock_minimum > 0
+                    ? '<?= $escaper->escapeJs(__('Achat de stock : %1 pcs par modèle et par couleur', '__N__')) ?>'.replace('__N__', conditions.stock_minimum)
+                    : '<?= $escaper->escapeJs(__('Aucun minimum de commande')) ?>'"></p>
+            </div>
+        </li>
+        <li class="myca-card flex items-start gap-3 p-4 shadow-card">
+            <?= $icons->renderHtml('tag', 'shrink-0 text-accent', 20, 20, ['aria-hidden' => 'true']) ?>
+            <div>
+                <p class="myca-body-s-strong"><?= $escaper->escapeHtml(__('Tarifs partenaire')) ?></p>
+                <p class="myca-caption text-fg-secondary"><?= $escaper->escapeHtml(__('Remise sur le prix public conseillé, selon le mode, vos volumes et votre contrat.')) ?></p>
+            </div>
+        </li>
+        <li class="myca-card flex items-start gap-3 p-4 shadow-card">
+            <?= $icons->renderHtml('truck', 'shrink-0 text-accent', 20, 20, ['aria-hidden' => 'true']) ?>
+            <div>
+                <p class="myca-body-s-strong"><?= $escaper->escapeHtml(__('Livraison professionnelle')) ?></p>
+                <p class="myca-caption text-fg-secondary" x-text="'<?= $escaper->escapeJs(__('Dropshipping :')) ?> ' + money(conditions.dropship_shipping) + ' · <?= $escaper->escapeJs(__('Stock :')) ?> ' + money(conditions.stock_shipping)
+                    + (conditions.stock_free_from > 0 ? ' (<?= $escaper->escapeJs(__('offerte dès')) ?> ' + money(conditions.stock_free_from) + ')' : '')"></p>
+            </div>
+        </li>
+        <li class="myca-card flex items-start gap-3 p-4 shadow-card">
+            <?= $icons->renderHtml('shield-check', 'shrink-0 text-accent', 20, 20, ['aria-hidden' => 'true']) ?>
+            <div>
+                <p class="myca-body-s-strong"><?= $escaper->escapeHtml(__('Contrôle qualité')) ?></p>
+                <p class="myca-caption text-fg-secondary"><?= $escaper->escapeHtml(__('Chaque lot est contrôlé à réception avant d’être vendu.')) ?></p>
+            </div>
+        </li>
+    </ul>
+</div>

@@ -29,4 +29,25 @@
             <column name="mode"/>
         </index>
     </table>
+    <!--
+        Commande partenaire en cours (M17) : mode choisi et destinataire final, attachés au panier de la boutique.
+        Le destinataire ne sert qu'à la livraison ; la ligne est supprimée dès la commande passée.
+    -->
+    <table name="myca_dropship_quote" resource="default" engine="innodb" comment="MYCA - Commande partenaire en cours">
+        <column xsi:type="int" name="quote_id" unsigned="true" nullable="false"/>
+        <column xsi:type="int" name="partner_id" unsigned="true" nullable="false"/>
+        <column xsi:type="varchar" name="mode" length="16" nullable="false" default="dropship"/>
+        <column xsi:type="text" name="recipient" nullable="true" comment="JSON : destinataire final (dropshipping)"/>
+        <column xsi:type="decimal" name="declared_sale_amount" scale="4" precision="20" unsigned="false" nullable="true"/>
+        <column xsi:type="timestamp" name="updated_at" nullable="false" default="CURRENT_TIMESTAMP" on_update="true"/>
+        <constraint xsi:type="primary" referenceId="PRIMARY">
+            <column name="quote_id"/>
+        </constraint>
+        <constraint xsi:type="foreign" referenceId="MYCA_DROPSHIP_QUOTE_QUOTE_ID_QUOTE_ENTITY_ID"
+                    table="myca_dropship_quote" column="quote_id"
+                    referenceTable="quote" referenceColumn="entity_id" onDelete="CASCADE"/>
+        <constraint xsi:type="foreign" referenceId="MYCA_DROPSHIP_QUOTE_PARTNER_ID_MYCA_PARTNER_PARTNER_ID"
+                    table="myca_dropship_quote" column="partner_id"
+                    referenceTable="myca_partner" referenceColumn="partner_id" onDelete="CASCADE"/>
+    </table>
 </schema>

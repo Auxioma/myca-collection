@@ -1,0 +1,73 @@
+<?xml version="1.0"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Config:etc/system_file.xsd">
+    <system>
+        <section id="myca_partner_order" translate="label" sortOrder="45" showInDefault="1" showInWebsite="1" showInStore="0">
+            <label>Commandes partenaires</label>
+            <tab>myca</tab>
+            <resource>Myca_Dropship::config</resource>
+            <group id="pricing" translate="label comment" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="0">
+                <label>Tarifs partenaires</label>
+                <comment>Remises sur le prix public conseillé, calculées par le serveur. Une remise contractuelle saisie sur la fiche d’une boutique (Clients &gt; Partenaires B2B) remplace la grille du mode. Valeurs à valider commercialement.</comment>
+                <field id="dropship_discount" translate="label" type="text" sortOrder="10" showInDefault="1" showInWebsite="1" canRestore="1">
+                    <label>Remise dropshipping (%)</label>
+                    <validate>validate-number validate-number-range number-range-0-90</validate>
+                </field>
+                <field id="stock_tiers" translate="label comment" sortOrder="20" showInDefault="1" showInWebsite="1">
+                    <label>Paliers de l’achat de stock</label>
+                    <comment>Quantité totale du modèle dans la commande (toutes tailles et couleurs).</comment>
+                    <frontend_model>Myca\Dropship\Block\Adminhtml\Form\Field\StockTiers</frontend_model>
+                    <backend_model>Magento\Config\Model\Config\Backend\Serialized\ArraySerialized</backend_model>
+                </field>
+                <field id="stock_moq_per_color" translate="label comment" type="text" sortOrder="30" showInDefault="1" showInWebsite="1" canRestore="1">
+                    <label>Minimum par modèle et par couleur (achat de stock)</label>
+                    <comment>0 = aucun minimum.</comment>
+                    <validate>validate-digits</validate>
+                </field>
+            </group>
+            <group id="shipping" translate="label comment" sortOrder="20" showInDefault="1" showInWebsite="1" showInStore="0">
+                <label>Livraison professionnelle</label>
+                <comment>Barème B2B, distinct du B2C. Destinations : celles desservies à domicile (MYCA &gt; Livraison). Les montants sont appliqués tels quels : la TVA sur le transport est à valider avec le comptable.</comment>
+                <field id="dropship_price" translate="label" type="text" sortOrder="10" showInDefault="1" showInWebsite="1" canRestore="1">
+                    <label>Dropshipping : frais par commande (€)</label>
+                    <validate>validate-number</validate>
+                </field>
+                <field id="stock_price" translate="label" type="text" sortOrder="20" showInDefault="1" showInWebsite="1" canRestore="1">
+                    <label>Achat de stock : frais par commande (€)</label>
+                    <validate>validate-number</validate>
+                </field>
+                <field id="stock_free_from" translate="label comment" type="text" sortOrder="30" showInDefault="1" showInWebsite="1" canRestore="1">
+                    <label>Achat de stock : port offert dès (€ de produits)</label>
+                    <comment>0 = jamais offert.</comment>
+                    <validate>validate-number</validate>
+                </field>
+            </group>
+            <group id="payment" translate="label comment" sortOrder="30" showInDefault="1" showInWebsite="1" showInStore="0">
+                <label>Paiement</label>
+                <comment>Les moyens doivent aussi être activés dans Ventes &gt; Moyens de paiement.</comment>
+                <field id="partner_methods" translate="label" type="multiselect" sortOrder="10" showInDefault="1" showInWebsite="1" canRestore="1">
+                    <label>Moyens proposés aux boutiques</label>
+                    <source_model>Magento\Payment\Model\Config\Source\Allmethods</source_model>
+                </field>
+                <field id="partner_only_methods" translate="label comment" type="multiselect" sortOrder="20" showInDefault="1" showInWebsite="1" canRestore="1">
+                    <label>Moyens réservés aux boutiques</label>
+                    <comment>Jamais proposés aux particuliers (par exemple le virement).</comment>
+                    <source_model>Magento\Payment\Model\Config\Source\Allmethods</source_model>
+                    <can_be_empty>1</can_be_empty>
+                </field>
+            </group>
+        </section>
+        <section id="carriers">
+            <group id="mycapro" translate="label" sortOrder="910" showInDefault="1" showInWebsite="1" showInStore="1">
+                <label>MYCA – Livraison professionnelle</label>
+                <field id="active" translate="label" type="select" sortOrder="10" showInDefault="1" showInWebsite="1" canRestore="1">
+                    <label>Activé</label>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                </field>
+                <field id="title" translate="label" type="text" sortOrder="20" showInDefault="1" showInWebsite="1" showInStore="1" canRestore="1">
+                    <label>Titre</label>
+                </field>
+            </group>
+        </section>
+    </system>
+</config>

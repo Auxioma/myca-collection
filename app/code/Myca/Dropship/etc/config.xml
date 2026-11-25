@@ -1,0 +1,29 @@
+<?xml version="1.0"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Store:etc/config.xsd">
+    <default>
+        <myca_partner_order>
+            <pricing>
+                <dropship_discount>0</dropship_discount>
+                <stock_moq_per_color>0</stock_moq_per_color>
+            </pricing>
+            <shipping>
+                <dropship_price>0</dropship_price>
+                <stock_price>0</stock_price>
+                <stock_free_from>0</stock_free_from>
+            </shipping>
+            <payment>
+                <partner_methods>banktransfer</partner_methods>
+                <partner_only_methods>banktransfer</partner_only_methods>
+            </payment>
+        </myca_partner_order>
+        <carriers>
+            <mycapro>
+                <active>1</active>
+                <model>Myca\Dropship\Model\Carrier\Professional</model>
+                <title>MYCA – Livraison professionnelle</title>
+                <sallowspecific>0</sallowspecific>
+            </mycapro>
+        </carriers>
+    </default>
+</config>

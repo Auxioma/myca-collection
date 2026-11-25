@@ -18,5 +18,20 @@
             "MYCA_DROPSHIP_ORDER_ORDER_ID_SALES_ORDER_ENTITY_ID": true,
             "MYCA_DROPSHIP_ORDER_PARTNER_ID_MYCA_PARTNER_PARTNER_ID": true
         }
+    },
+    "myca_dropship_quote": {
+        "column": {
+            "quote_id": true,
+            "partner_id": true,
+            "mode": true,
+            "recipient": true,
+            "declared_sale_amount": true,
+            "updated_at": true
+        },
+        "constraint": {
+            "PRIMARY": true,
+            "MYCA_DROPSHIP_QUOTE_QUOTE_ID_QUOTE_ENTITY_ID": true,
+            "MYCA_DROPSHIP_QUOTE_PARTNER_ID_MYCA_PARTNER_PARTNER_ID": true
+        }
     }
 }

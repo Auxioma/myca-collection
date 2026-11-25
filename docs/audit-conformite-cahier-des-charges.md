@@ -8,7 +8,7 @@ Audit du 24/11/2026 (J-37 avant l'échéance du 31/12/2026).
 
 **Légende** : ✅ conforme · 🟡 partiel · ❌ absent · ⏸ bloqué par une décision ou une donnée du commanditaire.
 
-**Suivi** : le lot de conformité 1 (pages publiques et juridiques, cookies, SEO) a été livré le 25/11/2026. Voir `docs/lot-conformite-1-livraison.md`.
+**Suivi** : lot de conformité 1 (pages publiques et juridiques, cookies, SEO) livré le 25/11/2026 ; lot 2 (commande partenaire M17) livré le 25/11/2026. Voir `docs/lot-conformite-1-livraison.md` et `docs/lot-conformite-2-livraison.md`.
 
 ## 1. Verdict
 
@@ -57,7 +57,7 @@ Audit du 24/11/2026 (J-37 avant l'échéance du 31/12/2026).
 | Vision et périmètre | 🟡 | La zone publique, l'espace client et l'espace partenaire existent. L'administration MYCA se limite aux écrans Magento natifs et aux écrans des modules. |
 | Objectifs métier et indicateurs | ❌ | Il n'y a pas de tableau de bord ni d'indicateurs par canal, pays ou collection, de comparaison de périodes, d'objectifs configurables ou d'export. |
 | Acteurs et permissions | 🟡 | Le cloisonnement entre boutiques est testé. En revanche, il n'existe qu'un rôle admin (« Administrators ») : pas de support, logistique, finance ni catalogue. Il n'y a pas non plus de journal horodaté des modifications sensibles (`myca_audit_log` prévu mais pas créé). |
-| Parcours global de vente | 🟡 | Le parcours B2C fonctionne (avec un paiement de test seulement). Le parcours B2B n'est pas bouclé, car la boutique ne peut pas passer commande (M17). |
+| Parcours global de vente | 🟡 | *25/11 : la boutique commande désormais (M17, lot 2). Le paiement réel par carte attend le prestataire.* |
 | Design system | 🟡 | Jetons, composants et états : faits. Le bleu de l'administration est absent. |
 | Navigation et en-têtes | 🟡 | Menus par espace, fil d'Ariane et menu mobile : faits. La cloche de notifications et l'accès à l'aide sont absents. |
 | Pied de page | ✅ | *Corrigé le 25/11 (lot de conformité 1) : 23 liens sur 23 répondent ; réseaux sociaux et moyens de paiement lus dans la configuration.* Avant : **13 liens sur 22 renvoyaient une 404** : CGV, CGU, confidentialité, cookies, FAQ, livraison, mentions légales, nos engagements, notre histoire, passeport, plan du site, qualité & matières, retours & échanges. Le cahier exige que « tous les liens du footer conduisent vers une route publiée ». Les réseaux sociaux ne sont pas cliquables (⏸ adresses à fournir). |
@@ -100,10 +100,10 @@ Audit du 24/11/2026 (J-37 avant l'échéance du 31/12/2026).
 |---|---|---|
 | Espace partenaire | 🟡 | Tableau de bord, commandes, factures, profil, cloisonnement : faits. Les tarifs partenaires ne sont pas configurés (aucun prix de groupe ni grille). |
 | Inscription et validation | ✅ | Candidature P17, contrôle SIRET/TVA, acceptation, refus motivé, suspension, e-mails. Seule manque la version des conditions B2B acceptées (seule la date est conservée). |
-| Tarifs partenaires et grossistes | ❌ | Il n'y a ni grille dropshipping, ni grille grossiste, ni seuils de quantité (⏸ V2 de l'étape 5). |
-| Dropshipping depuis le stock central | ❌ | La boutique ne peut pas créer de commande avec un destinataire final. Le bon de livraison sans prix n'est pas généré. |
-| Achat de stock grossiste | ❌ | Il n'y a ni minimum, ni lots par taille, ni livraison à la boutique. |
-| Commande partenaire et destinataire (M17) | ❌ | Non livrée. |
+| Tarifs partenaires et grossistes | 🟡 | *Lot 2 : grille dropshipping, paliers de l’achat de stock, remise contractuelle par boutique, calcul côté serveur. Restent les prix par pays et la grille par référence.* |
+| Dropshipping depuis le stock central | ✅ | *Lot 2 : commande avec destinataire final, e-mails à la boutique seule, bon de livraison sans prix au nom de la boutique.* |
+| Achat de stock grossiste | 🟡 | *Lot 2 : minimum par modèle et couleur, paliers, livraison à la boutique, port offert au-delà d’un montant. Manquent les lots par taille et le conditionnement.* |
+| Commande partenaire et destinataire (M17) | ✅ | *Lot 2 : 4 étapes, contrôles du stock, de la destination et du minimum, double validation impossible. L’annulation par la boutique reste à faire.* |
 | Marges et rapports | ✅ | Ventes déclarées, marge estimée, export CSV. L'export PDF manque. |
 | Boutique multi-utilisateur | 🟡 | Titulaire et collaborateur, invitation par e-mail, révocation : faits. Manquent les rôles distincts (gestionnaire, acheteur, SAV), la traçabilité des actions par utilisateur et la MFA. |
 
@@ -159,7 +159,7 @@ Audit du 24/11/2026 (J-37 avant l'échéance du 31/12/2026).
 | Espace | Faits | Partiels | Absents |
 |---|---|---|---|
 | Admin M01–M15 | M01, M10, M11 | M02–M09, M12–M14 : écrans Magento natifs, conformément à theme.md | M15 (tableau de bord) |
-| Partenaire M16–M27 | M16, M19, M21, M22, M23, M25 | M18 (catalogue sans tarif partenaire), M20 (pas de transporteur), M24 (consentements), M26 (rôles, MFA, intégrations) | **M17** (passer une commande). M27 n'a pas été arbitrée face à M16. |
+| Partenaire M16–M27 | M16, **M17**, M19, M21, M22, M23, M25 | M18 (catalogue sans tarif partenaire), M20 (pas de transporteur), M24 (consentements), M26 (rôles, MFA, intégrations) | M27 n'a pas été arbitrée face à M16. |
 | Client M28–M40 | M28–M34, M36, M39, M40 | M35 (moyens de paiement : prestataire ⏸), M37 | M38 (Aide & FAQ) |
 | Public M41–M52 | M41, M45, M46, M47, M50, M51, M52 | M43, M44, M48, M49 : pages publiées, textes juridiques et données réelles à compléter et à faire valider | — |
 

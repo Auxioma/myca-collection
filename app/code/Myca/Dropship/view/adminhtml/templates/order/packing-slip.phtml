@@ -1,0 +1,94 @@
+<?php
+/**
+ * Bon de livraison sans prix (dropshipping) : la boutique est le vendeur ; MYCA n'apparaît que comme expéditeur.
+ */
+
+declare(strict_types=1);
+
+use Magento\Framework\Escaper;
+use Magento\Framework\View\Element\Template;
+use Magento\Sales\Model\Order;
+
+/** @var Template $block */
+/** @var Escaper $escaper */
+
+/** @var Order $order */
+$order = $block->getData('order');
+/** @var array<string, string> $seller */
+$seller = $block->getData('seller');
+$address = $order->getShippingAddress();
+$lines = [];
+foreach ($order->getAllVisibleItems() as $item) {
+    $options = [];
+    foreach ((array) ($item->getProductOptions()['attributes_info'] ?? []) as $option) {
+        $options[(string) $option['label']] = (string) $option['value'];
+    }
+    $lines[] = [
+        'sku' => (string) $item->getSku(),
+        'name' => (string) $item->getName(),
+        'options' => implode(' · ', array_map(static fn ($label, $value) => $label . ' : ' . $value, array_keys($options), $options)),
+        'qty' => (int) $item->getQtyOrdered(),
+    ];
+}
+?>
+<!doctype html>
+<html lang="fr">
+<head>
+    <meta charset="utf-8">
+    <title><?= $escaper->escapeHtml(__('Bon de livraison %1', $order->getIncrementId())) ?></title>
+    <style>
+        body { font: 14px/1.5 Arial, sans-serif; color: #111; margin: 32px; }
+        h1 { font-size: 22px; margin: 0 0 4px; }
+        .grid { display: flex; gap: 48px; margin: 24px 0; }
+        .grid div { flex: 1; }
+        h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: #555; margin: 0 0 6px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 16px; }
+        th, td { border-bottom: 1px solid #ccc; padding: 8px 6px; text-align: left; }
+        td.qty, th.qty { text-align: right; }
+        .note { margin-top: 32px; font-size: 12px; color: #555; }
+        @media print { .no-print { display: none; } body { margin: 0; } }
+    </style>
+</head>
+<body>
+    <p class="no-print"><button type="button" onclick="window.print()"><?= $escaper->escapeHtml(__('Imprimer')) ?></button></p>
+    <h1><?= $escaper->escapeHtml(__('Bon de livraison')) ?></h1>
+    <p><?= $escaper->escapeHtml(__('Commande n° %1 du %2', $order->getIncrementId(), date('d/m/Y', (int) strtotime((string) $order->getCreatedAt())))) ?></p>
+    <div class="grid">
+        <div>
+            <h2><?= $escaper->escapeHtml(__('Vendeur')) ?></h2>
+            <strong><?= $escaper->escapeHtml($seller['company'] ?? '') ?></strong><br>
+            <?= $escaper->escapeHtml($seller['address'] ?? '') ?><br>
+            <?= $escaper->escapeHtml(implode(' · ', array_filter([$seller['phone'] ?? '', $seller['email'] ?? '']))) ?>
+        </div>
+        <div>
+            <h2><?= $escaper->escapeHtml(__('Destinataire')) ?></h2>
+            <?php if ($address): ?>
+                <strong><?= $escaper->escapeHtml($address->getFirstname() . ' ' . $address->getLastname()) ?></strong><br>
+                <?= $escaper->escapeHtml(implode(', ', (array) $address->getStreet())) ?><br>
+                <?= $escaper->escapeHtml($address->getPostcode() . ' ' . $address->getCity() . ' — ' . $address->getCountryId()) ?>
+            <?php endif ?>
+        </div>
+    </div>
+    <table>
+        <thead>
+            <tr>
+                <th><?= $escaper->escapeHtml(__('Référence')) ?></th>
+                <th><?= $escaper->escapeHtml(__('Article')) ?></th>
+                <th><?= $escaper->escapeHtml(__('Couleur / taille')) ?></th>
+                <th class="qty"><?= $escaper->escapeHtml(__('Quantité')) ?></th>
+            </tr>
+        </thead>
+        <tbody>
+            <?php foreach ($lines as $line): ?>
+                <tr>
+                    <td><?= $escaper->escapeHtml($line['sku']) ?></td>
+                    <td><?= $escaper->escapeHtml($line['name']) ?></td>
+                    <td><?= $escaper->escapeHtml($line['options']) ?></td>
+                    <td class="qty"><?= (int) $line['qty'] ?></td>
+                </tr>
+            <?php endforeach ?>
+        </tbody>
+    </table>
+    <p class="note"><?= $escaper->escapeHtml(__('Colis préparé et expédié par MYCA pour le compte de %1. Pour toute question, retour ou réclamation, contactez votre vendeur.', $seller['company'] ?? '')) ?></p>
+</body>
+</html>

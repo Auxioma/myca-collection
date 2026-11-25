@@ -25,6 +25,10 @@
         <column xsi:type="varchar" name="phone" length="32" nullable="true"/>
         <column xsi:type="varchar" name="email" length="255" nullable="true"/>
         <column xsi:type="date" name="opening_date" nullable="true"/>
+        <column xsi:type="decimal" name="dropship_discount" scale="2" precision="5" unsigned="true" nullable="true"
+                comment="Remise contractuelle dropshipping (%), à défaut celle de la configuration"/>
+        <column xsi:type="decimal" name="stock_discount" scale="2" precision="5" unsigned="true" nullable="true"
+                comment="Remise contractuelle achat de stock (%), remplace les paliers de la configuration"/>
         <column xsi:type="smallint" name="show_in_directory" unsigned="true" nullable="false" default="0"/>
         <column xsi:type="smallint" name="notify_new_collections" unsigned="true" nullable="false" default="1"/>
         <column xsi:type="smallint" name="notify_promotions" unsigned="true" nullable="false" default="1"/>

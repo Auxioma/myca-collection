@@ -94,6 +94,18 @@ $fields = [
                 </select>
             </div>
         </div>
+        <?php if ($partner): ?>
+            <?php foreach (['dropship_discount' => __('Remise contractuelle dropshipping (%)'), 'stock_discount' => __('Remise contractuelle achat de stock (%)')] as $field => $label): ?>
+                <div class="admin__field">
+                    <label class="admin__field-label" for="myca-partner-<?= $escaper->escapeHtmlAttr($field) ?>"><span><?= $escaper->escapeHtml($label) ?></span></label>
+                    <div class="admin__field-control">
+                        <input id="myca-partner-<?= $escaper->escapeHtmlAttr($field) ?>" name="partner[<?= $escaper->escapeHtmlAttr($field) ?>]" class="admin__control-text"
+                               inputmode="decimal" value="<?= $escaper->escapeHtmlAttr($partner->getData($field) !== null ? (string) (float) $partner->getData($field) : '') ?>">
+                        <div class="admin__field-note"><?= $escaper->escapeHtml(__('Vide : tarif standard (Magasins > Configuration > MYCA > Commandes partenaires).')) ?></div>
+                    </div>
+                </div>
+            <?php endforeach ?>
+        <?php endif ?>
         <button type="submit" class="action-primary"><?= $escaper->escapeHtml($partner ? __('Enregistrer') : __('Créer la boutique et son titulaire')) ?></button>
     </form>
 </section>

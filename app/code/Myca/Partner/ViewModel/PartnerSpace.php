@@ -34,11 +34,12 @@ use Myca\Partner\Model\ResourceModel\Partner as PartnerResource;
 class PartnerSpace implements ArgumentInterface
 {
     /**
-     * Rubriques livrées, dans l'ordre de la maquette. « Passer une commande » (M17) apparaîtra avec le tunnel de
-     * commande. « Mes marges & ventes » (M21) est servi par Myca_PartnerSales, « Retours & SAV » (M23) par Myca_Rma.
+     * Rubriques, dans l'ordre de la maquette. « Passer une commande » (M17) est servi par Myca_Dropship,
+     * « Mes marges & ventes » (M21) par Myca_PartnerSales, « Retours & SAV » (M23) par Myca_Rma.
      */
     private const NAVIGATION = [
         ['partenaire', 'partenaire_index_index', 'Tableau de bord', 'home'],
+        ['partenaire/commander', 'partenaire_commander_index', 'Passer une commande', 'cart'],
         ['__catalog__', '', 'Catalogue MYCA', 'shirt'],
         ['partenaire/commandes', 'partenaire_commandes_index', 'Mes commandes', 'layers'],
         ['partenaire/livraisons', 'partenaire_livraisons_index', 'Suivi des livraisons', 'truck'],
@@ -104,6 +105,14 @@ class PartnerSpace implements ArgumentInterface
     public function getContact(string $field): string
     {
         return (string) $this->scopeConfig->getValue('myca_partner/contact/' . $field, ScopeInterface::SCOPE_STORE);
+    }
+
+    /**
+     * M17 — Passer une commande.
+     */
+    public function getOrderUrl(): string
+    {
+        return $this->url->getUrl('partenaire/commander');
     }
 
     public function getCatalogUrl(): string

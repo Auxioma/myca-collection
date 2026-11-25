@@ -207,7 +207,28 @@ class PartnerManagement
             'email' => $row['email'],
         ]);
         $partner->setSalesModes($row['sales_modes']);
+        $partner->setData('dropship_discount', $this->discount($data, 'dropship_discount'));
+        $partner->setData('stock_discount', $this->discount($data, 'stock_discount'));
         $this->partnerRepository->save($partner);
+    }
+
+    /**
+     * Remise contractuelle facultative (0 à 90 %) ; vide = tarif de la configuration.
+     *
+     * @param array<string, mixed> $data
+     * @throws LocalizedException
+     */
+    private function discount(array $data, string $field): ?float
+    {
+        $value = str_replace(',', '.', trim((string) ($data[$field] ?? '')));
+        if ($value === '') {
+            return null;
+        }
+        if (!is_numeric($value) || (float) $value < 0 || (float) $value > 90) {
+            throw new LocalizedException(__('La remise contractuelle doit être comprise entre 0 et 90 %.'));
+        }
+
+        return round((float) $value, 2);
     }
 
     /**
