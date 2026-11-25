@@ -19,6 +19,10 @@ use Myca\Core\ViewModel\SitePrivacy;
 
 /** @var SitePrivacy $privacy */
 $privacy = $block->getData('view_model');
+// Gabarit Hyvä (Alpine.js) : jamais rendu par un thème Luma.
+if (!isset($hyvaCsp)) {
+    return;
+}
 $config = $privacy->getConsentConfig();
 $categories = [
     'analytics' => [__('Mesure d’audience'), __('Statistiques de fréquentation pour améliorer le site.')],

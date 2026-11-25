@@ -3,5 +3,7 @@
       xsi:noNamespaceSchemaLocation="urn:magento:framework:View/Layout/etc/page_configuration.xsd">
     <body>
         <referenceBlock name="copyright" template="Magento_Theme::html/myca-footer.phtml"/>
+        <!-- Bandeau de consentement : propre au thème Hyvä (Alpine.js), absent du tunnel Luma. -->
+        <referenceBlock name="myca.cookie.consent" remove="true"/>
     </body>
 </page>

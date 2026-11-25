@@ -8,7 +8,7 @@ Audit du 24/11/2026 (J-37 avant l'échéance du 31/12/2026).
 
 **Légende** : ✅ conforme · 🟡 partiel · ❌ absent · ⏸ bloqué par une décision ou une donnée du commanditaire.
 
-**Suivi** : lot de conformité 1 (pages publiques et juridiques, cookies, SEO) livré le 25/11/2026 ; lot 2 (commande partenaire M17) livré le 25/11/2026. Voir `docs/lot-conformite-1-livraison.md` et `docs/lot-conformite-2-livraison.md`.
+**Suivi** : lot de conformité 1 (pages publiques et juridiques, cookies, SEO) livré le 25/11/2026 ; lot 2 (commande partenaire M17) et lot 3 (paiement Stripe, mode test) livrés le 25/11/2026. Voir `docs/lot-conformite-1-livraison.md` et `docs/lot-conformite-2-livraison.md`.
 
 ## 1. Verdict
 
@@ -73,7 +73,7 @@ Audit du 24/11/2026 (J-37 avant l'échéance du 31/12/2026).
 | Guide des tailles | ❌ | Absent : ni tableau de mesures, ni aide à la mesure. |
 | Panier B2C | ✅ | Quantités, recalcul, seuil relais, rupture signalée. |
 | Tunnel de commande | 🟡 | Il fonctionne grâce au repli Luma, mais n'est pas fidèle aux maquettes P07–P10 (Hyvä Checkout est payant ⏸). |
-| Paiements B2C | ❌ | Seul « Chèque/virement » de test est actif. Aucun prestataire de paiement, webhook signé, remboursement en ligne ni rapprochement (⏸ choix du prestataire). |
+| Paiements B2C | 🟡 | *Lot 3 (25/11) : Stripe officiel en mode test — carte via Payment Element, webhooks signés et idempotents (R02 ✅), remboursements partiels et totaux en ligne, carte refusée et 3-D Secure testés. Restent les clés live, la limitation aux seuls moyens validés et le rapprochement bancaire.* |
 | Tarifs et promotions | 🟡 | Les règles de panier natives couvrent codes, dates et quotas. Manquent l'historique des prix (prix de référence des réductions) et la validation admin des promotions importantes. |
 
 ### Espace client
@@ -168,7 +168,7 @@ Audit du 24/11/2026 (J-37 avant l'échéance du 31/12/2026).
 | Test | État |
 |---|---|
 | R01 Deux acheteurs sur la dernière pièce | ❌ Non testé |
-| R02 Webhook et commande en double | ❌ Impossible sans prestataire de paiement (fidélité seule : idempotence testée) |
+| R02 Webhook et commande en double | ✅ Webhook Stripe rejoué deux fois : aucun doublon (lot 3) |
 | R03 Réservation expirée puis paiement tardif | ❌ |
 | R04 Affichage ≤ 1 s dans les trois espaces | ❌ Non mesuré, pas de diffusion temps réel |
 | R05 Retour total B2C | 🟡 Avoir, quarantaine et points testés ; remboursement par le prestataire absent |
