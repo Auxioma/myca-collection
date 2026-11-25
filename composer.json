@@ -25,7 +25,8 @@
         "magento/composer": "^1.10.1-beta1",
         "magento/composer-dependency-version-audit-plugin": "~0.1",
         "magento/composer-root-update-plugin": "^2.0.4",
-        "magento/product-community-edition": "2.4.9"
+        "magento/product-community-edition": "2.4.9",
+        "stripe/stripe-payments": "~4.8.0"
     },
     "autoload": {
         "exclude-from-classmap": [
