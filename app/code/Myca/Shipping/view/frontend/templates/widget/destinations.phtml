@@ -34,10 +34,10 @@ $no = __('Non');
             <?php foreach ($rows as $row): ?>
                 <tr>
                     <th scope="row"><?= $escaper->escapeHtml($row['country']) ?></th>
-                    <td><?= $escaper->escapeHtml($row['relay']
+                    <td data-label="<?= $escaper->escapeHtmlAttr(__('Point relais')) ?>"><?= $escaper->escapeHtml($row['relay']
                         ? __('Oui — offert dès %1 d’achats éligibles', $priceHelper->currency($block->getFreeRelayThreshold(), true, false))
                         : $no) ?></td>
-                    <td><?= $escaper->escapeHtml($row['home']
+                    <td data-label="<?= $escaper->escapeHtmlAttr(__('Domicile')) ?>"><?= $escaper->escapeHtml($row['home']
                         ? ($row['home_from'] !== null ? __('Oui — à partir de %1', $priceHelper->currency($row['home_from'], true, false)) : $yes)
                         : $no) ?></td>
                 </tr>

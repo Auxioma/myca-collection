@@ -17,6 +17,8 @@
         </referenceBlock>
         <referenceBlock name="page.main.title" display="false"/>
         <referenceBlock name="breadcrumbs" remove="true"/>
+        <!-- L'espace partenaire a son propre menu : pas de barre de navigation client en bas d'écran -->
+        <referenceBlock name="myca.bottom.nav" remove="true"/>
         <referenceContainer name="sidebar.additional" remove="true"/>
         <referenceContainer name="sidebar.main">
             <block name="myca.partner.nav" template="Myca_Partner::nav.phtml">

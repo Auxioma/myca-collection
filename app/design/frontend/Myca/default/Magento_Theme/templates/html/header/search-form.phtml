@@ -1,0 +1,312 @@
+<?php
+/**
+ * Recherche de l'en-tête avec autocomplétion : au focus, recherches populaires et raccourcis ; pendant la saisie,
+ * produits (image, prix), collections et recherches proches (Myca_Catalog : /recherche-apercu/suggest).
+ * Clavier : flèches pour parcourir, Entrée pour ouvrir, Échap pour fermer. Sans script, le formulaire reste un
+ * simple champ de recherche.
+ */
+
+declare(strict_types=1);
+
+use Hyva\Theme\Model\ViewModelRegistry;
+use Hyva\Theme\ViewModel\HyvaCsp;
+use Hyva\Theme\ViewModel\SvgIcons;
+use Magento\Framework\Escaper;
+use Magento\Framework\View\Element\Template;
+use Magento\Search\Helper\Data as SearchHelper;
+use Myca\Catalog\ViewModel\SearchSuggestions;
+
+// phpcs:disable Magento2.Templates.ThisInTemplate.FoundHelper
+
+/** @var Escaper $escaper */
+/** @var Template $block */
+/** @var HyvaCsp $hyvaCsp */
+/** @var ViewModelRegistry $viewModels */
+
+$icons = $viewModels->require(SvgIcons::class);
+/** @var SearchHelper $helper */
+$helper = $this->helper(SearchHelper::class);
+/** @var SearchSuggestions $suggestions */
+$suggestions = $viewModels->require(SearchSuggestions::class);
+$popular = $suggestions->getPopularTerms(6);
+$shortcuts = [
+    [__('Polos'), 'polos.html'],
+    [__('Tee-shirts'), 'tee-shirts.html'],
+    [__('Casquettes'), 'casquettes.html'],
+    [__('MYCA Signature'), 'myca-signature.html'],
+    [__('Toutes les collections'), 'collections.html'],
+];
+?>
+<script>
+    function initMycaSearch() {
+        return {
+            minLength: <?= (int) max(2, (int) $helper->getMinQueryLength()) ?>,
+            query: '',
+            open: false,
+            loading: false,
+            results: { products: [], categories: [], terms: [] },
+            active: -1,
+            controller: null,
+            cache: {},
+            init() {
+                this.query = this.$refs.input.value;
+            },
+            hasResults() {
+                return this.results.products.length + this.results.categories.length + this.results.terms.length > 0;
+            },
+            typing() {
+                return this.query.trim().length >= this.minLength;
+            },
+            onInput() {
+                this.$refs.input.setCustomValidity('');
+                this.active = -1;
+                this.open = true;
+                const term = this.query.trim();
+                if (term.length < this.minLength) {
+                    this.results = { products: [], categories: [], terms: [] };
+                    return;
+                }
+                if (this.cache[term]) {
+                    this.results = this.cache[term];
+                    return;
+                }
+                this.controller?.abort();
+                this.controller = new AbortController();
+                this.loading = true;
+                fetch(window.BASE_URL + 'recherche-apercu/suggest?' + new URLSearchParams({ q: term }), {
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                    signal: this.controller.signal
+                })
+                    .then((response) => response.json())
+                    .then((data) => {
+                        this.cache[term] = data;
+                        if (this.query.trim() === term) {
+                            this.results = data;
+                        }
+                    })
+                    .catch(() => {})
+                    .finally(() => { this.loading = false; });
+            },
+            options() {
+                return Array.from(this.$refs.panel?.querySelectorAll('[data-option]') || []).filter((el) => el.offsetParent !== null);
+            },
+            move(step) {
+                if (!this.open) {
+                    this.open = true;
+                    return;
+                }
+                const items = this.options();
+                if (!items.length) {
+                    return;
+                }
+                this.active = (this.active + step + items.length) % items.length;
+                items[this.active].scrollIntoView({ block: 'nearest' });
+            },
+            isActive(el) {
+                return this.active >= 0 && this.options().indexOf(el) === this.active;
+            },
+            activeId() {
+                const item = this.options()[this.active];
+                return item ? item.id : '';
+            },
+            submit() {
+                const item = this.options()[this.active];
+                if (item && this.open) {
+                    item.click();
+                    return;
+                }
+                const term = this.query.trim();
+                if (term.length < <?= (int) $helper->getMinQueryLength() ?>) {
+                    this.$refs.input.setCustomValidity('<?= $escaper->escapeJs(__('Saisissez au moins %1 caractères.', (int) $helper->getMinQueryLength())) ?>');
+                    this.$refs.input.reportValidity();
+                    return;
+                }
+                this.$refs.form.submit();
+            },
+            searchTerm(term) {
+                this.query = term;
+                this.$nextTick(() => this.$refs.form.submit());
+            },
+            close() {
+                this.open = false;
+                this.active = -1;
+            },
+            // Met en gras la partie qui correspond à la saisie (texte échappé avant mise en forme)
+            highlight(text) {
+                const escape = (value) => value.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+                const term = this.query.trim();
+                if (!term) {
+                    return escape(text);
+                }
+                const pattern = new RegExp('(' + term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')', 'ig');
+                return text.split(pattern).map((part, i) => i % 2 ? '<mark>' + escape(part) + '</mark>' : escape(part)).join('');
+            },
+            // Le panneau de l'en-tête devient visible juste après l'événement : focus dès qu'il est affiché
+            focusAfterOpen(attempt = 0) {
+                const input = this.$refs.input;
+                if (input.offsetParent === null && attempt < 20) {
+                    requestAnimationFrame(() => this.focusAfterOpen(attempt + 1));
+                    return;
+                }
+                input.focus();
+                input.select();
+                this.open = true;
+            }
+        };
+    }
+
+    window.addEventListener('alpine:init', () => Alpine.data('initMycaSearch', initMycaSearch), { once: true });
+</script>
+<?php $hyvaCsp->registerInlineScript() ?>
+<div class="myca-search" x-data="initMycaSearch" @click.outside="close()" @search-open.window="focusAfterOpen()">
+    <search role="search">
+        <form
+            id="search_mini_form"
+            class="myca-search-form"
+            action="<?= $escaper->escapeUrl($helper->getResultUrl()) ?>"
+            method="get"
+            x-ref="form"
+            @submit.prevent="submit()"
+        >
+            <label class="sr-only" for="search"><?= $escaper->escapeHtml(__('Rechercher sur MYCA')) ?></label>
+            <?= $icons->renderHtml('search', 'myca-search-icon', 20, 20, ['aria-hidden' => 'true']) ?>
+            <input
+                id="search"
+                x-ref="input"
+                type="search"
+                name="<?= $escaper->escapeHtmlAttr($helper->getQueryParamName()) ?>"
+                value="<?= /** @noEscape */ $helper->getEscapedQueryText() ?>"
+                placeholder="<?= $escaper->escapeHtmlAttr(__('Rechercher un polo, une collection, une couleur…')) ?>"
+                maxlength="<?= $escaper->escapeHtmlAttr($helper->getMaxQueryLength()) ?>"
+                autocomplete="off"
+                role="combobox"
+                aria-autocomplete="list"
+                aria-controls="myca-search-panel"
+                :aria-expanded="open ? 'true' : 'false'"
+                :aria-activedescendant="activeId()"
+                x-model="query"
+                @input.debounce.200ms="onInput()"
+                @focus="open = true"
+                @keydown.arrow-down.prevent="move(1)"
+                @keydown.arrow-up.prevent="move(-1)"
+                @keydown.escape="close()"
+            >
+            <span class="myca-search-spinner" x-show="loading" x-cloak aria-hidden="true"></span>
+            <button type="button" class="myca-search-clear" x-show="query" x-cloak
+                    @click="query = ''; onInput(); $refs.input.focus()"
+                    aria-label="<?= $escaper->escapeHtmlAttr(__('Effacer la recherche')) ?>">
+                <?= $icons->renderHtml('x', '', 16, 16, ['aria-hidden' => 'true']) ?>
+            </button>
+            <button type="submit" class="myca-search-submit">
+                <span class="hidden sm:inline"><?= $escaper->escapeHtml(__('Rechercher')) ?></span>
+                <?= $icons->renderHtml('search', 'sm:hidden', 20, 20, ['aria-hidden' => 'true']) ?>
+                <span class="sr-only sm:hidden"><?= $escaper->escapeHtml(__('Rechercher')) ?></span>
+            </button>
+        </form>
+    </search>
+
+    <div id="myca-search-panel" class="myca-search-panel" x-ref="panel" x-show="open" x-cloak role="listbox"
+         aria-label="<?= $escaper->escapeHtmlAttr(__('Suggestions de recherche')) ?>">
+        <!-- Avant la saisie : recherches populaires et raccourcis -->
+        <div class="myca-search-idle" x-show="!typing()">
+            <?php if ($popular !== []): ?>
+                <div>
+                    <p class="myca-search-heading"><?= $escaper->escapeHtml(__('Recherches populaires')) ?></p>
+                    <ul class="flex flex-wrap gap-2">
+                        <?php foreach ($popular as $index => $term): ?>
+                            <li>
+                                <button type="button" class="myca-search-chip" data-option role="option"
+                                        id="myca-search-popular-<?= (int) $index ?>"
+                                        :aria-selected="isActive($el)" :class="isActive($el) && 'is-active'"
+                                        @click="searchTerm(<?= $escaper->escapeHtmlAttr((string) json_encode($term)) ?>)">
+                                    <?= $icons->renderHtml('trend', '', 14, 14, ['aria-hidden' => 'true']) ?><?= $escaper->escapeHtml($term) ?>
+                                </button>
+                            </li>
+                        <?php endforeach ?>
+                    </ul>
+                </div>
+            <?php endif ?>
+            <div>
+                <p class="myca-search-heading"><?= $escaper->escapeHtml(__('Accès rapide')) ?></p>
+                <ul class="flex flex-wrap gap-2">
+                    <?php foreach ($shortcuts as $index => [$label, $path]): ?>
+                        <li>
+                            <a href="<?= $escaper->escapeUrl($block->getUrl('', ['_direct' => $path])) ?>" class="myca-search-chip" data-option role="option"
+                               id="myca-search-shortcut-<?= (int) $index ?>" :aria-selected="isActive($el)" :class="isActive($el) && 'is-active'">
+                                <?= $escaper->escapeHtml($label) ?>
+                            </a>
+                        </li>
+                    <?php endforeach ?>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Pendant la saisie -->
+        <div class="myca-search-results" x-show="typing()">
+            <template x-if="!hasResults() && !loading">
+                <p class="myca-search-empty">
+                    <?= $escaper->escapeHtml(__('Aucune suggestion pour')) ?> « <span x-text="query.trim()"></span> ».
+                    <?= $escaper->escapeHtml(__('Lancez la recherche ou essayez un autre mot.')) ?>
+                </p>
+            </template>
+            <div class="myca-search-side" x-show="results.terms.length || results.categories.length">
+                <template x-if="results.terms.length">
+                    <div>
+                        <p class="myca-search-heading"><?= $escaper->escapeHtml(__('Suggestions')) ?></p>
+                        <ul>
+                            <template x-for="(term, i) in results.terms" :key="'t' + term">
+                                <li>
+                                    <button type="button" class="myca-search-line" data-option role="option" :id="'myca-search-term-' + i"
+                                            :aria-selected="isActive($el)" :class="isActive($el) && 'is-active'" @click="searchTerm(term)">
+                                        <?= $icons->renderHtml('search', 'shrink-0 text-fg-muted', 16, 16, ['aria-hidden' => 'true']) ?>
+                                        <span x-html="highlight(term)"></span>
+                                    </button>
+                                </li>
+                            </template>
+                        </ul>
+                    </div>
+                </template>
+                <template x-if="results.categories.length">
+                    <div>
+                        <p class="myca-search-heading"><?= $escaper->escapeHtml(__('Collections & catégories')) ?></p>
+                        <ul>
+                            <template x-for="(category, i) in results.categories" :key="'c' + category.url">
+                                <li>
+                                    <a :href="category.url" class="myca-search-line" data-option role="option" :id="'myca-search-category-' + i"
+                                       :aria-selected="isActive($el)" :class="isActive($el) && 'is-active'">
+                                        <?= $icons->renderHtml('layers', 'shrink-0 text-gold-700', 16, 16, ['aria-hidden' => 'true']) ?>
+                                        <span x-html="highlight(category.name)"></span>
+                                    </a>
+                                </li>
+                            </template>
+                        </ul>
+                    </div>
+                </template>
+            </div>
+            <div class="myca-search-products" x-show="results.products.length">
+                <p class="myca-search-heading"><?= $escaper->escapeHtml(__('Produits')) ?></p>
+                <ul>
+                    <template x-for="(product, i) in results.products" :key="'p' + product.url">
+                        <li>
+                            <a :href="product.url" class="myca-search-product" data-option role="option" :id="'myca-search-product-' + i"
+                               :aria-selected="isActive($el)" :class="isActive($el) && 'is-active'">
+                                <img :src="product.image" alt="" width="56" height="56" loading="lazy">
+                                <span class="min-w-0 grow">
+                                    <span class="block truncate font-semibold text-navy-900" x-html="highlight(product.name)"></span>
+                                    <span class="block text-sm text-fg-secondary" x-text="product.price"></span>
+                                </span>
+                                <?= $icons->renderHtml('chevron-right', 'shrink-0 text-fg-muted', 16, 16, ['aria-hidden' => 'true']) ?>
+                            </a>
+                        </li>
+                    </template>
+                </ul>
+            </div>
+            <button type="submit" form="search_mini_form" class="myca-search-all" data-option role="option" id="myca-search-all"
+                    :aria-selected="isActive($el)" :class="isActive($el) && 'is-active'"
+                    @click.prevent="active = -1; submit()">
+                <?= $escaper->escapeHtml(__('Voir tous les résultats pour')) ?> « <span x-text="query.trim()"></span> »
+                <?= $icons->renderHtml('arrow-right', '', 16, 16, ['aria-hidden' => 'true']) ?>
+            </button>
+        </div>
+    </div>
+</div>

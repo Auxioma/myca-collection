@@ -65,7 +65,7 @@ $countLabel = $count > 1 ? __('%1 modèles', $count) : __('%1 modèle', $count);
             <?php if ($heroKicker !== ''): ?>
                 <p class="myca-overline text-gold-400"><?= $escaper->escapeHtml($heroKicker) ?></p>
             <?php endif ?>
-            <h1 class="font-display text-[40px] leading-[46px] font-bold italic md:text-[56px] md:leading-[63px]">
+            <h1 class="font-display text-[40px] leading-[46px] font-semibold md:text-[56px] md:leading-[63px]">
                 <span class="sr-only"><?= $escaper->escapeHtml($name) ?> — </span><?= $escaper->escapeHtml($heroTitle) ?>
             </h1>
             <?php if ($heroText !== ''): ?>
@@ -108,7 +108,7 @@ $countLabel = $count > 1 ? __('%1 modèles', $count) : __('%1 modèle', $count);
             </div>
             <div class="flex items-center gap-4">
                 <?= $icons->renderHtml('layers', 'shrink-0 text-brand-red', 40, 40, ['aria-hidden' => 'true']) ?>
-                <h1 class="font-display text-4xl leading-[44px] font-black italic md:text-[44px] md:leading-[52px]">
+                <h1 class="font-display text-4xl leading-[44px] font-bold md:text-[44px] md:leading-[52px]">
                     <?= $escaper->escapeHtml($heroTitle ?: $name) ?>
                 </h1>
             </div>
@@ -121,7 +121,7 @@ $countLabel = $count > 1 ? __('%1 modèles', $count) : __('%1 modèle', $count);
     </section>
 <?php else: ?>
     <header class="mt-4 mb-6 flex flex-col gap-2">
-        <h1 class="font-display text-[32px] leading-10 font-bold italic text-fg md:text-4xl md:leading-11">
+        <h1 class="font-display text-[32px] leading-10 font-semibold text-fg md:text-4xl md:leading-11">
             <?= $escaper->escapeHtml($name) ?>
         </h1>
         <p class="myca-body-m text-fg-secondary">

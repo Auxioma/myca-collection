@@ -37,6 +37,14 @@
                     <validate>required-entry validate-digits validate-digits-range digits-range-1-395</validate>
                 </field>
             </group>
+            <group id="audit" translate="label comment" sortOrder="30" showInDefault="1" showInWebsite="0" showInStore="0">
+                <label>Journal d’audit</label>
+                <comment>Système &gt; Journal d’audit MYCA. Les entrées plus anciennes que cette durée sont supprimées chaque nuit.</comment>
+                <field id="retention_days" translate="label" type="text" sortOrder="10" showInDefault="1" canRestore="1">
+                    <label>Durée de conservation (jours, 30 minimum)</label>
+                    <validate>required-entry validate-digits validate-digits-range digits-range-30-3650</validate>
+                </field>
+            </group>
             <group id="footer" translate="label comment" sortOrder="20" showInDefault="1" showInWebsite="1" showInStore="1">
                 <label>Pied de page</label>
                 <comment>Une icône de réseau social n’est cliquable que si son adresse est renseignée.</comment>

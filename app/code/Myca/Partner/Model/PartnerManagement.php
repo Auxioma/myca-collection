@@ -16,6 +16,7 @@ use Magento\Framework\DB\Adapter\Pdo\Mysql;
 use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\Framework\Math\Random;
+use Myca\Core\Model\AuditLogger;
 use Magento\Store\Model\StoreManagerInterface;
 use Myca\Partner\Api\Data\PartnerInterface;
 use Myca\Partner\Api\PartnerRepositoryInterface;
@@ -50,7 +51,8 @@ class PartnerManagement
         private readonly StoreManagerInterface $storeManager,
         private readonly ScopeConfigInterface $scopeConfig,
         private readonly Random $random,
-        private readonly PartnerMailer $mailer
+        private readonly PartnerMailer $mailer,
+        private readonly AuditLogger $audit
     ) {
     }
 
@@ -128,7 +130,9 @@ class PartnerManagement
             $connection->rollBack();
             throw $e;
         }
-        $this->mailer->sendApplicationApproved($application, $this->loadPartner($partnerId)->getCode(), $customerId, $token);
+        $code = $this->loadPartner($partnerId)->getCode();
+        $this->audit->log('partner_application_approved', 'partner_application', $applicationId, ['status' => self::APPLICATION_PENDING], ['status' => self::APPLICATION_APPROVED, 'partner' => $code]);
+        $this->mailer->sendApplicationApproved($application, $code, $customerId, $token);
 
         return $partnerId;
     }
@@ -151,6 +155,7 @@ class PartnerManagement
             'reviewed_by' => $adminUserId ?: null,
             'reviewed_at' => gmdate('Y-m-d H:i:s'),
         ], ['application_id = ?' => $applicationId]);
+        $this->audit->log('partner_application_rejected', 'partner_application', $applicationId, ['status' => self::APPLICATION_PENDING], ['status' => self::APPLICATION_REJECTED], trim($reason));
         $this->mailer->sendApplicationRejected($application, trim($reason));
     }
 
@@ -176,6 +181,7 @@ class PartnerManagement
             $connection->rollBack();
             throw $e;
         }
+        $this->audit->log('partner_created', 'partner', $partnerId, null, ['company' => $row['company_name'], 'siret' => $row['siret'], 'owner' => $row['email']]);
         $this->mailer->sendInvitation($row['email'], $contact, $row['company_name'], self::ROLE_OWNER, $customerId, $token);
 
         return $partnerId;
@@ -206,10 +212,17 @@ class PartnerManagement
             'phone' => $row['phone'],
             'email' => $row['email'],
         ]);
+        $before = ['siret' => $partner->getOrigData('siret'), 'sales_modes' => $partner->getOrigData('sales_modes'),
+            'dropship_discount' => $partner->getOrigData('dropship_discount'), 'stock_discount' => $partner->getOrigData('stock_discount')];
         $partner->setSalesModes($row['sales_modes']);
         $partner->setData('dropship_discount', $this->discount($data, 'dropship_discount'));
         $partner->setData('stock_discount', $this->discount($data, 'stock_discount'));
         $this->partnerRepository->save($partner);
+        $after = ['siret' => $partner->getData('siret'), 'sales_modes' => $partner->getData('sales_modes'),
+            'dropship_discount' => $partner->getData('dropship_discount'), 'stock_discount' => $partner->getData('stock_discount')];
+        if (array_map('strval', $before) !== array_map('strval', $after)) {
+            $this->audit->log('partner_contract_changed', 'partner', $partnerId, $before, $after);
+        }
     }
 
     /**
@@ -245,12 +258,14 @@ class PartnerManagement
             throw new LocalizedException(__('Indiquez le motif de la suspension.'));
         }
         $partner = $this->loadPartner($partnerId);
+        $previous = $partner->getStatus();
         $partner->setStatus($status);
         $partner->setData($status === PartnerInterface::STATUS_ACTIVE ? 'approved_at' : 'suspended_at', gmdate('Y-m-d H:i:s'));
         if ($status === PartnerInterface::STATUS_ACTIVE) {
             $partner->setData('suspended_at', null);
         }
         $this->partnerRepository->save($partner);
+        $this->audit->log('partner_status_changed', 'partner', $partnerId, ['status' => $previous], ['status' => $status], trim($reason) ?: null);
     }
 
     /**
@@ -277,6 +292,7 @@ class PartnerManagement
             $connection->rollBack();
             throw $e;
         }
+        $this->audit->log('partner_user_added', 'partner', $partnerId, null, ['customer_id' => $customerId, 'email' => $email, 'role' => $role]);
         $this->mailer->sendInvitation($email, trim($name) ?: $email, (string) $partner->getCompanyName(), $role, $customerId, $token);
 
         return $customerId;
@@ -310,6 +326,7 @@ class PartnerManagement
             $connection->rollBack();
             throw $e;
         }
+        $this->audit->log('partner_user_removed', 'partner', $partnerId, ['customer_id' => $customerId], null);
     }
 
     /**

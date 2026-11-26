@@ -1,0 +1,137 @@
+<?php
+/**
+ * Connexion client et partenaire (MYCA) : carte titrée, champs MYCA, mot de passe affichable, lien de réinitialisation.
+ * Reprend le gabarit Hyvä (reCAPTCHA, validation, messages d'erreur) ; seule la présentation change.
+ */
+
+declare(strict_types=1);
+
+use Hyva\Theme\Model\ViewModelRegistry;
+use Hyva\Theme\ViewModel\Customer\LoginButton;
+use Hyva\Theme\ViewModel\LucideIcons;
+use Hyva\Theme\ViewModel\ReCaptcha;
+use Magento\Customer\Block\Form\Login;
+use Magento\Framework\Escaper;
+
+/** @var Escaper $escaper */
+/** @var Login $block */
+/** @var LoginButton $loginButtonViewModel */
+/** @var ViewModelRegistry $viewModels */
+/** @var ReCaptcha $recaptcha */
+/** @var LucideIcons $lucideIcons */
+
+$lucideIcons = $viewModels->require(LucideIcons::class);
+$loginButtonViewModel = $viewModels->require(LoginButton::class);
+
+// Disabling autocomplete on form fields is not recommended,
+// Enable it in Stores->Configuration->Customers configuration->Password Options
+
+// Do not replace this with $viewModels->require(ReCaptcha::class); that might break the dependency
+// on the Magento_ReCaptchaCustomer module
+$recaptcha = $block->getData('viewModelRecaptcha');
+?>
+<div class="myca-login-card">
+    <form class="form form-login"
+          action="<?= $escaper->escapeUrl($block->getPostActionUrl()) ?>"
+          method="post"
+          x-data="initCustomerLoginForm()"
+          @submit.prevent="submitForm()"
+          id="customer-login-form">
+        <?= $block->getBlockHtml('formkey') ?>
+        <fieldset class="fieldset login flex flex-col gap-4">
+            <legend class="myca-login-title">
+                <span class="myca-login-icon" aria-hidden="true"></span>
+                <span>
+                    <span class="block"><?= $escaper->escapeHtml(__('Déjà client ?')) ?></span>
+                    <span class="block text-sm font-normal font-sans text-fg-secondary"><?= $escaper->escapeHtml(__('Connectez-vous avec votre adresse e-mail.')) ?></span>
+                </span>
+            </legend>
+            <div class="field email required">
+                <label class="myca-field-label" for="email"><?= $escaper->escapeHtml(__('Adresse e-mail')) ?></label>
+                <input name="login[username]"
+                       class="myca-field w-full"
+                       required
+                       value="<?= $escaper->escapeHtmlAttr($block->getUsername()) ?>"
+                       autocomplete="<?= $block->isAutocompleteDisabled() ? 'off' : 'username' ?>"
+                       id="email"
+                       type="email"
+                       placeholder="<?= $escaper->escapeHtmlAttr(__('vous@exemple.com')) ?>"
+                >
+            </div>
+            <div class="field password required">
+                <div class="flex items-baseline justify-between gap-3">
+                    <label for="pass" class="myca-field-label"><?= $escaper->escapeHtml(__('Mot de passe')) ?></label>
+                    <a class="text-[13px] leading-[18px] font-semibold text-accent-text hover:underline" href="<?= $escaper->escapeUrl($block->getForgotPasswordUrl()) ?>"><?= $escaper->escapeHtml(__('Mot de passe oublié ?')) ?></a>
+                </div>
+                <div class="relative">
+                    <div class="sr-only" aria-live="polite">
+                        <span x-show="!showPassword"><?= $escaper->escapeHtml(__('Mot de passe masqué')) ?></span>
+                        <template x-if="showPassword"><span><?= $escaper->escapeHtml(__('Mot de passe affiché')) ?></span></template>
+                    </div>
+                    <input name="login[password]"
+                           class="myca-field w-full pe-12"
+                           required
+                           :type="showPassword ? 'text' : 'password'"
+                           type="password"
+                           autocomplete="<?= $block->isAutocompleteDisabled() ? 'off' : 'current-password' ?>"
+                           id="pass"
+                    >
+                    <button type="button"
+                            x-on:click="showPassword = !showPassword"
+                            :aria-pressed="showPassword ? 'true' : 'false'"
+                            class="absolute inset-y-0 end-0 flex w-11 items-center justify-center text-fg-secondary hover:text-fg"
+                            :aria-label="showPassword ? '<?= $escaper->escapeJs(__('Masquer le mot de passe')) ?>' : '<?= $escaper->escapeJs(__('Afficher le mot de passe')) ?>'"
+                    >
+                        <?= $lucideIcons->eyeHtml('', 20, 20, ['x-show' => '!showPassword', 'aria-hidden' => 'true']); ?>
+                        <template x-if="showPassword">
+                            <?= $lucideIcons->eyeOffHtml('', 20, 20, ['aria-hidden' => 'true']); ?>
+                        </template>
+                    </button>
+                </div>
+            </div>
+
+            <?= $recaptcha ? $recaptcha->getInputHtml(ReCaptcha::RECAPTCHA_FORM_ID_CUSTOMER_LOGIN) : '' ?>
+            <?= $block->getChildHtml('form_additional_info') ?>
+            <button type="submit" class="myca-btn myca-btn-primary min-h-12 w-full text-base" name="send"
+                <?php if ($loginButtonViewModel->disabled()): ?> disabled data-recaptcha-btn<?php endif; ?>
+            >
+                <?= $escaper->escapeHtml(__('Se connecter')) ?>
+            </button>
+            <template x-if="displayErrorMessage">
+                <p class="flex items-center gap-2 rounded-md bg-danger-bg p-3 myca-body-s text-danger" role="alert">
+                    <?= $lucideIcons->circleAlertHtml('shrink-0', 20, 20, ['aria-hidden' => true]); ?>
+                    <template x-for="errorMessage in errorMessages">
+                        <span x-html-safe="errorMessage"></span>
+                    </template>
+                </p>
+            </template>
+            <p class="myca-login-secure"><?= $escaper->escapeHtml(__('Connexion sécurisée. Vos données ne sont jamais partagées.')) ?></p>
+        </fieldset>
+    </form>
+    <div class="w-full">
+        <?= $recaptcha ? $recaptcha->getLegalNoticeHtml(ReCaptcha::RECAPTCHA_FORM_ID_CUSTOMER_LOGIN) : '' ?>
+    </div>
+    <script>
+        function initCustomerLoginForm() {
+            return {
+                errors: 0,
+                hasCaptchaToken: 0,
+                showPassword: false,
+                displayErrorMessage: false,
+                errorMessages: [],
+                setErrorMessages(messages) {
+                    this.errorMessages = [messages]
+                    this.displayErrorMessage = this.errorMessages.length
+                },
+                submitForm() {
+                    // do not rename $form, the variable is the expected name in the recaptcha output
+                    const $form = document.querySelector('#customer-login-form');
+                    <?= $recaptcha ? $recaptcha->getValidationJsHtml(ReCaptcha::RECAPTCHA_FORM_ID_CUSTOMER_LOGIN) : '' ?>
+                    if (this.errors === 0) {
+                        $form.submit();
+                    }
+                }
+            }
+        }
+    </script>
+</div>

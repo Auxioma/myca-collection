@@ -2,6 +2,10 @@
  * Contenus Page Builder aux couleurs MYCA (accueil P01, pages éditoriales).
  * Les classes myca-pb-* se posent dans l'éditeur (champ « Classes CSS » de chaque élément) ;
  * elles reprennent les composants Figma sans exiger de HTML spécifique.
+ *
+ * Page Builder injecte au rendu ses propres règles « #html-body [data-pb-style=…] » (display, justify-content,
+ * height:auto des images), plus spécifiques qu'une classe : les propriétés de mise en page qu'elles
+ * écraseraient sont marquées !important ci-dessous.
  */
 
 /* Grille Page Builder : colonnes empilées en mobile, côte à côte à partir de 768 px. */
@@ -82,7 +86,7 @@
 }
 
 /* Icônes posées par classe sur un texte, une tuile ou un élément de liste */
-:is(.myca-pb-tile, .myca-pb-checklist li, .myca-pb-note)::before {
+:is(.myca-pb-tile, .myca-pb-checklist li, .myca-pb-note, .myca-pb-promo-features li)::before {
     content: "";
     flex-shrink: 0;
     background-color: currentColor;
@@ -95,6 +99,9 @@
 .myca-pb-icon-qr { --myca-pb-icon: url("../svg/qr.svg"); }
 .myca-pb-icon-award { --myca-pb-icon: url("../svg/award.svg"); }
 .myca-pb-icon-shield-check { --myca-pb-icon: url("../svg/shield-check.svg"); }
+.myca-pb-icon-gem { --myca-pb-icon: url("../svg/gem.svg"); }
+.myca-pb-icon-shirt { --myca-pb-icon: url("../svg/shirt.svg"); }
+.myca-pb-icon-star { --myca-pb-icon: url("../svg/star.svg"); }
 
 /* Surtitre (« NOUVELLE COLLECTION 2027 », « NOTRE HISTOIRE ») */
 .myca-pb-overline p {
@@ -114,12 +121,43 @@
     }
 }
 
+/* Figma : texte 40 % (marge 56 px, blocs de 500 px qui débordent sur le dégradé), image 60 %. */
 .myca-pb-hero-text {
-    @apply justify-center gap-4 px-5 pt-2 pb-6 md:px-14 md:py-10;
+    @apply relative z-10 gap-4 px-5 pt-2 pb-6 md:py-10 md:pr-0 md:pl-14;
+    justify-content: center !important;
+
+    @variant md {
+        width: 50% !important;
+    }
+
+    @variant lg {
+        width: 40% !important;
+    }
+
+    > :is(.myca-pb-hero-title, [data-content-type="text"]:not(.myca-pb-overline)) {
+        @apply lg:w-[500px] lg:max-w-none;
+    }
+
+    > [data-content-type="text"]:not(.myca-pb-overline) p {
+        @apply text-sm leading-5;
+    }
 }
 
 .myca-pb-hero-title {
-    @apply font-display text-[32px] leading-[38px] font-bold italic md:text-5xl md:leading-[54px];
+    @apply font-display text-[32px] leading-[38px] font-semibold tracking-[-0.015em] md:text-5xl md:leading-[54px];
+
+    /* Élément « Texte » contenant le h1 : le titre hérite de la typographie ci-dessus */
+    :is(h1, h2, p) {
+        margin: 0;
+        font: inherit;
+        letter-spacing: inherit;
+        color: inherit;
+    }
+
+    /* Accroche : seul passage en italique, en or (texte mis en italique dans l'éditeur Page Builder) */
+    :is(em, i) {
+        @apply font-medium text-gold-400 italic;
+    }
 }
 
 .myca-pb-hero-media {
@@ -128,11 +166,21 @@
 
     @variant md {
         order: 0;
+        width: 50% !important;
+    }
+
+    @variant lg {
+        width: 60% !important;
     }
 
     figure,
     img {
-        @apply h-56 w-full object-cover md:h-full md:min-h-[480px];
+        @apply w-full object-cover md:min-h-[480px];
+        height: --spacing(56) !important;
+
+        @variant md {
+            height: 100% !important;
+        }
     }
 
     &::before {
@@ -168,7 +216,7 @@
     &::before {
         width: 26px;
         height: 26px;
-        @apply text-accent-text;
+        @apply text-gold-700;
     }
 
     strong {
@@ -182,7 +230,7 @@
 
 /* Titre de section + bouton « Voir tout » + grille de produits */
 .myca-pb-products {
-    display: grid;
+    display: grid !important;
     grid-template-columns: minmax(0, 1fr) auto;
     align-items: center;
     gap: --spacing(4);
@@ -193,20 +241,29 @@
 }
 
 .myca-pb-section-title {
-    @apply font-display text-2xl leading-[30px] font-bold italic text-fg md:text-[32px] md:leading-[37px];
+    @apply font-display text-2xl leading-[30px] font-semibold text-fg md:text-[32px] md:leading-[37px];
 }
 
 /* Bloc « Notre histoire » */
 .myca-pb-story-media img {
-    @apply h-72 w-full rounded-xl object-cover md:h-[420px];
+    @apply w-full rounded-xl object-cover;
+    height: --spacing(72) !important;
+
+    @variant md {
+        height: 420px !important;
+    }
 }
 
 .myca-pb-story-text {
     @apply gap-4 rounded-lg bg-surface-subtle p-5 shadow-card md:p-10;
+
+    > [data-content-type="text"]:not(.myca-pb-overline, .myca-pb-checklist) p {
+        @apply text-sm leading-5 text-fg-secondary;
+    }
 }
 
 .myca-pb-story-title {
-    @apply font-display text-[28px] leading-[34px] font-bold italic text-fg md:text-4xl md:leading-[41px];
+    @apply font-display text-[28px] leading-[34px] font-semibold text-fg md:text-4xl md:leading-[41px];
 }
 
 .myca-pb-checklist ul {
@@ -223,34 +280,137 @@
     }
 }
 
-/* Encarts promotionnels (MYCA Signature, Devenir partenaire) */
+/*
+ * Encarts promotionnels (MYCA Signature, Devenir partenaire) : photo en fond sur la moitié droite, fondue dans la
+ * couleur de l'encart ; surtitre, grand titre, texte, bouton arrondi et, pour Signature, trois atouts illustrés.
+ * Variante claire : classe « myca-pb-promo-light » sur la colonne.
+ */
 .myca-pb-promo {
-    display: grid !important;
-    grid-template-columns: minmax(0, 1fr);
-    align-content: center;
-    gap: --spacing(2) --spacing(3);
-    @apply rounded-lg bg-navy-900 p-4 text-white;
+    --myca-promo-bg: var(--color-navy-900);
+    position: relative;
+    overflow: hidden;
+    isolation: isolate;
+    justify-content: center !important;
+    gap: --spacing(4);
+    @apply rounded-xl px-6 pt-52 pb-7 text-white sm:pt-60 md:min-h-[340px] md:px-10 md:py-10;
+    background: var(--myca-promo-bg);
 
-    @variant sm {
-        grid-template-columns: minmax(0, 1fr) auto;
+    > :not([data-content-type="image"]) {
+        position: relative;
+        z-index: 1;
 
-        > [data-content-type="image"] {
-            grid-column: 2;
-            grid-row: 1 / span 3;
+        @variant md {
+            max-width: 72%;
         }
     }
 
-    img {
-        @apply h-40 w-full rounded-md object-cover sm:h-[200px] sm:w-[200px] lg:w-[260px];
+    > [data-content-type="image"] {
+        position: absolute;
+        inset: 0 0 auto;
+        z-index: 0;
+        height: --spacing(52);
+        margin: 0;
+
+        @variant sm {
+            height: --spacing(60);
+        }
+
+        @variant md {
+            inset: 0 0 0 auto;
+            width: 58%;
+            height: 100%;
+        }
+
+        img {
+            width: 100%;
+            height: 100% !important;
+            max-width: none !important;
+            object-fit: cover;
+            object-position: center 30%;
+        }
+
+        /* Fondu de la photo dans le fond de l'encart */
+        &::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(to top, var(--myca-promo-bg) 2%, transparent 55%);
+
+            @variant md {
+                background: linear-gradient(to right, var(--myca-promo-bg) 0%, color-mix(in srgb, var(--myca-promo-bg) 55%, transparent) 30%, transparent 62%);
+            }
+        }
+    }
+
+    > [data-content-type="text"]:not(.myca-pb-kicker, .myca-pb-promo-features) p {
+        @apply text-base leading-6 text-white/90 md:text-lg md:leading-7;
+    }
+
+    [data-content-type="buttons"] {
+        margin-top: --spacing(1);
+    }
+}
+
+.myca-pb-promo-light {
+    --myca-promo-bg: #f3efe9;
+    @apply text-fg;
+
+    > [data-content-type="text"]:not(.myca-pb-kicker, .myca-pb-promo-features) p {
+        @apply text-fg-secondary;
+    }
+
+    .myca-pb-promo-title {
+        @apply text-navy-900;
+    }
+
+    .myca-pb-kicker p {
+        @apply text-navy-900;
+    }
+}
+
+/* Surtitre « — COLLECTION MYCA » */
+.myca-pb-kicker p {
+    @apply flex items-center gap-3 text-xs leading-4 font-bold tracking-[0.22em] uppercase text-[#ff5a60];
+
+    &::before {
+        content: "";
+        width: 22px;
+        height: 2px;
+        background: var(--color-brand-red);
     }
 }
 
 .myca-pb-promo-title {
-    @apply font-display text-2xl leading-[30px] font-bold italic text-white;
+    @apply font-display text-[34px] leading-[38px] font-semibold tracking-[-0.015em] text-white md:text-[42px] md:leading-[46px] xl:text-[46px] xl:leading-[50px];
+    text-wrap: balance;
 }
 
-.myca-pb-promo-round img {
-    @apply lg:w-[200px] lg:rounded-full;
+/* Bouton arrondi, flèche après le texte */
+[data-content-type="buttons"] .myca-pb-pill :is(.pagebuilder-button-primary, .pagebuilder-button-secondary) {
+    @apply min-h-12 rounded-full px-8 text-base;
+
+    &::after {
+        content: "";
+        width: 16px;
+        height: 16px;
+        background-color: currentColor;
+        mask: url("../svg/arrow-right.svg") center / contain no-repeat;
+    }
+}
+
+/* Atouts illustrés sous le bouton (Qualité premium, Style intemporel, L'élégance sportive) */
+.myca-pb-promo-features ul {
+    @apply mt-2 flex flex-wrap gap-y-3 xl:flex-nowrap;
+}
+
+.myca-pb-promo-features li {
+    @apply flex flex-col items-center gap-2 border-white/30 px-3 text-center text-xs leading-4 font-medium whitespace-nowrap first:ps-0 last:pe-0 xl:px-4
+        [&:not(:last-child)]:border-e;
+
+    &::before {
+        width: 24px;
+        height: 24px;
+    }
 }
 
 /* Note d'information (renvoi « * ») */
@@ -401,53 +561,3 @@
     }
 }
 
-/* FAQ : accordéons natifs <details>, accessibles au clavier sans script. */
-.myca-faq-group {
-    max-width: 860px;
-    scroll-margin-top: --spacing(4);
-
-    & h2 {
-        margin: --spacing(6) 0 --spacing(2);
-        font-size: 1.25rem;
-        line-height: 1.75rem;
-        font-weight: 600;
-    }
-}
-
-.myca-faq-item {
-    border-bottom: 1px solid var(--color-line);
-
-    & summary {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: --spacing(3);
-        min-height: 44px;
-        padding: --spacing(3) 0;
-        font-weight: 600;
-        cursor: pointer;
-        list-style: none;
-    }
-
-    & summary::-webkit-details-marker {
-        display: none;
-    }
-
-    & summary::after {
-        content: "+";
-        flex-shrink: 0;
-        font-size: 1.25rem;
-        line-height: 1;
-        color: var(--color-fg-secondary);
-    }
-
-    &[open] summary::after {
-        content: "−";
-    }
-
-    & > div {
-        padding-bottom: --spacing(3);
-        color: var(--color-fg);
-        line-height: 1.65;
-    }
-}

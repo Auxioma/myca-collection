@@ -40,44 +40,64 @@ $statusStyles = [
     LotFields::PENDING => 'text-warning',
 ];
 $collection = trim((string) ($lot['collection'] ?? ''));
+$modelName = $product ? (string) $product->getName() : (string) __('Vêtement MYCA');
+$rowIcons = [
+    'model' => 'star', 'variant' => 'tag', 'collection' => 'globe', 'model_reference' => 'qr', 'cut' => 'shirt',
+    'material' => 'layers', 'grammage' => 'chart', 'manufactured_on' => 'calendar', 'origin' => 'map-pin', 'serial' => 'key',
+];
 $tiles = [
-    ['crown', __('Création originale'), __('MYCA')],
+    ['crown', __('Création originale'), __('MYCA®')],
     ['award', __('Qualité'), __('premium')],
-    ['star', __('Finitions'), __('soignées')],
-    ['leaf', __('Confort'), __('& liberté')],
-    ['qr', __('Traçabilité'), __('garantie')],
+    ['layers', __('Finitions'), __('soignées')],
+    ['feather', __('Confort'), __('& liberté')],
+    ['shield-check', __('Traçabilité'), __('garantie')],
 ];
 ?>
-<div class="mx-auto flex w-full max-w-[1200px] flex-col gap-5 py-4">
-    <nav aria-label="<?= $escaper->escapeHtmlAttr(__('Fil d’Ariane')) ?>">
-        <ol class="flex flex-wrap items-center gap-1.5 myca-caption text-fg-secondary">
-            <li><a href="<?= $escaper->escapeUrl($block->getBaseUrl()) ?>" class="hover:text-fg"><?= $escaper->escapeHtml(__('Accueil')) ?></a></li>
+<div class="mx-auto flex w-full max-w-[1200px] flex-col gap-5 pb-6">
+    <nav class="myca-pp-crumbs" aria-label="<?= $escaper->escapeHtmlAttr(__('Fil d’Ariane')) ?>">
+        <ol>
+            <li>
+                <a href="<?= $escaper->escapeUrl($block->getBaseUrl()) ?>">
+                    <?= $icons->renderHtml('home', '', 16, 16, ['aria-hidden' => 'true']) ?><?= $escaper->escapeHtml(__('Accueil')) ?>
+                </a>
+            </li>
             <?php if ($product): ?>
-                <li aria-hidden="true">›</li>
-                <li><a href="<?= $escaper->escapeUrl($product->getProductUrl()) ?>" class="hover:text-fg"><?= $escaper->escapeHtml($product->getName()) ?></a></li>
+                <li><a href="<?= $escaper->escapeUrl($product->getProductUrl()) ?>"><?= $escaper->escapeHtml($modelName) ?></a></li>
             <?php endif ?>
-            <li aria-hidden="true">›</li>
-            <li class="text-fg" aria-current="page"><?= $escaper->escapeHtml(__('Passeport & certificat')) ?></li>
+            <li aria-current="page"><?= $escaper->escapeHtml(__('Passeport & certificat')) ?></li>
         </ol>
     </nav>
 
-    <header class="flex items-center gap-4">
-        <?php if ($product): ?>
-            <img src="<?= $escaper->escapeUrl($view->getImageUrl($product)) ?>" alt="" class="size-[72px] shrink-0 rounded-md object-cover sm:size-[90px]" width="90" height="90">
-        <?php endif ?>
-        <div class="flex min-w-0 flex-col gap-1">
-            <?php if ($collection !== ''): ?>
-                <span class="myca-badge myca-badge-danger self-start"><?= $escaper->escapeHtml(__('Collection %1', $collection)) ?></span>
+    <header class="grid items-center gap-5 md:grid-cols-[minmax(0,1fr)_minmax(0,420px)]">
+        <div class="flex items-center gap-4 sm:gap-6">
+            <?php if ($product): ?>
+                <img src="<?= $escaper->escapeUrl($view->getImageUrl($product)) ?>" alt="" width="148" height="148"
+                     class="size-24 shrink-0 rounded-xl border-2 border-brand-red bg-surface-subtle object-contain p-1 shadow-card sm:size-[148px]">
             <?php endif ?>
-            <h1 class="font-display text-[26px] leading-8 font-bold text-fg italic sm:text-[30px] sm:leading-9"><?= $escaper->escapeHtml($product ? $product->getName() : __('Vêtement MYCA')) ?></h1>
-            <p class="myca-body-s text-fg-secondary"><?= $escaper->escapeHtml(__('Passeport du vêtement & certificat d’authenticité')) ?></p>
+            <div class="flex min-w-0 flex-col items-start gap-2">
+                <?php if ($collection !== ''): ?>
+                    <span class="rounded-md bg-brand-red px-3 py-1 text-sm leading-5 font-semibold text-white"><?= $escaper->escapeHtml(__('Collection %1', $collection)) ?></span>
+                <?php endif ?>
+                <h1 class="font-display text-[28px] leading-tight font-semibold text-navy-900 sm:text-[40px]"><?= $escaper->escapeHtml($modelName) ?></h1>
+                <p class="text-sm leading-5 text-fg-secondary sm:text-lg sm:leading-7"><?= $escaper->escapeHtml(__('Passeport du vêtement & certificat d’authenticité')) ?></p>
+            </div>
         </div>
+        <?php if ($collection !== ''): ?>
+            <div class="myca-pp-banner" aria-hidden="true">
+                <span class="font-logo text-2xl tracking-wide">MYCA<sup class="text-xs">®</sup></span>
+                <span class="font-display text-[34px] leading-none font-semibold italic"><?= $escaper->escapeHtml($collection) ?></span>
+                <span class="text-[10px] font-semibold tracking-[0.35em] uppercase opacity-80"><?= $escaper->escapeHtml(__('L’élégance sportive')) ?></span>
+            </div>
+        <?php endif ?>
     </header>
 
     <?php if ($product): ?>
         <nav class="myca-tabs overflow-y-hidden" aria-label="<?= $escaper->escapeHtmlAttr(__('Informations du produit')) ?>">
             <a href="<?= $escaper->escapeUrl($product->getProductUrl()) ?>" class="myca-tab inline-flex items-center"><?= $escaper->escapeHtml(__('Description')) ?></a>
             <span class="myca-tab inline-flex items-center border-accent text-accent-text" aria-current="page"><?= $escaper->escapeHtml(__('Passeport & certificat')) ?></span>
+            <?php if ($view->hasMaterials($product)): ?>
+                <a href="<?= $escaper->escapeUrl($view->getProductTabUrl($product, 'materials')) ?>" class="myca-tab inline-flex items-center"><?= $escaper->escapeHtml(__('Matières & entretien')) ?></a>
+            <?php endif ?>
         </nav>
     <?php endif ?>
 
@@ -102,22 +122,33 @@ $tiles = [
         </p>
     <?php endif ?>
 
-    <div class="grid gap-5 <?= $certificate ? 'lg:grid-cols-[minmax(0,575fr)_minmax(0,607fr)]' : '' ?>">
-        <section class="overflow-hidden rounded-lg border border-line bg-surface shadow-card" aria-labelledby="myca-passport-title">
-            <h2 id="myca-passport-title" class="flex items-center gap-2 bg-hero px-4 py-3 text-sm leading-5 font-semibold tracking-wide text-white uppercase">
-                <?= $icons->renderHtml('book', '', 18, 18, ['aria-hidden' => 'true']) ?><?= $escaper->escapeHtml(__('Passeport du vêtement — MYCA')) ?>
-            </h2>
-            <div class="grid gap-4 p-4 sm:grid-cols-[180px_minmax(0,1fr)]">
+    <div class="grid gap-5 <?= $certificate ? 'lg:grid-cols-[minmax(0,575fr)_minmax(0,500fr)]' : '' ?>">
+        <section class="myca-pp-passport" aria-labelledby="myca-passport-title">
+            <div class="flex items-center gap-4 bg-navy-900 px-5 py-4 text-white">
+                <span class="flex size-12 shrink-0 items-center justify-center rounded-md border-2 border-gold-400 text-gold-400 sm:size-14">
+                    <?= $icons->renderHtml('globe', '', 28, 28, ['aria-hidden' => 'true']) ?>
+                </span>
+                <h2 id="myca-passport-title" class="grow text-lg leading-6 font-bold tracking-wide uppercase sm:text-2xl sm:leading-7">
+                    <?= $escaper->escapeHtml(__('Passeport')) ?><br><?= $escaper->escapeHtml(__('du vêtement')) ?>
+                </h2>
+                <span class="hidden font-logo text-3xl sm:block" aria-hidden="true">MYCA<sup class="text-xs">®</sup></span>
+            </div>
+            <div class="grid gap-5 p-4 sm:grid-cols-[200px_minmax(0,1fr)] sm:p-5">
                 <?php if ($product): ?>
-                    <img src="<?= $escaper->escapeUrl($view->getImageUrl($product)) ?>" alt="<?= $escaper->escapeHtmlAttr($product->getName()) ?>" class="mx-auto size-[180px] object-contain" width="180" height="180" loading="lazy">
+                    <div class="flex items-center justify-center self-start rounded-lg border border-line bg-white p-3">
+                        <img src="<?= $escaper->escapeUrl($view->getImageUrl($product)) ?>" alt="<?= $escaper->escapeHtmlAttr($modelName) ?>" class="size-[180px] object-contain" width="180" height="180" loading="lazy">
+                    </div>
                 <?php endif ?>
-                <dl class="flex flex-col divide-y divide-line myca-body-s">
+                <dl class="myca-pp-rows">
                     <?php foreach ($rows as $row): ?>
-                        <div class="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5 py-1.5">
-                            <dt class="text-fg-secondary"><?= $escaper->escapeHtml($row['label']) ?></dt>
-                            <dd class="flex flex-col items-end text-right">
+                        <div>
+                            <dt>
+                                <?= $icons->renderHtml($rowIcons[$row['key']] ?? 'check', 'shrink-0 text-navy-900', 18, 18, ['aria-hidden' => 'true']) ?>
+                                <?= $escaper->escapeHtml($row['label']) ?>
+                            </dt>
+                            <dd>
                                 <?php if ($row['value'] !== null): ?>
-                                    <span class="font-semibold text-fg"><?= $escaper->escapeHtml($row['value']) ?></span>
+                                    <span class="font-medium text-fg"><?= $escaper->escapeHtml($row['value']) ?></span>
                                 <?php endif ?>
                                 <span class="myca-caption <?= $escaper->escapeHtmlAttr($statusStyles[$row['status']]) ?>">
                                     <?= $escaper->escapeHtml($statusLabels[$row['status']]) ?>
@@ -127,12 +158,13 @@ $tiles = [
                     <?php endforeach ?>
                 </dl>
             </div>
-            <div class="flex flex-col gap-4 border-t border-line p-4 sm:flex-row sm:items-center">
-                <div class="size-[120px] shrink-0 text-fg [&_svg]:size-full" role="img" aria-label="<?= $escaper->escapeHtmlAttr(__('QR code de ce passeport')) ?>">
+            <div class="mx-4 mb-4 flex flex-col gap-4 rounded-lg bg-surface-subtle p-4 sm:mx-5 sm:mb-5 sm:flex-row sm:items-center">
+                <div class="size-[120px] shrink-0 rounded-md bg-white p-1.5 text-fg [&_svg]:size-full" role="img" aria-label="<?= $escaper->escapeHtmlAttr(__('QR code de ce passeport')) ?>">
                     <?= /* @noEscape */ $view->getQrSvg($token) ?>
                 </div>
+                <?= $icons->renderHtml('qr', 'hidden shrink-0 text-brand-red sm:block', 40, 40, ['aria-hidden' => 'true']) ?>
                 <div class="flex flex-col gap-1.5">
-                    <p class="myca-body-m font-semibold text-fg"><?= $escaper->escapeHtml(__('Scannez le QR code')) ?></p>
+                    <p class="text-lg leading-6 font-bold text-navy-900"><?= $escaper->escapeHtml(__('Scannez le QR code')) ?></p>
                     <p class="myca-body-s text-fg-secondary"><?= $escaper->escapeHtml(__('Il pointe vers cette fiche sécurisée (lot, matière, origine, certificat) pour vérifier l’authenticité de votre vêtement.')) ?></p>
                     <p class="myca-caption text-fg-secondary"><?= $escaper->escapeHtml(__('N° de passeport : %1', $view->formatNumber($token))) ?></p>
                     <?php if ($isActive): ?>
@@ -151,16 +183,21 @@ $tiles = [
         </section>
 
         <?php if ($certificate): ?>
-            <section class="flex flex-col items-center gap-3 rounded-lg border border-gold-500 bg-gold-100 p-6 text-center" aria-labelledby="myca-certificate-title">
-                <p class="font-display text-[40px] leading-[48px] font-bold text-fg italic" aria-hidden="true">MYCA</p>
-                <h2 id="myca-certificate-title" class="text-xl leading-7 font-bold tracking-wide text-fg uppercase"><?= $escaper->escapeHtml(__('Certificat d’authenticité')) ?></h2>
-                <p class="myca-body-s max-w-[520px] text-fg"><?= $escaper->escapeHtml(__('Ce vêtement est une création originale MYCA, conçue selon nos standards de qualité, de style et d’élégance.')) ?></p>
-                <p class="myca-body-s font-semibold text-gold-700"><?= $escaper->escapeHtml(__('Collection %1', $collection)) ?></p>
-                <dl class="mt-2 flex w-full flex-col gap-2 myca-body-s">
-                    <div class="flex justify-between gap-3"><dt class="text-fg-secondary"><?= $escaper->escapeHtml(__('Modèle')) ?></dt><dd class="font-semibold text-fg"><?= $escaper->escapeHtml($product ? $product->getName() : '') ?></dd></div>
-                    <div class="flex justify-between gap-3"><dt class="text-fg-secondary"><?= $escaper->escapeHtml(__('N° d’authenticité')) ?></dt><dd class="font-semibold break-all text-fg"><?= $escaper->escapeHtml($view->formatNumber($token)) ?></dd></div>
-                </dl>
-                <p class="mt-auto myca-caption text-fg-secondary"><?= $escaper->escapeHtml(__('Vérifiable à tout moment à l’adresse de ce QR code ; une image du certificat ne suffit pas à prouver l’authenticité.')) ?></p>
+            <section class="myca-pp-certificate" aria-labelledby="myca-certificate-title">
+                <?= $icons->renderHtml('crown', 'text-gold-500', 48, 48, ['aria-hidden' => 'true']) ?>
+                <p class="font-logo text-[40px] leading-none text-navy-900" aria-hidden="true">MYCA<sup class="text-base">®</sup></p>
+                <h2 id="myca-certificate-title" class="myca-pp-certificate-title"><?= $escaper->escapeHtml(__('Certificat d’authenticité')) ?></h2>
+                <p class="max-w-[380px] text-base leading-6 text-navy-900"><?= $escaper->escapeHtml(__('Ce vêtement est une création originale MYCA®, conçue selon nos standards de qualité, de style et d’exigence.')) ?></p>
+                <p class="myca-pp-ribbon"><?= $escaper->escapeHtml(__('Collection %1', $collection)) ?></p>
+                <div class="flex w-full items-end justify-between gap-4">
+                    <dl class="flex min-w-0 flex-col gap-1 text-left text-sm leading-5 text-navy-900">
+                        <div><dt class="inline font-bold"><?= $escaper->escapeHtml(__('Modèle')) ?>&nbsp;:</dt> <dd class="inline"><?= $escaper->escapeHtml($modelName) ?></dd></div>
+                        <div><dt class="inline font-bold"><?= $escaper->escapeHtml(__('N° d’authenticité')) ?>&nbsp;:</dt> <dd class="inline break-all"><?= $escaper->escapeHtml($view->formatNumber($token)) ?></dd></div>
+                        <div class="mt-4 w-48 border-t border-navy-900/40 pt-1 text-xs text-fg-secondary"><?= $escaper->escapeHtml(__('La Direction MYCA®')) ?></div>
+                    </dl>
+                    <span class="myca-pp-seal" aria-hidden="true"><span>MYCA<sup>®</sup></span><span><?= $escaper->escapeHtml(__('Original')) ?></span></span>
+                </div>
+                <p class="mt-3 myca-caption text-fg-secondary"><?= $escaper->escapeHtml(__('Vérifiable à tout moment à l’adresse de ce QR code ; une image du certificat ne suffit pas à prouver l’authenticité.')) ?></p>
             </section>
         <?php endif ?>
     </div>
@@ -170,12 +207,11 @@ $tiles = [
         <span><?= $escaper->escapeHtml(__('Le certificat d’authenticité MYCA ne remplace pas une certification réglementaire (étiquetage textile, sécurité des produits).')) ?></span>
     </p>
 
-    <ul class="grid grid-cols-2 gap-3 rounded-lg border border-line bg-surface p-4 sm:grid-cols-3 lg:grid-cols-5">
+    <ul class="myca-pp-tiles">
         <?php foreach ($tiles as [$icon, $title, $subtitle]): ?>
-            <li class="flex flex-col items-center gap-1 rounded-md border border-line p-4 text-center">
-                <?= $icons->renderHtml($icon, 'text-gold-700', 26, 26, ['aria-hidden' => 'true']) ?>
-                <span class="myca-body-s-strong text-fg"><?= $escaper->escapeHtml($title) ?></span>
-                <span class="myca-caption text-fg-secondary"><?= $escaper->escapeHtml($subtitle) ?></span>
+            <li>
+                <?= $icons->renderHtml($icon, 'shrink-0 text-gold-700', 32, 32, ['aria-hidden' => 'true']) ?>
+                <span class="text-sm leading-5 font-semibold text-navy-900"><?= $escaper->escapeHtml($title) ?><br><?= $escaper->escapeHtml($subtitle) ?></span>
             </li>
         <?php endforeach ?>
     </ul>

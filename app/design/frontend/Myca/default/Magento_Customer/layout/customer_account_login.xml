@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<!-- Connexion : titre de page traduit et porté par l'en-tête du contenu ; deux colonnes (connexion, nouveau client). -->
+<page xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:noNamespaceSchemaLocation="urn:magento:framework:View/Layout/etc/page_configuration.xsd">
+    <head>
+        <title>Connexion</title>
+    </head>
+    <body>
+        <referenceBlock name="page.main.title" remove="true"/>
+        <referenceContainer name="content">
+            <block name="myca.login.header" template="Magento_Customer::login-header.phtml" before="-"/>
+        </referenceContainer>
+        <referenceContainer name="customer.login.container" htmlClass="myca-login-container"/>
+    </body>
+</page>

@@ -1,0 +1,14 @@
+<?php
+/**
+ * Délai de retour seul (« 14 jours » ou « 30 jours »), inséré dans un titre de la page Retours.
+ */
+
+declare(strict_types=1);
+
+use Magento\Framework\Escaper;
+use Myca\Rma\Block\Widget\ReturnPolicy;
+
+/** @var ReturnPolicy $block */
+/** @var Escaper $escaper */
+?>
+<?= $escaper->escapeHtml(__('%1 jours', $block->getReturnDays())) ?>

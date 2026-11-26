@@ -19,5 +19,15 @@
         <referenceBlock name="footer-static-links" remove="true"/>
         <referenceBlock name="footer-cms-content" remove="true"/>
         <referenceBlock name="footer-copyright" remove="true"/>
+
+        <!-- Barre de navigation inférieure (mobile et tablette) -->
+        <referenceContainer name="before.body.end">
+            <block name="myca.bottom.nav" template="Magento_Theme::html/bottom-nav.phtml"/>
+        </referenceContainer>
+
+        <!-- Préchargement des polices du premier écran (titres Fraunces, texte Inter) : pas de saut au chargement. -->
+        <referenceBlock name="head.additional">
+            <block name="myca.font.preload" template="Magento_Theme::html/font-preload.phtml" before="-"/>
+        </referenceBlock>
     </body>
 </page>

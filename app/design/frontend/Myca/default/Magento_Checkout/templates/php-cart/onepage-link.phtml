@@ -21,7 +21,7 @@ $privacy = $viewModels->require(SitePrivacy::class);
 $paymentMethods = $privacy->getPaymentMethods();
 ?>
 <?php if ($block->isPossibleOnepageCheckout()): ?>
-    <div class="fixed inset-x-0 bottom-0 z-20 border-t border-line bg-surface p-3 md:static md:mt-3 md:border-0 md:p-0">
+    <div class="myca-above-nav fixed inset-x-0 bottom-0 z-20 border-t border-line bg-surface p-3 md:static md:mt-3 md:border-0 md:p-0">
         <a
             @click.prevent.stop="$dispatch('toggle-authentication', {url: '<?= $escaper->escapeHtmlAttr($escaper->escapeUrl($block->getCheckoutUrl())) ?>'});"
             href="<?= $escaper->escapeUrl($block->getCheckoutUrl()) ?>"

@@ -7,7 +7,9 @@ declare(strict_types=1);
 
 use Magento\Theme\Block\Html\Breadcrumbs;
 use Hyva\Theme\Model\ViewModelRegistry;
+use Hyva\Theme\ViewModel\CurrentProduct;
 use Hyva\Theme\ViewModel\SvgIcons;
+use Magento\Catalog\Model\Category;
 use Magento\Framework\Escaper;
 
 /** @var Escaper $escaper */
@@ -25,6 +27,30 @@ $crumbsCount = 1;
 $currentPageUrl = preg_replace('/[?#].*$/', '', $block->getUrl('', ['_current' => true, '_use_rewrite' => true]));
 /** @var ViewModelRegistry $viewModels */
 $icons = $viewModels->require(SvgIcons::class);
+
+// Fiche produit ouverte sans catégorie d'origine (accueil, lien direct) : on intercale la catégorie de type
+// (Polos…) puis la plus précise (collection), comme Accueil > Polos > España – Hidalgo > Polo Hidalgo.
+$currentProduct = $viewModels->require(CurrentProduct::class);
+if (isset($crumbs['product']) && count($crumbs) === 2 && $currentProduct->exists()) {
+    $byLevel = [];
+    /** @var Category $category */
+    foreach ($currentProduct->get()->getCategoryCollection()->addAttributeToSelect('name')->addIsActiveFilter() as $category) {
+        if ((int) $category->getLevel() >= 2) {
+            $byLevel[(int) $category->getLevel()] ??= $category;
+        }
+    }
+    ksort($byLevel);
+    $trail = array_values($byLevel);
+    $trail = count($trail) > 1 ? [$trail[0], end($trail)] : $trail;
+    $categoryCrumbs = [];
+    foreach ($trail as $category) {
+        $categoryCrumbs['category' . $category->getId()] = [
+            'label' => (string) $category->getName(), 'title' => '', 'link' => $category->getUrl(), 'last' => false,
+            'first' => false, 'readonly' => false,
+        ];
+    }
+    $crumbs = ['home' => $crumbs['home'] ?? reset($crumbs)] + $categoryCrumbs + ['product' => $crumbs['product']];
+}
 ?>
 
 <nav class="breadcrumbs" aria-label="<?= $escaper->escapeHtmlAttr(__('Fil d’Ariane')) ?>">

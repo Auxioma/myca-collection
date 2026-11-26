@@ -4,5 +4,18 @@
     <widget id="myca_rma_return_policy" class="Myca\Rma\Block\Widget\ReturnPolicy" is_email_compatible="false">
         <label translate="true">MYCA – Délais de retour</label>
         <description translate="true">Délais lus dans Magasins &gt; Configuration &gt; MYCA &gt; Retours &amp; SAV.</description>
+        <parameters>
+            <parameter name="display" xsi:type="select" visible="true" required="false" sort_order="10">
+                <label translate="true">Affichage</label>
+                <options>
+                    <option name="full" value="full" selected="true">
+                        <label translate="true">Tous les délais</label>
+                    </option>
+                    <option name="days" value="days">
+                        <label translate="true">Délai de retour seul (ex. « 14 jours »)</label>
+                    </option>
+                </options>
+            </parameter>
+        </parameters>
     </widget>
 </widgets>

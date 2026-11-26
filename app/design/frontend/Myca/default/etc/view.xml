@@ -1,0 +1,36 @@
+<?xml version="1.0"?>
+<!--
+/**
+ * Tailles d'images propres au thème MYCA (fusionnées avec celles du thème parent Hyvä).
+ * Cartes produits des widgets de l'accueil (Best-sellers, Nouveautés) : zone Figma 265 × 110,
+ * générée en double densité et sans cadre, pour garder le format d'origine (casquette en paysage).
+ * Galerie de la fiche produit : image sans cadre blanc, flèches de part et d'autre de l'image (maquette M45).
+ */
+-->
+<view xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:Config/etc/view.xsd">
+    <media>
+        <images module="Magento_Catalog">
+            <image id="new_products_content_widget_grid" type="small_image">
+                <width>530</width>
+                <height>220</height>
+                <frame>false</frame>
+            </image>
+            <!-- Image principale de la fiche : sans cadre blanc, pour que la photo occupe toute la galerie -->
+            <image id="product_page_image_medium" type="image">
+                <width>700</width>
+                <height>700</height>
+                <frame>false</frame>
+            </image>
+        </images>
+    </media>
+    <vars module="Magento_Catalog">
+        <var name="gallery">
+            <var name="loop">1</var>
+            <var name="caption">0</var>
+            <var name="pager">thumbs</var>
+            <var name="pagerdir">vertical</var>
+            <var name="nav">center</var>
+            <var name="maxthumbs">0</var>
+        </var>
+    </vars>
+</view>

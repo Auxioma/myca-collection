@@ -30,6 +30,7 @@ use Myca\Dropship\Model\ResourceModel\DropshipOrder;
 use Myca\Dropship\Model\ResourceModel\PartnerQuote;
 use Myca\Partner\Api\Data\PartnerInterface;
 use Myca\Partner\Model\CurrentPartner;
+use Myca\Core\Model\AuditLogger;
 use Myca\Shipping\Model\Config as ShippingConfig;
 
 /**
@@ -65,7 +66,8 @@ class PartnerOrderService
         private readonly QuotePartner $quotePartner,
         private readonly OrderConfig $config,
         private readonly OrderRules $rules,
-        private readonly ShippingConfig $shippingConfig
+        private readonly ShippingConfig $shippingConfig,
+        private readonly AuditLogger $audit
     ) {
     }
 
@@ -236,6 +238,13 @@ class PartnerOrderService
             $mode === PartnerPricing::MODE_DROPSHIP
         );
         $this->partnerQuote->delete((int) $quote->getId());
+        $this->audit->log('partner_order_placed', 'order', (string) $order->getIncrementId(), null, [
+            'partner' => $partner->getCode(),
+            'mode' => $mode,
+            'grand_total' => (float) $order->getGrandTotal(),
+            'payment' => $paymentMethod,
+            'terms_accepted' => true,
+        ]);
 
         return ['order' => $order, 'redirect_url' => $redirectUrl];
     }

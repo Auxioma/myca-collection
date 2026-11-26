@@ -30,6 +30,14 @@ class ReturnPolicy extends Template implements BlockInterface
         parent::__construct($context, $data);
     }
 
+    /**
+     * Paramètre « display="days" » : seulement le délai de retour (« 14 jours »), à insérer dans une phrase.
+     */
+    public function getTemplate(): string
+    {
+        return $this->getData('display') === 'days' ? 'Myca_Rma::widget/return-days.phtml' : (string) parent::getTemplate();
+    }
+
     public function isCommercial30DaysEnabled(): bool
     {
         return $this->config->isCommercial30DaysEnabled();

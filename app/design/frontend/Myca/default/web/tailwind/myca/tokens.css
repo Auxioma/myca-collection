@@ -6,7 +6,8 @@
 
 @theme {
     --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
-    --font-display: "Playfair Display", Georgia, serif;
+    --font-display: "Fraunces", Georgia, serif;
+    --font-logo: "Playfair Display", Georgia, serif;
 
     --color-white: #ffffff;
 

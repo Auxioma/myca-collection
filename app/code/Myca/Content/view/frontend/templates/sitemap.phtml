@@ -1,6 +1,7 @@
 <?php
 /**
- * M51 — Plan du site : catégories, pages de service, compte et pages légales réellement publiées.
+ * M51 — Plan du site : bannière puis huit cartes (accueil, collections, produits, marque, services, pages légales,
+ * compte, contact). Catégories et pages CMS sont lues à chaque affichage : une page désactivée disparaît du plan.
  */
 
 declare(strict_types=1);
@@ -15,24 +16,37 @@ use Myca\Content\ViewModel\SiteMap;
 /** @var SiteMap $siteMap */
 $siteMap = $block->getData('view_model');
 $pages = $siteMap->getPages();
+$categories = $siteMap->getCategoryGroups();
 $sections = [
-    [__('Boutique'), array_map(static fn (array $c) => ['title' => $c['name'], 'url' => $c['url'], 'level' => $c['level']], $siteMap->getCategories())],
-    [__('Informations & aide'), $pages['service']],
-    [__('Mon compte & services'), $siteMap->getServices()],
-    [__('Informations légales'), $pages['legal']],
+    ['home', __('Accueil'), [['title' => (string) __('Page d’accueil'), 'url' => $block->getBaseUrl()]]],
+    ['layers', __('Collections'), $categories['collections']],
+    ['shirt', __('Produits'), $categories['products']],
+    ['crown', __('La Marque'), $pages['brand']],
+    ['headset', __('Services'), [...$pages['service'], ...$siteMap->getServices()]],
+    ['file', __('Informations légales'), $pages['legal']],
+    ['user', __('Mon compte'), $siteMap->getAccountLinks()],
+    ['mail', __('Contact'), $siteMap->getContactLinks()],
 ];
 ?>
-<div class="mx-auto grid w-full max-w-[1200px] gap-6 py-4 md:grid-cols-2 lg:grid-cols-4">
-    <?php foreach ($sections as [$title, $links]): ?>
+<div class="myca-rx-hero mb-5">
+    <figure><img src="<?= $escaper->escapeUrl($siteMap->getHeroImageUrl()) ?>" alt="" width="1140" height="520"></figure>
+    <div class="myca-rx-hero-text myca-sm-hero-text">
+        <h1><?= $escaper->escapeHtml(__('Plan du site')) ?></h1>
+        <p><?= $escaper->escapeHtml(__('Accédez rapidement à toutes les pages de l’univers MYCA.')) ?></p>
+    </div>
+</div>
+<div class="myca-sm-grid">
+    <?php foreach ($sections as [$icon, $title, $links]): ?>
         <?php if ($links === []) { continue; } ?>
-        <nav aria-label="<?= $escaper->escapeHtmlAttr($title) ?>">
-            <h2 class="mb-2 text-base font-semibold text-fg"><?= $escaper->escapeHtml($title) ?></h2>
-            <ul class="flex flex-col gap-1 myca-body-s">
+        <nav class="myca-sm-card" aria-label="<?= $escaper->escapeHtmlAttr($title) ?>">
+            <h2>
+                <span class="myca-sm-icon myca-pb-icon-<?= $escaper->escapeHtmlAttr($icon) ?>" aria-hidden="true"></span>
+                <?= $escaper->escapeHtml($title) ?>
+            </h2>
+            <ul>
                 <?php foreach ($links as $link): ?>
-                    <li class="<?= ((int) ($link['level'] ?? 0)) > 0 ? 'pl-4' : '' ?>">
-                        <a href="<?= $escaper->escapeUrl($link['url']) ?>" class="inline-block py-1 text-fg underline-offset-2 hover:underline focus-visible:underline">
-                            <?= $escaper->escapeHtml($link['title']) ?>
-                        </a>
+                    <li class="<?= ((int) ($link['level'] ?? 0)) > 0 ? 'ps-4' : '' ?>">
+                        <a href="<?= $escaper->escapeUrl($link['url']) ?>"><?= $escaper->escapeHtml($link['title']) ?></a>
                     </li>
                 <?php endforeach ?>
             </ul>

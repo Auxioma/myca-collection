@@ -1,0 +1,198 @@
+/*
+ * Fiche produit (M45) d'après la maquette : galerie arrondie à vignettes encadrées, macaron Signature, options plus
+ * grandes, bouton d'achat large, réassurance en bande unique et encart passeport de l'onglet Description.
+ * Hors couche : ces règles doivent primer sur les classes utilitaires des gabarits Hyvä (galerie, pastilles).
+ */
+
+/* Galerie : image dans un cadre arrondi, agrandie pour remplir la zone (format d'origine conservé).
+   Hyvä borne la galerie à la largeur de l'image source (style en ligne) : elle occupe ici toute sa colonne. */
+.catalog-product-view #gallery {
+    max-inline-size: none !important;
+
+    & [data-slider-type] ,
+    & .aspect-\(--gallery-ratio\).flex {
+        border-radius: var(--radius-xl, 16px);
+    }
+
+    & img.object-scale-down {
+        object-fit: contain;
+        inline-size: 100%;
+    }
+
+    & .snap-marker {
+        border-radius: var(--radius-lg, 12px);
+    }
+
+    & .snap-marker[aria-current] {
+        box-shadow: inset 0 0 0 2px var(--color-brand-red);
+    }
+
+    & .snap-marker img {
+        border-radius: var(--radius-lg, 12px);
+    }
+}
+
+.catalog-product-view #gallery > .relative {
+    /* Dans la galerie à vignettes verticales (flex), la zone image prend toute la place restante */
+    flex: 1 1 auto;
+    min-inline-size: 0;
+    overflow: hidden;
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-xl, 16px);
+}
+
+/* Macaron « MYCA Signature » (ligne Signature uniquement) */
+.myca-pdp-signature {
+    @apply flex size-28 shrink-0 flex-col items-center justify-center gap-0.5 rounded-full border-2 border-gold-500 bg-[radial-gradient(circle,#fffdf7,#f8f0dc)] text-center;
+    box-shadow: 0 0 0 4px #fff, 0 0 0 5px var(--color-gold-500);
+}
+
+/* Options : libellés plus présents, pastilles de couleur 56 px, tailles 44 px */
+.myca-pdp-options {
+    & legend,
+    & .label {
+        @apply text-base leading-6 font-semibold text-navy-900;
+    }
+
+    & .swatch-option {
+        min-block-size: 44px;
+        min-inline-size: 48px;
+        border-radius: var(--radius-lg, 12px);
+        @apply text-base;
+    }
+
+    & .swatch-option[data-swatch-type="visual"] {
+        min-block-size: 56px;
+        min-inline-size: 56px;
+        border-radius: var(--radius-lg, 12px);
+    }
+
+    /* La couleur remplit la pastille (le gabarit Hyvä fixe 30 × 20 px en style en ligne) */
+    & .swatch-option[data-swatch-type="visual"] > span.block {
+        inline-size: 100% !important;
+        block-size: 100% !important;
+        border-radius: calc(var(--radius-lg, 12px) - 3px);
+    }
+
+    & .swatch-option[data-swatch-type="visual"] {
+        padding: 3px;
+    }
+
+    & .swatch-option[data-swatch-type="visual"]:is(:has(:checked), [aria-checked="true"]) {
+        box-shadow: 0 0 0 2px #fff, 0 0 0 4px var(--color-brand-red);
+    }
+}
+
+/* Achat : bouton large et favori carré */
+.myca-pdp-buy {
+    & .myca-btn {
+        @apply min-h-12 md:min-h-14 md:text-lg;
+    }
+
+    & .myca-btn svg {
+        @apply md:size-6;
+    }
+
+    & .myca-btn-secondary {
+        @apply w-12 md:w-14;
+    }
+}
+
+/* Réassurance : une bande, quatre colonnes séparées */
+.myca-pdp-perks {
+    @apply grid w-full grid-cols-2 gap-y-4 rounded-xl border border-line bg-surface-subtle px-2 py-4 shadow-card sm:grid-cols-4;
+
+    & li {
+        @apply flex flex-col items-center gap-1 px-2 text-center;
+    }
+
+    & li + li {
+        @apply sm:border-s sm:border-line-strong;
+    }
+
+    & li:nth-child(3) {
+        @apply max-sm:border-0;
+    }
+
+    & li:nth-child(even) {
+        @apply max-sm:border-s max-sm:border-line-strong;
+    }
+}
+
+/* Onglet Description : encart passeport doré */
+.myca-pdp-passport-card {
+    @apply flex items-center gap-4 self-start rounded-xl border-2 border-gold-500 bg-surface p-4 text-left transition-shadow hover:shadow-card
+        focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent;
+}
+
+/* Onglet Matières & entretien : cartes à en-tête marine (icône dorée encadrée), tissu, caractéristiques,
+   symboles d'entretien et conseils MYCA */
+.myca-mc-card {
+    @apply overflow-hidden rounded-xl border border-line-strong bg-surface shadow-card;
+}
+
+.myca-mc-head {
+    @apply flex items-center gap-4 bg-navy-900 px-5 py-3.5 text-lg leading-6 font-bold tracking-wide text-white uppercase md:text-xl;
+
+    & > span {
+        @apply flex size-11 shrink-0 items-center justify-center rounded-md border-2 border-gold-400 text-gold-400;
+    }
+}
+
+/* Tissu : texture piquée dessinée en CSS (aucune photo de matière fournie) */
+.myca-mc-fabric {
+    @apply aspect-[16/7] rounded-lg border border-line sm:aspect-[16/10];
+    background-color: #e9ecf1;
+    background-image:
+        radial-gradient(circle at 50% 50%, rgb(15 27 53 / 0.26) 1.1px, transparent 1.8px),
+        radial-gradient(circle at 50% 50%, rgb(15 27 53 / 0.14) 1.1px, transparent 1.8px),
+        radial-gradient(ellipse at 30% 25%, rgb(255 255 255 / 0.9), transparent 65%);
+    background-size: 7px 7px, 7px 7px, 100% 100%;
+    background-position: 0 0, 3.5px 3.5px, 0 0;
+}
+
+.myca-mc-specs {
+    @apply mx-4 mb-4 flex flex-col divide-y divide-line rounded-lg bg-surface-subtle px-4 text-sm leading-5;
+
+    & > div {
+        @apply grid grid-cols-[minmax(0,128px)_minmax(0,1fr)] items-center gap-3 py-2.5 sm:grid-cols-[minmax(0,180px)_minmax(0,1fr)];
+    }
+
+    & dt {
+        @apply flex items-center gap-3 font-semibold text-navy-900;
+    }
+
+    & dd {
+        @apply text-fg;
+    }
+}
+
+.myca-mc-care {
+    @apply flex flex-col gap-2 p-4;
+
+    & li {
+        @apply flex min-h-12 items-center gap-4 rounded-lg bg-surface-subtle px-4 py-1.5 text-sm leading-5 text-fg;
+    }
+}
+
+.myca-mc-tips {
+    @apply rounded-xl border-2 border-gold-500 bg-[linear-gradient(135deg,#fffdf7,#fbf3df)] p-5;
+
+    & h3 {
+        @apply flex items-center gap-3 font-display text-xl leading-7 font-semibold text-navy-900;
+
+        &::before {
+            content: "";
+            @apply size-7 shrink-0 bg-gold-500;
+            mask: url("../svg/zap.svg") center / contain no-repeat;
+        }
+    }
+
+    & ul {
+        @apply mt-3 flex flex-col gap-1.5 text-sm leading-5 text-fg;
+    }
+
+    & li {
+        @apply flex gap-2.5;
+    }
+}

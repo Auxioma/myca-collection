@@ -1,0 +1,101 @@
+/*
+ * Expérience mobile façon application (< 1024 px) : barre de navigation inférieure, menu latéral, barres d'action
+ * fixées au-dessus de la barre inférieure, zones de sécurité des écrans à encoche (env(safe-area-inset-*)).
+ */
+
+:root {
+    --myca-bottom-nav-h: 0px;
+}
+
+@media (width < 64rem) {
+    :root {
+        --myca-bottom-nav-h: calc(64px + env(safe-area-inset-bottom, 0px));
+    }
+
+    /* La page laisse la place de la barre inférieure */
+    body:has(.myca-bottom-nav) {
+        padding-bottom: var(--myca-bottom-nav-h);
+    }
+
+    /* Barres d'action fixées (achat, commande, filtres) : au-dessus de la barre inférieure */
+    body:has(.myca-bottom-nav) .myca-above-nav.bottom-0 {
+        bottom: var(--myca-bottom-nav-h);
+    }
+
+    body:has(.myca-bottom-nav) .myca-above-nav.bottom-4 {
+        bottom: calc(var(--myca-bottom-nav-h) + 1rem);
+    }
+
+    /* Défilement : pas de rebond horizontal, tapotement sans surlignage gris */
+    html {
+        -webkit-tap-highlight-color: transparent;
+        overflow-x: clip;
+    }
+}
+
+.myca-bottom-nav {
+    @apply fixed inset-x-0 bottom-0 z-40 grid grid-cols-5 border-t border-line bg-surface/95 backdrop-blur-md lg:hidden;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    box-shadow: 0 -4px 16px rgb(15 27 53 / 0.08);
+
+    & > a,
+    & > button {
+        @apply relative flex h-16 flex-col items-center justify-center gap-1 text-[11px] leading-3 font-semibold text-fg-secondary transition-colors
+            active:scale-95 focus-visible:outline-2 focus-visible:-outline-offset-4 focus-visible:outline-accent;
+    }
+
+    & > [aria-current="page"] {
+        @apply text-brand-red;
+
+        &::before {
+            content: "";
+            @apply absolute top-0 h-[3px] w-8 rounded-b-full bg-brand-red;
+        }
+    }
+}
+
+.myca-bottom-nav-badge {
+    @apply absolute -top-1.5 -right-2.5 min-w-4 rounded-full bg-brand-red px-1 text-center text-[10px] leading-4 font-bold text-white tabular-nums;
+}
+
+/* Menu latéral : fond assombri, coins arrondis côté contenu, rubriques larges */
+.myca-drawer {
+    @apply rounded-e-2xl shadow-[8px_0_32px_rgb(15_27_53/0.25)];
+
+    &::backdrop {
+        background: rgb(10 18 38 / 0.55);
+        backdrop-filter: blur(2px);
+    }
+
+    & nav a[aria-current="page"] {
+        @apply text-brand-red;
+    }
+}
+
+.myca-drawer-head {
+    padding-top: env(safe-area-inset-top, 0px);
+}
+
+.myca-drawer-shortcuts {
+    @apply mt-2 bg-surface-subtle px-5 py-4;
+
+    & > p {
+        @apply mb-2 text-xs leading-4 font-bold tracking-[0.12em] text-fg-secondary uppercase;
+    }
+
+    & a {
+        @apply flex min-h-12 items-center gap-3 text-[15px] leading-5 font-medium text-navy-900;
+    }
+}
+
+.myca-drawer-foot {
+    @apply flex items-center gap-2 border-t border-line bg-navy-900 px-5 py-3 text-xs leading-4 text-white/85;
+    padding-bottom: calc(0.75rem + env(safe-area-inset-bottom, 0px));
+}
+
+/* Grilles des pages de service en une colonne (mobile) : la colonne peut rétrécir sous la largeur de son contenu */
+@media (width < 64rem) {
+    :is(.myca-contact-layout, .myca-login-container, .myca-register, .myca-faq-layout, .myca-bp-steps ol, .myca-qm-exigences) {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}

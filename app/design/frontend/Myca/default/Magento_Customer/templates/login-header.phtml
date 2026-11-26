@@ -1,0 +1,23 @@
+<?php
+/**
+ * Connexion et création de compte — en-tête : logotype, liseré tricolore, titre et accroche (arguments de layout
+ * « title » et « text », sinon ceux de la connexion).
+ */
+
+declare(strict_types=1);
+
+use Magento\Framework\Escaper;
+use Magento\Framework\View\Element\Template;
+
+/** @var Escaper $escaper */
+/** @var Template $block */
+
+$title = (string) ($block->getData('title') ?: __('Mon compte MYCA'));
+$text = (string) ($block->getData('text') ?: __('Connectez-vous pour suivre vos commandes, vos retours et vos passeports.'));
+?>
+<header class="myca-login-header">
+    <p class="font-logo text-2xl leading-none text-navy-900" aria-hidden="true">MYCA<sup class="text-xs">®</sup></p>
+    <span class="myca-login-flag" aria-hidden="true"></span>
+    <h1><?= $escaper->escapeHtml($title) ?></h1>
+    <p><?= $escaper->escapeHtml($text) ?></p>
+</header>

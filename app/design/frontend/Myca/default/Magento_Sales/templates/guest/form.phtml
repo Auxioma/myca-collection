@@ -1,0 +1,117 @@
+<?php
+/**
+ * Suivi de commande sans compte (sales/guest/form) : n° de commande, nom de facturation et e-mail ou code postal.
+ * Mêmes champs que le gabarit Hyvä (oar_*) ; le choix e-mail / code postal se fait par deux boutons.
+ */
+
+declare(strict_types=1);
+
+use Hyva\Theme\Model\ViewModelRegistry;
+use Hyva\Theme\ViewModel\SvgIcons;
+use Magento\Framework\Escaper;
+use Magento\Sales\Block\Widget\Guest\Form as GuestFormWidget;
+
+/** @var GuestFormWidget $block */
+/** @var Escaper $escaper */
+/** @var ViewModelRegistry $viewModels */
+
+$icons = $viewModels->require(SvgIcons::class);
+$features = [
+    ['truck', __('Où en est ma commande'), __('Statut, expédition et lien de suivi du transporteur.')],
+    ['refresh', __('Retour ou échange'), __('Demandez un retour depuis la commande, sans compte.')],
+    ['file', __('Factures'), __('Consultez et imprimez vos factures.')],
+];
+?>
+<div class="myca-login-container myca-track">
+    <div class="myca-login-card">
+        <form class="form form-orders-search flex grow flex-col"
+              id="oar-widget-orders-and-returns-form"
+              action="<?= $escaper->escapeUrl($block->getActionUrl()) ?>"
+              method="post" name="guest_post"
+              x-data="{ authenticateBy: 'email' }">
+            <?= $block->getBlockHtml('formkey') ?>
+            <fieldset class="flex grow flex-col gap-4">
+                <legend class="myca-login-title">
+                    <span class="myca-login-icon myca-track-icon" aria-hidden="true"></span>
+                    <span>
+                        <span class="block"><?= $escaper->escapeHtml(__('Retrouver ma commande')) ?></span>
+                        <span class="block font-sans text-sm font-normal text-fg-secondary"><?= $escaper->escapeHtml(__('Commande passée sans compte')) ?></span>
+                    </span>
+                </legend>
+
+                <div>
+                    <label class="myca-field-label" for="oar-order-id"><?= $escaper->escapeHtml(__('N° de commande')) ?></label>
+                    <input type="text" class="myca-field w-full" id="oar-order-id" name="oar_order_id" required
+                           placeholder="<?= $escaper->escapeHtmlAttr(__('Ex. : 000000123')) ?>" autocomplete="off">
+                    <p class="myca-track-hint"><?= $escaper->escapeHtml(__('Il figure dans l’e-mail de confirmation de commande.')) ?></p>
+                </div>
+
+                <div>
+                    <label class="myca-field-label" for="oar-billing-lastname"><?= $escaper->escapeHtml(__('Nom de famille (facturation)')) ?></label>
+                    <input type="text" class="myca-field w-full" id="oar-billing-lastname" name="oar_billing_lastname" required autocomplete="family-name">
+                </div>
+
+                <fieldset>
+                    <legend class="myca-field-label"><?= $escaper->escapeHtml(__('Vérifier avec')) ?></legend>
+                    <input type="hidden" name="oar_type" :value="authenticateBy" value="email">
+                    <div class="myca-track-switch" role="radiogroup">
+                        <button type="button" role="radio" :aria-checked="authenticateBy === 'email'" @click="authenticateBy = 'email'">
+                            <?= $icons->renderHtml('mail', '', 16, 16, ['aria-hidden' => 'true']) ?><?= $escaper->escapeHtml(__('Mon e-mail')) ?>
+                        </button>
+                        <button type="button" role="radio" :aria-checked="authenticateBy === 'zip'" @click="authenticateBy = 'zip'">
+                            <?= $icons->renderHtml('map-pin', '', 16, 16, ['aria-hidden' => 'true']) ?><?= $escaper->escapeHtml(__('Mon code postal')) ?>
+                        </button>
+                    </div>
+                </fieldset>
+
+                <div x-show="authenticateBy !== 'zip'">
+                    <label class="myca-field-label" for="oar_email"><?= $escaper->escapeHtml(__('Adresse e-mail de la commande')) ?></label>
+                    <input type="email" class="myca-field w-full" id="oar_email" name="oar_email" autocomplete="email"
+                           :required="authenticateBy !== 'zip'" required>
+                </div>
+                <div x-show="authenticateBy === 'zip'" x-cloak>
+                    <label class="myca-field-label" for="oar_zip"><?= $escaper->escapeHtml(__('Code postal de facturation')) ?></label>
+                    <input type="text" class="myca-field w-full" id="oar_zip" name="oar_zip" autocomplete="postal-code"
+                           :required="authenticateBy === 'zip'">
+                </div>
+
+                <button type="submit" class="myca-btn myca-btn-primary min-h-12 w-full text-base">
+                    <?= $icons->renderHtml('search', '', 18, 18, ['aria-hidden' => 'true']) ?><?= $escaper->escapeHtml(__('Voir ma commande')) ?>
+                </button>
+                <p class="myca-login-secure"><?= $escaper->escapeHtml(__('Vos informations servent uniquement à retrouver votre commande.')) ?></p>
+            </fieldset>
+        </form>
+    </div>
+
+    <aside class="myca-login-side">
+        <div class="myca-login-new">
+            <h2 class="myca-login-title">
+                <span class="myca-login-icon myca-login-icon-new myca-track-truck" aria-hidden="true"></span>
+                <span><?= $escaper->escapeHtml(__('Depuis votre commande')) ?></span>
+            </h2>
+            <ul class="flex flex-col gap-4">
+                <?php foreach ($features as [$icon, $title, $text]): ?>
+                    <li class="flex gap-3">
+                        <?= $icons->renderHtml($icon, 'mt-0.5 shrink-0 text-gold-400', 20, 20, ['aria-hidden' => 'true']) ?>
+                        <span>
+                            <strong class="block text-[15px] leading-5 font-semibold text-white"><?= $escaper->escapeHtml($title) ?></strong>
+                            <span class="block text-sm leading-5 text-white/75"><?= $escaper->escapeHtml($text) ?></span>
+                        </span>
+                    </li>
+                <?php endforeach ?>
+            </ul>
+            <p class="mt-auto text-sm leading-5 text-white/75">
+                <?= $escaper->escapeHtml(__('Vous avez un compte ?')) ?>
+                <a class="font-semibold text-white underline underline-offset-2" href="<?= $escaper->escapeUrl($block->getUrl('sales/order/history')) ?>"><?= $escaper->escapeHtml(__('Voir mes commandes')) ?></a>
+            </p>
+        </div>
+        <div class="myca-login-partner">
+            <span class="myca-login-icon myca-login-icon-store myca-track-help" aria-hidden="true"></span>
+            <p>
+                <strong><?= $escaper->escapeHtml(__('Commande introuvable ?')) ?></strong>
+                <?= $escaper->escapeHtml(__('Vérifiez le numéro dans l’e-mail de confirmation, ou')) ?>
+                <a href="<?= $escaper->escapeUrl($block->getUrl('contact')) ?>"><?= $escaper->escapeHtml(__('contactez-nous')) ?></a>.
+            </p>
+        </div>
+    </aside>
+</div>

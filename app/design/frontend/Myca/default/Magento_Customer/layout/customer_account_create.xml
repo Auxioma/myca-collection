@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<!-- Création de compte : en-tête MYCA, formulaire Hyvä restylé (myca-register) et colonne des avantages. -->
+<page xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:noNamespaceSchemaLocation="urn:magento:framework:View/Layout/etc/page_configuration.xsd">
+    <head>
+        <title>Créer mon compte</title>
+    </head>
+    <body>
+        <referenceBlock name="page.main.title" remove="true"/>
+        <referenceContainer name="content">
+            <block name="myca.register.header" template="Magento_Customer::login-header.phtml" before="-">
+                <arguments>
+                    <argument name="title" xsi:type="string" translate="true">Créer mon compte MYCA</argument>
+                    <argument name="text" xsi:type="string" translate="true">Quelques informations suffisent pour profiter de votre espace client.</argument>
+                </arguments>
+            </block>
+        </referenceContainer>
+        <referenceContainer name="customer.login.container" htmlClass="registration-container registation-container myca-register">
+            <block name="myca.register.side" template="Magento_Customer::register-side.phtml" after="customer_form_register"/>
+        </referenceContainer>
+    </body>
+</page>

@@ -1,0 +1,1920 @@
+/*
+ * Pages de service maquettées : « Retours & échanges » et « Nos engagements » (Contenu > Pages ; chaque bloc est un
+ * élément « HTML Code » Page Builder portant une classe myca-rx-* / myca-en-*) et le plan du site (myca-sm-*).
+ */
+
+.myca-rx-hero,
+.myca-rx-cards,
+.myca-rx-steps,
+.myca-rx-strip {
+    margin-bottom: --spacing(5);
+}
+
+/* Icône posée par classe (myca-pb-icon-*) sur un élément, dessinée en ::before */
+:is(.myca-rx-cards li, .myca-rx-steps li, .myca-rx-help li, .myca-rx-strip li)::before {
+    content: "";
+    flex-shrink: 0;
+    background-color: currentColor;
+    mask: var(--myca-pb-icon) center / contain no-repeat;
+}
+
+.myca-pb-icon-calendar { --myca-pb-icon: url("../svg/calendar.svg"); }
+.myca-pb-icon-laptop { --myca-pb-icon: url("../svg/laptop.svg"); }
+.myca-pb-icon-swap { --myca-pb-icon: url("../svg/swap.svg"); }
+.myca-pb-icon-card { --myca-pb-icon: url("../svg/card.svg"); }
+.myca-pb-icon-box { --myca-pb-icon: url("../svg/box.svg"); }
+.myca-pb-icon-mail { --myca-pb-icon: url("../svg/mail.svg"); }
+.myca-pb-icon-help { --myca-pb-icon: url("../svg/help.svg"); }
+.myca-pb-icon-user { --myca-pb-icon: url("../svg/user.svg"); }
+.myca-pb-icon-feather { --myca-pb-icon: url("../svg/feather.svg"); }
+.myca-pb-icon-globe { --myca-pb-icon: url("../svg/globe.svg"); }
+.myca-pb-icon-home { --myca-pb-icon: url("../svg/home.svg"); }
+.myca-pb-icon-layers { --myca-pb-icon: url("../svg/layers.svg"); }
+.myca-pb-icon-crown { --myca-pb-icon: url("../svg/crown.svg"); }
+.myca-pb-icon-headset { --myca-pb-icon: url("../svg/headset.svg"); }
+.myca-pb-icon-file { --myca-pb-icon: url("../svg/file.svg"); }
+.myca-pb-icon-leaf { --myca-pb-icon: url("../svg/leaf.svg"); }
+
+/* Titres de section : trait rouge à gauche, Fraunces */
+:is(.myca-rx-steps, .myca-rx-faq, .myca-rx-help) h2 {
+    @apply flex items-center gap-3 font-display text-xl leading-7 font-semibold text-navy-900 md:text-2xl;
+
+    &::before {
+        content: "";
+        @apply h-6 w-1 shrink-0 rounded-full bg-brand-red;
+    }
+}
+
+/* Bannière : photo à gauche coupée en diagonale par un liseré rouge, texte sur fond marine */
+.myca-rx-hero {
+    @apply grid overflow-hidden rounded-xl bg-navy-900 text-white md:grid-cols-[46%_1fr];
+
+    & figure {
+        @apply bg-brand-red;
+
+        @variant md {
+            clip-path: polygon(0 0, 100% 0, calc(100% - 56px) 100%, 0 100%);
+        }
+    }
+
+    & img {
+        @apply h-44 w-full object-cover object-[50%_30%] sm:h-56 md:h-full md:min-h-[260px];
+
+        @variant md {
+            clip-path: polygon(0 0, calc(100% - 7px) 0, calc(100% - 63px) 100%, 0 100%);
+        }
+    }
+}
+
+.myca-rx-hero-text {
+    @apply flex flex-col justify-center gap-3 px-5 py-7 sm:px-8 md:py-10 md:pr-10 md:pl-4 lg:pl-8;
+
+    & h1 {
+        @apply flex items-center gap-4 font-display text-[32px] leading-tight font-semibold tracking-[-0.015em] text-white lg:text-[44px];
+
+        &::before {
+            content: "";
+            @apply size-11 shrink-0 bg-gold-400 lg:size-14;
+            mask: var(--myca-rx-hero-icon, url("../svg/refresh.svg")) center / contain no-repeat;
+        }
+    }
+
+    & p {
+        @apply max-w-[560px] text-sm leading-6 text-white/85 md:text-base md:leading-7;
+    }
+}
+
+/* Variante marque : texte centré sous le liseré tricolore, sans icône */
+.myca-rx-hero-brand .myca-rx-hero-text {
+    @apply items-center text-center md:pl-8;
+
+    &::before {
+        content: "";
+        @apply mb-1 h-1.5 w-36 bg-[linear-gradient(90deg,var(--color-flag-blue)_33.3%,#fff_33.3%_66.6%,var(--color-brand-red)_66.6%)];
+    }
+
+    & h1::before {
+        content: none;
+    }
+}
+
+/* Cartes d'engagement */
+.myca-rx-cards ul {
+    @apply grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5;
+}
+
+.myca-rx-cards-4 ul {
+    @apply lg:grid-cols-4;
+}
+
+.myca-rx-cards li {
+    @apply flex flex-col items-center gap-2 rounded-lg border border-line bg-surface px-4 pt-5 pb-4 text-center shadow-card;
+
+    &::before {
+        @apply mb-1 size-11 text-gold-700;
+    }
+
+    & h2 {
+        @apply font-display text-lg leading-6 font-semibold text-navy-900;
+    }
+
+    & p {
+        @apply grow text-sm leading-5 text-fg-secondary;
+    }
+
+    & a {
+        @apply mt-2 inline-flex min-h-10 items-center gap-1.5 rounded-md border border-accent px-3.5 text-sm whitespace-nowrap font-semibold text-accent-text
+            transition-colors hover:bg-red-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent;
+
+        &::after {
+            content: "";
+            @apply size-4 bg-current;
+            mask: url("../svg/chevron-right.svg") center / contain no-repeat;
+        }
+    }
+}
+
+/* Étapes du retour */
+.myca-rx-steps {
+    @apply rounded-xl bg-surface-subtle p-5 md:p-7;
+
+    & ol {
+        @apply mt-5 grid gap-5 sm:grid-cols-2 xl:grid-cols-4 xl:gap-0;
+        counter-reset: myca-rx-step;
+    }
+
+    & li {
+        @apply relative grid grid-cols-[40px_1fr] gap-x-3 gap-y-1 xl:px-5 xl:first:ps-0;
+        counter-increment: myca-rx-step;
+
+        &::before {
+            @apply row-span-2 size-10 text-brand-red;
+        }
+
+        /* Chevron entre deux étapes */
+        &:not(:last-child)::after {
+            content: "";
+            @apply absolute top-3 -right-2 hidden size-4 bg-fg-muted xl:block;
+            mask: url("../svg/chevron-right.svg") center / contain no-repeat;
+        }
+    }
+
+    & h3 {
+        @apply text-base leading-6 font-semibold text-navy-900;
+
+        &::before {
+            content: counter(myca-rx-step) ". ";
+        }
+    }
+
+    & p {
+        @apply text-sm leading-5 text-fg-secondary;
+    }
+
+    & a {
+        @apply font-medium text-accent-text underline underline-offset-2;
+    }
+}
+
+/* FAQ et bloc d’aide côte à côte à partir de 1280 px */
+.myca-rx-duo {
+    @apply grid gap-5 xl:grid-cols-[5fr_7fr];
+}
+
+.myca-rx-faq {
+    @apply flex flex-col gap-2.5;
+
+    & h2 {
+        @apply mb-1;
+    }
+
+    & details {
+        @apply rounded-lg border border-line bg-surface;
+    }
+
+    & details[open] {
+        @apply border-line-strong;
+    }
+
+    & summary {
+        @apply flex min-h-12 cursor-pointer list-none items-center justify-between gap-3 px-4 py-2.5 text-[15px] leading-5 font-semibold text-navy-900;
+
+        &::-webkit-details-marker {
+            display: none;
+        }
+
+        &::after {
+            content: "";
+            @apply size-4 shrink-0 bg-current transition-transform;
+            mask: url("../svg/chevron-right.svg") center / contain no-repeat;
+        }
+
+        &:focus-visible {
+            @apply rounded-lg outline-2 outline-offset-2 outline-accent;
+        }
+    }
+
+    & details[open] summary::after {
+        @apply rotate-90;
+    }
+
+    & details > div {
+        @apply px-4 pb-4 text-sm leading-6 text-fg-secondary;
+
+        & ul {
+            @apply list-disc space-y-1 ps-5;
+        }
+
+        & p + p {
+            @apply mt-2;
+        }
+
+        & strong {
+            @apply text-fg;
+        }
+    }
+}
+
+/* Bloc d'aide : visuel marine (ou photo posée en arrière-plan) + moyens de contact */
+.myca-rx-help {
+    @apply grid self-start overflow-hidden rounded-xl bg-surface-subtle sm:grid-cols-[170px_1fr] xl:grid-cols-[150px_1fr] 2xl:grid-cols-[170px_1fr];
+}
+
+.myca-rx-help-visual {
+    @apply relative hidden min-h-full bg-navy-900 sm:block;
+
+    &::before {
+        content: "";
+        @apply absolute inset-0 m-auto size-16 bg-gold-400 xl:size-20;
+        mask: url("../svg/headset.svg") center / contain no-repeat;
+    }
+
+    &::after {
+        content: "";
+        @apply absolute inset-y-0 right-0 w-1.5 bg-brand-red;
+    }
+}
+
+.myca-rx-help-body {
+    @apply flex flex-col gap-3 p-5 md:p-7;
+
+    & > p {
+        @apply text-sm leading-6 text-fg-secondary;
+    }
+
+    & ul {
+        @apply mt-1 grid gap-3 sm:grid-cols-[repeat(3,auto)] sm:justify-start sm:gap-0;
+    }
+
+    & li {
+        @apply flex items-center gap-3 text-brand-red sm:px-4 sm:first:ps-0 xl:px-5 sm:[&+li]:border-s sm:[&+li]:border-line-strong;
+
+        &::before {
+            @apply size-7;
+        }
+    }
+
+    & a {
+        @apply flex flex-col rounded-sm text-navy-900 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent;
+    }
+
+    & strong {
+        @apply text-sm leading-5 font-semibold;
+    }
+
+    & span {
+        @apply text-xs leading-4 text-fg-secondary;
+    }
+}
+
+/* Bandeau de réassurance */
+.myca-rx-strip {
+    @apply mt-5;
+
+    & ul {
+        @apply grid gap-3 sm:grid-cols-2 lg:grid-cols-4;
+    }
+
+    & li {
+        @apply relative flex min-h-14 items-center gap-3 rounded-lg border border-line bg-surface px-4 text-gold-700 shadow-card;
+
+        &::before {
+            @apply size-7;
+        }
+    }
+
+    & a {
+        @apply flex grow items-center justify-between gap-2 text-sm leading-5 font-semibold text-navy-900
+            after:absolute after:inset-0 after:rounded-lg focus-visible:outline-none;
+
+        &::before {
+            content: "";
+            @apply order-last size-4 shrink-0 bg-current;
+            mask: url("../svg/chevron-right.svg") center / contain no-repeat;
+        }
+    }
+
+    & li:has(a:focus-visible) {
+        @apply outline-2 outline-offset-2 outline-accent;
+    }
+}
+
+/* Promesse MYCA (Nos engagements) : bandeau clair, couronne dorée entre deux filets */
+.myca-en-promise {
+    @apply mt-2 flex flex-col items-center gap-3 rounded-xl bg-[linear-gradient(90deg,var(--color-gold-100),#fff_30%,#fff_70%,var(--color-gold-100))]
+        px-5 py-9 text-center md:py-12;
+
+    &::before {
+        content: "";
+        @apply h-7 w-full max-w-[420px];
+        background:
+            linear-gradient(var(--color-gold-500), var(--color-gold-500)) left center / calc(50% - 30px) 1px no-repeat,
+            linear-gradient(var(--color-gold-500), var(--color-gold-500)) right center / calc(50% - 30px) 1px no-repeat;
+        mask: none;
+    }
+
+    &::after {
+        content: "";
+        @apply order-first -mb-10 size-7 bg-gold-500;
+        mask: url("../svg/crown.svg") center / contain no-repeat;
+    }
+
+    & h2 {
+        @apply font-display text-[28px] leading-tight font-semibold text-navy-900 md:text-4xl;
+    }
+
+    & p {
+        @apply max-w-[640px] text-sm leading-6 text-fg-secondary md:text-base md:leading-7;
+    }
+}
+
+/* Plan du site : huit cartes titrées (trait rouge, icône rouge) et listes à chevrons */
+.myca-sm-hero-text {
+    --myca-rx-hero-icon: url("../svg/sitemap.svg");
+}
+
+.myca-sm-grid {
+    @apply mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4;
+}
+
+.myca-sm-card {
+    @apply rounded-xl border border-line bg-surface shadow-card;
+
+    & h2 {
+        @apply flex items-center gap-3 border-b border-line px-4 py-3.5 font-display text-xl leading-7 font-semibold text-navy-900;
+
+        &::before {
+            content: "";
+            @apply h-7 w-1 shrink-0 rounded-full bg-brand-red;
+        }
+
+    }
+
+    & .myca-sm-icon {
+        @apply size-7 shrink-0 bg-brand-red;
+        mask: var(--myca-pb-icon) center / contain no-repeat;
+    }
+
+    & ul {
+        @apply flex flex-col px-4 py-3;
+    }
+
+    & a {
+        @apply flex min-h-9 items-center gap-2 rounded-sm text-[15px] leading-5 text-fg hover:text-accent-text hover:underline
+            focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent;
+
+        &::before {
+            content: "";
+            @apply size-3.5 shrink-0 bg-fg-muted;
+            mask: url("../svg/chevron-right.svg") center / contain no-repeat;
+        }
+    }
+}
+
+/* Mentions légales : bandeau à la balance, cartes titrées (trait rouge, icône marine), bandeau de contact */
+.myca-lg-hero .myca-rx-hero-text {
+    --myca-rx-hero-icon: url("../svg/scale.svg");
+}
+
+.myca-pb-icon-landmark { --myca-pb-icon: url("../svg/landmark.svg"); }
+.myca-pb-icon-database { --myca-pb-icon: url("../svg/database.svg"); }
+.myca-pb-icon-copyright { --myca-pb-icon: url("../svg/copyright.svg"); }
+.myca-pb-icon-user-shield { --myca-pb-icon: url("../svg/user-shield.svg"); }
+.myca-pb-icon-cookie { --myca-pb-icon: url("../svg/cookie.svg"); }
+.myca-pb-icon-alert { --myca-pb-icon: url("../svg/alert.svg"); }
+
+.myca-lg-version p {
+    @apply mt-4 mb-4 text-sm leading-5 text-fg-secondary italic;
+}
+
+.myca-lg-cards {
+    @apply grid gap-4 md:grid-cols-2;
+
+    & section {
+        @apply grid grid-cols-[auto_1fr] content-start items-start gap-x-3 gap-y-2 rounded-xl border border-line bg-surface p-5 shadow-card md:p-6;
+
+        &::before {
+            content: "";
+            @apply row-span-2 mt-0.5 size-9 bg-navy-900;
+            mask: var(--myca-pb-icon) center / contain no-repeat;
+        }
+    }
+
+    & h2 {
+        @apply flex items-center gap-3 font-display text-xl leading-7 font-semibold text-navy-900 md:text-2xl md:leading-8;
+    }
+
+    & div {
+        @apply col-start-2 text-sm leading-6 text-fg-secondary;
+    }
+
+    & p + p {
+        @apply mt-2;
+    }
+
+    & dl > div {
+        @apply col-auto;
+    }
+
+    & dt {
+        @apply inline font-semibold text-navy-900;
+    }
+
+    & dd {
+        @apply inline;
+    }
+
+    & a,
+    & .myca-lg-link {
+        @apply font-semibold text-accent-text underline underline-offset-2 hover:no-underline;
+    }
+}
+
+/* Trait rouge devant chaque carte, à gauche de l'icône */
+.myca-lg-cards section {
+    @apply relative;
+
+    &::after {
+        content: "";
+        @apply absolute top-6 left-0 h-7 w-1 rounded-e-full bg-brand-red md:top-7;
+    }
+}
+
+.myca-lg-contact {
+    @apply mt-4 mb-6 flex flex-col gap-2 rounded-xl border border-red-100 bg-red-50 px-5 py-4 sm:flex-row sm:items-center sm:gap-5;
+
+    & h2 {
+        @apply flex shrink-0 items-center gap-3 font-display text-xl leading-7 font-semibold text-navy-900 sm:border-e sm:border-line-strong sm:pe-5;
+
+        &::before {
+            content: "";
+            @apply size-8 bg-brand-red;
+            mask: url("../svg/info.svg") center / contain no-repeat;
+        }
+    }
+
+    & p {
+        @apply text-sm leading-6 text-fg md:text-base;
+    }
+
+    & a {
+        @apply font-semibold text-accent-text underline underline-offset-2 hover:no-underline;
+    }
+}
+
+/* FAQ (M46) : bandeau, colonne des rubriques (recherche, liens à icône, encart contact) et accordéons <details>.
+   Le script n'affiche qu'une rubrique à la fois ; sans script, toutes restent visibles. */
+.myca-faq-hero .myca-rx-hero-text {
+    --myca-rx-hero-icon: url("../svg/help.svg");
+}
+
+.myca-pb-icon-gift { --myca-pb-icon: url("../svg/gift.svg"); }
+.myca-pb-icon-store { --myca-pb-icon: url("../svg/store.svg"); }
+
+.myca-faq-layout {
+    @apply mb-6 grid items-start gap-5 lg:grid-cols-[300px_minmax(0,1fr)] xl:gap-7;
+
+    & > .myca-rx-hero {
+        @apply mb-0 lg:col-span-2;
+    }
+}
+
+.myca-faq-aside {
+    /* Mobile : rubriques avant les réponses, encart contact après */
+    @apply contents lg:sticky lg:top-4 lg:flex lg:max-h-[calc(100vh-2rem)] lg:flex-col lg:gap-4 lg:overflow-y-auto;
+
+    & .myca-faq-help {
+        @apply max-lg:order-last;
+    }
+}
+
+.myca-faq-nav {
+    @apply rounded-xl border border-line bg-surface p-3 shadow-card;
+
+    & ul {
+        @apply flex flex-col;
+    }
+
+    & li + li {
+        @apply border-t border-line;
+    }
+
+    & a {
+        @apply flex min-h-12 items-center gap-3 rounded-lg px-3 text-[15px] leading-5 font-semibold text-navy-900 transition-colors
+            hover:bg-surface-subtle focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent;
+
+        &::before {
+            content: "";
+            @apply size-6 shrink-0 bg-current;
+            mask: var(--myca-pb-icon) center / contain no-repeat;
+        }
+
+        &.is-active {
+            @apply bg-brand-red text-white hover:bg-brand-red;
+        }
+    }
+
+    & li:has(a.is-active) + li,
+    & li:has(a.is-active) {
+        @apply border-transparent;
+    }
+}
+
+.myca-faq-search {
+    @apply mb-2 flex flex-col gap-1.5 px-1 pb-3;
+
+    & label {
+        @apply text-[13px] leading-[18px] font-semibold text-fg;
+    }
+
+    & input {
+        @apply min-h-11 w-full rounded-md border border-line-strong bg-surface px-3 text-base focus:border-accent focus:outline-none;
+    }
+
+    & p:not(:empty) {
+        @apply text-xs leading-4 text-fg-secondary;
+    }
+}
+
+.myca-faq-help {
+    @apply flex flex-col items-center gap-1 rounded-xl border border-line bg-surface p-5 text-center shadow-card;
+
+    &::before {
+        content: "";
+        @apply mb-1 size-10 bg-brand-red;
+        mask: url("../svg/headset.svg") center / contain no-repeat;
+    }
+
+    & .myca-faq-help-title {
+        @apply font-display text-xl leading-7 font-semibold text-navy-900;
+    }
+
+    & p {
+        @apply text-sm leading-5 text-fg-secondary;
+    }
+
+    & a {
+        @apply mt-3 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-md border-2 border-accent px-4 text-base font-semibold text-accent-text
+            hover:bg-red-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent;
+
+        &::before {
+            content: "";
+            @apply size-5 bg-current;
+            mask: url("../svg/mail.svg") center / contain no-repeat;
+        }
+    }
+}
+
+.myca-faq-group {
+    @apply flex scroll-mt-4 flex-col gap-2.5;
+
+    & + .myca-faq-group {
+        @apply mt-6;
+    }
+
+    & h2 {
+        @apply mb-1 flex items-center gap-3 font-display text-2xl leading-8 font-semibold text-navy-900 md:text-[28px] md:leading-9;
+
+        &::before {
+            content: "";
+            @apply h-7 w-1 shrink-0 rounded-full bg-brand-red;
+        }
+    }
+}
+
+.myca-faq-group[hidden] + .myca-faq-group {
+    @apply mt-0;
+}
+
+.myca-faq-item {
+    @apply rounded-lg border border-line-strong bg-surface;
+
+    &[open] {
+        @apply border-red-100;
+    }
+
+    & summary {
+        @apply flex min-h-12 cursor-pointer list-none items-center justify-between gap-3 px-5 py-3 text-base leading-6 font-semibold text-navy-900;
+
+        &::-webkit-details-marker {
+            display: none;
+        }
+
+        &::after {
+            content: "";
+            @apply size-5 shrink-0 bg-brand-red transition-transform;
+            mask: url("../svg/chevron-down.svg") center / contain no-repeat;
+        }
+
+        &:focus-visible {
+            @apply rounded-lg outline-2 outline-offset-2 outline-accent;
+        }
+    }
+
+    &[open] summary::after {
+        @apply rotate-180;
+    }
+
+    & > div {
+        @apply mx-2 mb-2 rounded-md bg-red-50 px-3 py-3 text-[15px] leading-6 text-fg;
+
+        & p + p {
+            @apply mt-2;
+        }
+
+        & a {
+            @apply font-semibold text-accent-text underline underline-offset-2;
+        }
+    }
+}
+
+/* Textes juridiques (CGV, CGU) : sommaire en colonne (lien de l'article en cours en rouge), un article par carte.
+   Reprend la mise en page de la FAQ (myca-faq-layout / -aside / -nav / -help). */
+.myca-cgv-hero .myca-rx-hero-text {
+    --myca-rx-hero-icon: url("../svg/file.svg");
+}
+
+.myca-cgu-hero .myca-rx-hero-text {
+    --myca-rx-hero-icon: url("../svg/laptop.svg");
+}
+
+.myca-pb-icon-tag { --myca-pb-icon: url("../svg/tag.svg"); }
+.myca-pb-icon-target { --myca-pb-icon: url("../svg/target.svg"); }
+.myca-pb-icon-scale { --myca-pb-icon: url("../svg/scale.svg"); }
+.myca-pb-icon-cart { --myca-pb-icon: url("../svg/cart.svg"); }
+
+.myca-doc-nav {
+    & .myca-doc-nav-title {
+        @apply px-3 pt-2 pb-3 font-display text-xl leading-7 font-semibold text-navy-900;
+    }
+
+    & a {
+        @apply min-h-10 text-sm;
+    }
+
+    & a::before {
+        @apply size-5;
+    }
+}
+
+.myca-doc-content {
+    @apply flex flex-col gap-3;
+}
+
+.myca-doc-intro {
+    @apply mb-1;
+
+    & h2 {
+        @apply flex items-center gap-3 font-display text-2xl leading-8 font-semibold text-navy-900 md:text-[28px] md:leading-9;
+
+        &::before {
+            content: "";
+            @apply h-7 w-1 shrink-0 rounded-full bg-brand-red;
+        }
+    }
+
+    & .myca-doc-version {
+        @apply mt-2 text-sm leading-5 text-fg-secondary;
+    }
+}
+
+.myca-doc-article {
+    @apply grid scroll-mt-4 grid-cols-[auto_minmax(0,1fr)] items-start gap-x-4 gap-y-2 rounded-xl border border-line-strong bg-surface p-5 shadow-card md:px-6;
+
+    &::before {
+        content: "";
+        @apply row-span-2 mt-0.5 size-8 bg-brand-red;
+        mask: var(--myca-pb-icon) center / contain no-repeat;
+    }
+
+    & h2 {
+        @apply font-display text-xl leading-7 font-semibold text-navy-900;
+    }
+
+    & > div {
+        @apply text-[15px] leading-6 text-fg;
+
+        & p + p,
+        & p + ul,
+        & ul + p {
+            @apply mt-2;
+        }
+
+        & ul {
+            @apply list-disc ps-5;
+        }
+
+        & a {
+            @apply font-semibold text-accent-text underline underline-offset-2;
+        }
+    }
+}
+
+/* Mobile : la carte garde l'icône en ligne avec le titre */
+@media (width < 40rem) {
+    .myca-doc-article {
+        @apply grid-cols-[auto_minmax(0,1fr)];
+
+        &::before {
+            @apply row-span-1 size-7;
+        }
+
+        & > div {
+            @apply col-span-2;
+        }
+    }
+}
+
+/* Qualité & matières : matière signature (texture dessinée, loupe dorée), caractéristiques en tuiles,
+   exigences qualité avec photos, puis les trois engagements détaillés (cartes myca-lg-cards). */
+.myca-pb-icon-care-wash-30 { --myca-pb-icon: url("../svg/care-wash-30.svg"); }
+.myca-pb-icon-chart { --myca-pb-icon: url("../svg/chart.svg"); }
+
+.myca-qm-signature {
+    @apply my-5 grid items-center gap-5 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:grid-cols-[minmax(0,5fr)_minmax(0,5fr)_minmax(0,4fr)];
+}
+
+/* Maille piquée : relief en points, reflet, loupe cerclée d'or */
+.myca-qm-fabric {
+    @apply relative aspect-[16/9] overflow-hidden rounded-xl border border-line;
+    background-color: #eef0f3;
+    background-image:
+        radial-gradient(ellipse at 30% 25%, rgb(255 255 255 / 0.95), transparent 55%),
+        radial-gradient(circle at 50% 50%, rgb(15 27 53 / 0.2) 1.1px, transparent 1.8px),
+        radial-gradient(circle at 50% 50%, rgb(15 27 53 / 0.1) 1.1px, transparent 1.8px);
+    background-size: 100% 100%, 7px 7px, 7px 7px;
+    background-position: 0 0, 0 0, 3.5px 3.5px;
+
+    & span {
+        @apply absolute top-1/2 right-[12%] size-[46%] -translate-y-1/2 rounded-full border-4 border-gold-500 shadow-card;
+        aspect-ratio: 1;
+        inline-size: auto;
+        background-color: #f7f8fa;
+        background-image:
+            radial-gradient(circle at 50% 50%, rgb(15 27 53 / 0.3) 2.2px, transparent 3.4px),
+            radial-gradient(circle at 50% 50%, rgb(15 27 53 / 0.16) 2.2px, transparent 3.4px);
+        background-size: 14px 14px;
+        background-position: 0 0, 7px 7px;
+    }
+}
+
+.myca-qm-signature-text {
+    & h2 {
+        @apply flex items-center gap-3 font-display text-2xl leading-8 font-semibold text-navy-900 md:text-[28px] md:leading-9;
+
+        &::before {
+            content: "";
+            @apply h-7 w-1 shrink-0 rounded-full bg-brand-red;
+        }
+    }
+
+    & .myca-qm-fabric-name {
+        @apply mt-3 text-xl leading-7 font-bold text-navy-900;
+    }
+
+    & p:last-child {
+        @apply mt-1 text-base leading-6 text-fg-secondary;
+    }
+}
+
+.myca-qm-benefits {
+    @apply grid grid-cols-2 gap-3 rounded-xl border border-line bg-surface-subtle p-5 shadow-card md:col-span-2 lg:col-span-1 lg:grid-cols-1;
+
+    & li {
+        @apply flex items-center gap-3 text-lg leading-6 font-medium text-navy-900;
+
+        &::before {
+            content: "";
+            @apply size-6 shrink-0 bg-gold-700;
+            mask: url("../svg/check.svg") center / contain no-repeat;
+        }
+    }
+}
+
+.myca-qm-specs {
+    @apply mb-6;
+
+    & > h2 {
+        @apply mb-4 grid grid-cols-[1fr_auto_1fr] items-center gap-4 text-center font-display text-2xl leading-8 font-semibold text-navy-900;
+
+        &::before,
+        &::after {
+            content: "";
+            @apply h-0.5 bg-[linear-gradient(90deg,transparent,var(--color-brand-red))];
+        }
+
+        &::after {
+            @apply bg-[linear-gradient(90deg,var(--color-brand-red),transparent)];
+        }
+    }
+
+    & ul {
+        @apply grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7;
+    }
+
+    /* Mobile : la septième tuile occupe toute la ligne */
+    & li:last-child {
+        @apply max-sm:col-span-2;
+    }
+
+    & li {
+        @apply flex flex-col items-center gap-1.5 rounded-xl border border-line bg-surface px-3 py-4 text-center shadow-card;
+
+        &::before {
+            content: "";
+            @apply mb-1 size-10 bg-gold-700;
+            mask: var(--myca-pb-icon) center / contain no-repeat;
+        }
+    }
+
+    & h3 {
+        @apply text-base leading-6 font-bold text-navy-900;
+    }
+
+    & p {
+        @apply text-sm leading-5 text-fg-secondary;
+    }
+}
+
+.myca-qm-exigences {
+    @apply mb-6 grid items-center gap-6 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)];
+
+    & h2 {
+        @apply flex items-center gap-3 font-display text-2xl leading-8 font-semibold text-navy-900 md:text-[28px] md:leading-9;
+
+        &::before {
+            content: "";
+            @apply h-7 w-1 shrink-0 rounded-full bg-brand-red;
+        }
+    }
+
+    & ul {
+        @apply mt-4 flex flex-col gap-2.5;
+    }
+
+    & li {
+        @apply flex items-center gap-3 text-base leading-6 text-fg;
+
+        &::before {
+            content: "";
+            @apply size-6 shrink-0 bg-gold-700;
+            mask: url("../svg/check.svg") center / contain no-repeat;
+        }
+    }
+}
+
+/* Photos en bandes inclinées, comme la maquette */
+.myca-qm-gallery {
+    @apply grid h-56 grid-cols-2 gap-2 overflow-hidden rounded-xl md:h-64;
+
+    & img {
+        @apply size-full object-cover;
+    }
+
+    & img:first-child {
+        clip-path: polygon(0 0, 100% 0, 88% 100%, 0 100%);
+    }
+
+    & img:last-child {
+        @apply -ms-[12%] w-[112%] max-w-none;
+        clip-path: polygon(11% 0, 100% 0, 100% 100%, 0 100%);
+    }
+}
+
+.myca-qm-infos {
+    @apply mb-6 lg:grid-cols-3;
+}
+
+/* Aide & services : reprend les blocs de la page Retours (bandeau, cartes, encart d'aide, liens utiles) */
+.myca-aide-hero .myca-rx-hero-text {
+    --myca-rx-hero-icon: url("../svg/headset.svg");
+}
+
+.myca-aide-help {
+    @apply mb-5;
+}
+
+.myca-aide-links {
+    & > h2 {
+        @apply mb-3 flex items-center gap-3 font-display text-2xl leading-8 font-semibold text-navy-900;
+
+        &::before {
+            content: "";
+            @apply h-7 w-1 shrink-0 rounded-full bg-brand-red;
+        }
+    }
+
+    & ul {
+        @apply sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6;
+    }
+
+    & li {
+        @apply text-navy-900;
+    }
+}
+
+/* Passeport du vêtement (page d'information) : vérification mise en avant avec exemple d'étiquette, étapes,
+   contenu du passeport, statuts des informations, certificat et espace client. */
+.myca-pv-hero .myca-rx-hero-text {
+    --myca-rx-hero-icon: url("../svg/qr.svg");
+}
+
+.myca-pv-verify {
+    @apply mb-5 grid gap-5 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)];
+}
+
+.myca-pv-verify-card {
+    @apply relative overflow-hidden rounded-xl bg-navy-900 p-6 text-white md:p-8;
+
+    &::after {
+        content: "";
+        @apply absolute inset-x-0 bottom-0 h-1.5 bg-[linear-gradient(90deg,var(--color-flag-blue)_33.3%,#fff_33.3%_66.6%,var(--color-brand-red)_66.6%)];
+    }
+
+    & h2 {
+        @apply flex items-center gap-3 font-display text-2xl leading-8 font-semibold md:text-[28px] md:leading-9;
+
+        &::before {
+            content: "";
+            @apply size-9 shrink-0 bg-gold-400;
+            mask: url("../svg/shield-check.svg") center / contain no-repeat;
+        }
+    }
+
+    & > p {
+        @apply mt-2 max-w-[560px] text-sm leading-6 text-white/80 md:text-base;
+    }
+
+    & .myca-pb-verify {
+        @apply mt-5 max-w-none;
+
+        & label {
+            @apply text-white;
+        }
+
+        & input {
+            @apply border-white bg-white font-mono tracking-wide text-fg uppercase placeholder:normal-case placeholder:tracking-normal;
+        }
+
+        & button {
+            @apply min-h-11 px-6;
+        }
+    }
+}
+
+/* Exemple d'étiquette tissée : marque, QR code dessiné, numéro dessous */
+.myca-pv-label {
+    @apply flex flex-col items-center justify-center gap-3 rounded-xl border border-line bg-surface-subtle p-5 shadow-card;
+
+    & figcaption {
+        @apply font-display text-lg leading-6 font-semibold text-navy-900;
+    }
+}
+
+.myca-pv-label-tag {
+    @apply flex w-full max-w-[260px] flex-col items-center gap-2 rounded-md border-2 border-dashed border-line-strong bg-white px-5 py-4 shadow-card;
+
+    & .myca-pv-label-brand {
+        @apply font-logo text-xl leading-none text-navy-900;
+
+        & sup {
+            @apply text-[9px];
+        }
+    }
+
+    & .myca-pv-label-qr {
+        @apply size-24 bg-navy-900;
+        mask: url("../svg/qr.svg") center / contain no-repeat;
+    }
+
+    & .myca-pv-label-number {
+        @apply rounded-sm bg-gold-100 px-1.5 font-mono text-[11px] leading-5 font-semibold tracking-wide text-navy-900 outline-2 outline-offset-2 outline-brand-red;
+    }
+
+    & .myca-pv-label-hint {
+        @apply text-[10px] font-semibold tracking-[0.2em] text-fg-secondary uppercase;
+    }
+}
+
+.myca-pv-steps ol {
+    @apply md:grid-cols-3 xl:grid-cols-3;
+}
+
+.myca-pv-title {
+    @apply mb-3 flex items-center gap-3 font-display text-2xl leading-8 font-semibold text-navy-900;
+
+    &::before {
+        content: "";
+        @apply h-7 w-1 shrink-0 rounded-full bg-brand-red;
+    }
+}
+
+.myca-pv-contents li a {
+    @apply hidden;
+}
+
+.myca-pv-statuses {
+    @apply mb-5 rounded-xl border border-line bg-surface p-5 shadow-card md:p-6;
+
+    & h2 {
+        @apply font-display text-xl leading-7 font-semibold text-navy-900;
+    }
+
+    & ul {
+        @apply mt-3 grid gap-3 md:grid-cols-3;
+    }
+
+    & li {
+        @apply flex flex-col gap-0.5 rounded-lg border-s-4 bg-surface-subtle px-4 py-3;
+    }
+
+    & strong {
+        @apply text-sm leading-5 font-semibold;
+    }
+
+    & span {
+        @apply text-sm leading-5 text-fg-secondary;
+    }
+
+    & .is-certified {
+        @apply border-success;
+
+        & strong {
+            @apply text-success;
+        }
+    }
+
+    & .is-declared {
+        @apply border-line-strong;
+
+        & strong {
+            @apply text-fg;
+        }
+    }
+
+    & .is-pending {
+        @apply border-warning;
+
+        & strong {
+            @apply text-warning;
+        }
+    }
+}
+
+.myca-pv-infos {
+    @apply mb-6;
+}
+
+/* Connexion (customer/account/login) : en-tête centré, carte de connexion et colonne marine « Nouveau client » */
+.myca-pb-icon-heart { --myca-pb-icon: url("../svg/heart.svg"); }
+.myca-pb-icon-zap { --myca-pb-icon: url("../svg/zap.svg"); }
+
+.myca-login-header {
+    @apply mx-auto mt-4 mb-6 flex max-w-[640px] flex-col items-center gap-2 text-center md:mt-8;
+
+    & h1 {
+        @apply mt-2 font-display text-[32px] leading-tight font-semibold text-navy-900 md:text-[40px];
+    }
+
+    & > p:last-child {
+        @apply text-base leading-6 text-fg-secondary;
+    }
+}
+
+.myca-login-flag {
+    @apply h-1.5 w-28 bg-[linear-gradient(90deg,var(--color-flag-blue)_33.3%,var(--color-line)_33.3%_66.6%,var(--color-brand-red)_66.6%)];
+}
+
+.myca-login-container {
+    @apply mx-auto mb-10 grid w-full max-w-[980px] items-stretch gap-5 md:grid-cols-2;
+}
+
+.myca-login-card {
+    @apply rounded-xl border border-line bg-surface p-6 shadow-card md:p-8;
+}
+
+.myca-login-title {
+    @apply mb-2 flex items-center gap-3 font-display text-2xl leading-8 font-semibold text-navy-900;
+}
+
+.myca-login-icon {
+    @apply flex size-12 shrink-0 items-center justify-center rounded-lg bg-red-50;
+
+    &::before {
+        content: "";
+        @apply size-6 bg-brand-red;
+        mask: url("../svg/user.svg") center / contain no-repeat;
+    }
+}
+
+.myca-login-icon-new {
+    @apply bg-white/10;
+
+    &::before {
+        @apply bg-gold-400;
+        mask-image: url("../svg/user-plus.svg");
+    }
+}
+
+.myca-login-icon-store {
+    @apply size-10 bg-surface;
+
+    &::before {
+        @apply size-5 bg-navy-900;
+        mask-image: url("../svg/store.svg");
+    }
+}
+
+.myca-login-side {
+    @apply flex flex-col gap-4;
+}
+
+.myca-login-new {
+    @apply relative flex grow flex-col gap-5 overflow-hidden rounded-xl bg-navy-900 p-6 text-white md:p-8;
+
+    & .myca-login-title {
+        @apply text-white;
+    }
+
+    &::after {
+        content: "";
+        @apply absolute inset-x-0 bottom-0 h-1.5 bg-[linear-gradient(90deg,var(--color-flag-blue)_33.3%,#fff_33.3%_66.6%,var(--color-brand-red)_66.6%)];
+    }
+
+    & .myca-btn {
+        @apply mt-auto;
+    }
+}
+
+.myca-login-benefits {
+    @apply flex flex-col gap-3;
+
+    & li {
+        @apply flex items-center gap-3 text-[15px] leading-5 text-white/90;
+
+        &::before {
+            content: "";
+            @apply size-5 shrink-0 bg-gold-400;
+            mask: var(--myca-pb-icon) center / contain no-repeat;
+        }
+    }
+}
+
+.myca-login-partner {
+    @apply flex items-center gap-3 rounded-xl border border-line bg-surface-subtle p-4 text-sm leading-5 text-fg-secondary;
+
+    & strong {
+        @apply block text-navy-900;
+    }
+
+    & a {
+        @apply font-semibold text-accent-text underline underline-offset-2;
+    }
+}
+
+/* Connexion : champs obligatoires sans astérisque (les deux le sont), mention de sécurité en pied de carte */
+.myca-login-card .field.required .myca-field-label::after {
+    content: none;
+}
+
+.myca-login-card {
+    @apply flex flex-col;
+
+    & form,
+    & fieldset {
+        @apply flex grow flex-col;
+    }
+}
+
+.myca-login-secure {
+    @apply mt-auto flex items-center justify-center gap-2 border-t border-line pt-4 text-center text-xs leading-4 text-fg-secondary;
+
+    &::before {
+        content: "";
+        @apply size-4 shrink-0 bg-success;
+        mask: url("../svg/lock.svg") center / contain no-repeat;
+    }
+}
+
+/* Création de compte : formulaire Hyvä (fieldsets en cartes) à gauche, avantages à droite */
+.myca-register {
+    @apply mx-auto mb-10 grid w-full max-w-[1100px] items-start gap-5 lg:grid-cols-[minmax(0,1fr)_340px];
+
+    & > div:first-child {
+        @apply mb-0;
+    }
+
+    /* Le thème grise les formulaires de compte : ici les blocs sont déjà des cartes */
+    & .form-create-account {
+        @apply bg-transparent p-0;
+    }
+
+    /* Titre de bloc dans la carte (une legend se pose sinon sur la bordure) */
+    & fieldset.card > legend {
+        float: left;
+        inline-size: 100%;
+    }
+
+    & .self-center.mt-0\.5 {
+        @apply self-start;
+    }
+
+    & .form-create-account > .md\:grid {
+        @apply flex flex-col gap-4;
+    }
+
+    & fieldset.card {
+        @apply my-0 rounded-xl border border-line bg-surface p-6 shadow-card md:p-7;
+
+        & > legend span,
+        & > legend {
+            @apply font-display text-xl leading-7 font-semibold text-navy-900;
+        }
+    }
+
+    & fieldset.card > legend {
+        @apply mb-3 flex items-center gap-3;
+    }
+
+    /* Personnel / identifiants : deux champs côte à côte à partir de 640 px */
+    & fieldset.card {
+        @apply grid gap-x-4 sm:grid-cols-2;
+
+        & > legend,
+        & > .field.choice,
+        & > .field.field-reserved:has(#password),
+        & > .field.field-reserved:has(#password-confirmation) {
+            @apply sm:col-span-2;
+        }
+    }
+
+    & .label {
+        @apply text-[13px] leading-[18px] font-semibold text-fg;
+    }
+
+    & .form-input,
+    & .form-select {
+        @apply min-h-11 w-full rounded-md border-line-strong;
+    }
+
+    & .control.flex {
+        @apply relative;
+
+        & .form-input {
+            @apply pe-12;
+        }
+
+        & > button {
+            @apply absolute inset-y-0 end-0 flex w-11 items-center justify-center px-0 py-0 text-fg-secondary hover:text-fg;
+        }
+    }
+
+    & .field.field-reserved:has(#password) .flex.flex-wrap {
+        @apply flex-col gap-1.5;
+
+        & > .control {
+            @apply w-full;
+        }
+    }
+
+    & .password-strength-meter {
+        @apply text-xs leading-4 text-fg-secondary;
+    }
+
+    & .field.choice {
+        @apply mt-1 text-sm leading-5 text-fg;
+    }
+
+    & .actions-toolbar {
+        @apply mt-4 flex flex-row-reverse items-center justify-between gap-4 border-0 p-0;
+
+        & .primary {
+            @apply grow sm:grow-0;
+        }
+
+        & .btn-primary {
+            @apply min-h-12 w-full justify-center rounded-md px-8 text-base sm:w-auto;
+        }
+
+        & .secondary {
+            @apply ms-0 text-sm font-semibold text-fg-secondary;
+        }
+    }
+}
+
+/* Devenir partenaire (P17) : photo coupée par un liseré rouge en diagonale, cartes des modèles, étapes,
+   formulaire en quatre blocs numérotés et colonne « après votre envoi ». */
+.myca-bp-hero-media {
+    @apply bg-brand-red;
+    clip-path: polygon(56px 0, 100% 0, 100% 100%, 0 100%);
+
+    & img {
+        clip-path: polygon(63px 0, 100% 0, 100% 100%, 7px 100%);
+    }
+}
+
+.myca-bp-card {
+    @apply rounded-xl border border-line bg-surface p-5 shadow-card md:p-6;
+
+    & h2 {
+        @apply mb-3 flex items-center gap-3 font-display text-xl leading-7 font-semibold text-navy-900;
+    }
+
+    & ul {
+        @apply flex flex-col divide-y divide-line;
+    }
+
+    & li {
+        @apply flex items-center gap-3 py-2.5 text-[15px] leading-5 text-fg;
+
+        & svg {
+            @apply text-success;
+        }
+    }
+}
+
+.myca-bp-card-icon {
+    @apply flex size-11 shrink-0 items-center justify-center rounded-lg bg-gold-100 text-gold-700;
+}
+
+.myca-bp-card-dark {
+    @apply border-navy-900 bg-navy-900;
+
+    & h2 {
+        @apply text-white;
+    }
+
+    & .myca-bp-card-icon {
+        @apply bg-white/10 text-gold-400;
+    }
+
+    & ul {
+        @apply divide-white/15;
+    }
+
+    & li {
+        @apply text-white/90;
+
+        & svg {
+            @apply text-gold-400;
+        }
+    }
+}
+
+.myca-bp-steps {
+    @apply rounded-xl bg-surface-subtle p-5 md:p-7;
+
+    & h2 {
+        @apply mb-4 flex items-center gap-3 font-display text-2xl leading-8 font-semibold text-navy-900;
+
+        &::before {
+            content: "";
+            @apply h-7 w-1 shrink-0 rounded-full bg-brand-red;
+        }
+    }
+
+    & ol {
+        @apply grid gap-4 sm:grid-cols-2 lg:grid-cols-4;
+    }
+
+    & li {
+        @apply flex items-start gap-3;
+    }
+
+    & strong {
+        @apply block text-base leading-6 font-semibold text-navy-900;
+    }
+
+    & li > span:last-child > span {
+        @apply block text-sm leading-5 text-fg-secondary;
+    }
+}
+
+.myca-bp-step-icon {
+    @apply flex size-11 shrink-0 items-center justify-center rounded-full bg-brand-red text-white;
+}
+
+.myca-bp-form {
+    @apply rounded-xl border border-line bg-surface p-5 shadow-card md:p-7;
+
+    & form {
+        @apply gap-4;
+    }
+}
+
+.myca-bp-form-title {
+    @apply flex items-center gap-3 font-display text-2xl leading-8 font-semibold text-navy-900 md:text-[28px] md:leading-9;
+
+    &::before {
+        content: "";
+        @apply h-7 w-1 shrink-0 rounded-full bg-brand-red;
+    }
+}
+
+.myca-bp-group {
+    @apply my-0 rounded-lg border border-line bg-surface-subtle/50 p-4 md:p-5;
+
+    & > div {
+        clear: both;
+    }
+
+    & > legend {
+        float: left;
+        inline-size: 100%;
+        @apply mb-3 flex items-center gap-2 text-base leading-6 font-semibold text-navy-900;
+
+        & span {
+            @apply flex size-6 items-center justify-center rounded-full bg-navy-900 text-xs text-white;
+        }
+    }
+}
+
+.myca-bp-aside {
+    @apply flex flex-col gap-4 lg:sticky lg:top-4;
+}
+
+.myca-bp-aside-card {
+    @apply relative overflow-hidden rounded-xl bg-navy-900 p-5 text-white;
+
+    &::after {
+        content: "";
+        @apply absolute inset-x-0 bottom-0 h-1.5 bg-[linear-gradient(90deg,var(--color-flag-blue)_33.3%,#fff_33.3%_66.6%,var(--color-brand-red)_66.6%)];
+    }
+
+    & h2 {
+        @apply font-display text-xl leading-7 font-semibold;
+    }
+
+    & ul {
+        @apply mt-3 flex flex-col gap-2.5 pb-2;
+    }
+
+    & li {
+        @apply flex gap-2.5 text-sm leading-5 text-white/85;
+
+        &::before {
+            content: "";
+            @apply mt-0.5 size-4 shrink-0 bg-gold-400;
+            mask: url("../svg/check.svg") center / contain no-repeat;
+        }
+    }
+}
+
+.myca-bp-aside-help {
+    @apply flex flex-col items-start gap-2 rounded-xl border border-line bg-surface p-5 shadow-card;
+
+    & > p:not(:first-child) {
+        @apply text-sm leading-5 text-fg-secondary;
+    }
+
+    & .myca-btn {
+        @apply mt-1;
+    }
+}
+
+/* Politique cookies : mise en page des textes juridiques ; tableau des catégories et boutons de consentement */
+.myca-cookies-hero .myca-rx-hero-text {
+    --myca-rx-hero-icon: url("../svg/cookie.svg");
+}
+
+.myca-pb-icon-settings { --myca-pb-icon: url("../svg/settings.svg"); }
+
+.myca-doc-article > div table {
+    @apply mt-2 w-full border-collapse overflow-hidden rounded-lg text-sm;
+
+    & th,
+    & td {
+        @apply border-b border-line px-3 py-2.5 text-left align-top;
+    }
+
+    & thead th {
+        @apply bg-navy-900 font-semibold text-white;
+    }
+
+    & tbody tr:nth-child(even) {
+        @apply bg-surface-subtle;
+    }
+
+    /* Mobile : chaque ligne devient une fiche, chaque valeur précédée du titre de sa colonne (data-label) */
+    @media (width < 40rem) {
+        & thead {
+            @apply sr-only;
+        }
+
+        & tbody,
+        & tr,
+        & td {
+            @apply block;
+        }
+
+        & tr {
+            @apply border-b border-line py-2;
+        }
+
+        & tbody tr:nth-child(even) {
+            @apply bg-transparent;
+        }
+
+        & td {
+            @apply border-0 px-0 py-1;
+        }
+
+        & td[data-label]::before {
+            content: attr(data-label);
+            @apply block text-xs leading-4 font-semibold tracking-wide text-fg-secondary uppercase;
+        }
+
+        & td:first-child {
+            @apply font-semibold text-navy-900;
+        }
+    }
+}
+
+.myca-doc-action {
+    @apply mt-3;
+}
+
+.myca-cookies-btn {
+    @apply mt-3 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-md border-2 border-accent px-4 text-base font-semibold text-accent-text
+        hover:bg-red-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent;
+
+    &::before {
+        content: "";
+        @apply size-5 bg-current;
+        mask: url("../svg/settings.svg") center / contain no-repeat;
+    }
+}
+
+.myca-cookies-manage::before {
+    mask-image: url("../svg/cookie.svg");
+}
+
+/* Politique de confidentialité : mise en page des textes juridiques */
+.myca-privacy-hero .myca-rx-hero-text {
+    --myca-rx-hero-icon: url("../svg/user-shield.svg");
+}
+
+.myca-pb-icon-users { --myca-pb-icon: url("../svg/users.svg"); }
+
+.myca-privacy-help::before {
+    mask-image: url("../svg/user-shield.svg");
+}
+
+/* Livraison : deux modes (point relais mis en avant), destinations, étapes, délais et incidents */
+.myca-ship-hero .myca-rx-hero-text {
+    --myca-rx-hero-icon: url("../svg/truck.svg");
+}
+
+.myca-pb-icon-map-pin { --myca-pb-icon: url("../svg/map-pin.svg"); }
+.myca-pb-icon-clock { --myca-pb-icon: url("../svg/clock.svg"); }
+
+.myca-ship-modes {
+    @apply mb-5 grid gap-4 md:grid-cols-2;
+}
+
+.myca-ship-mode {
+    @apply relative flex flex-col gap-1.5 rounded-xl border border-line bg-surface p-6 shadow-card;
+
+    &::before {
+        content: "";
+        @apply mb-2 size-11 bg-gold-700;
+        mask: var(--myca-pb-icon) center / contain no-repeat;
+    }
+
+    & h2 {
+        @apply font-display text-2xl leading-8 font-semibold text-navy-900;
+    }
+
+    & > p {
+        @apply text-base leading-6 text-fg;
+    }
+
+    & .myca-ship-note {
+        @apply mt-2 border-t border-line pt-3 text-sm leading-5 text-fg-secondary;
+    }
+
+    &.is-featured {
+        @apply border-2 border-gold-500 bg-[linear-gradient(135deg,#fffdf7,#fbf3df)];
+    }
+}
+
+.myca-ship-badge {
+    @apply absolute top-5 right-5 rounded-full bg-brand-red px-3 py-1 text-xs leading-4 font-bold tracking-wide text-white uppercase;
+}
+
+.myca-ship-dest {
+    @apply mb-5 rounded-xl border border-line bg-surface p-5 shadow-card md:p-6;
+
+    & h2 {
+        @apply mb-3 flex items-center gap-3 font-display text-2xl leading-8 font-semibold text-navy-900;
+
+        &::before {
+            content: "";
+            @apply h-7 w-1 shrink-0 rounded-full bg-brand-red;
+        }
+    }
+
+    & table {
+        @apply w-full max-w-none border-collapse text-sm;
+
+        & th,
+        & td {
+            @apply border-b border-line px-3 py-2.5 text-left align-top;
+        }
+
+        & thead th {
+            @apply bg-navy-900 font-semibold text-white first:rounded-ss-lg last:rounded-se-lg;
+        }
+
+        & tbody th {
+            @apply font-semibold text-navy-900;
+        }
+
+        & tbody tr:nth-child(even) {
+            @apply bg-surface-subtle;
+        }
+
+        @media (width < 40rem) {
+            @apply block;
+
+            & thead {
+                @apply sr-only;
+            }
+
+            & tbody,
+            & tr,
+            & th,
+            & td {
+                @apply block;
+            }
+
+            & tr {
+                @apply border-b border-line py-2;
+            }
+
+            & tbody tr:nth-child(even) {
+                @apply bg-transparent;
+            }
+
+            & th,
+            & td {
+                @apply border-0 px-0 py-0.5;
+            }
+
+            & td[data-label]::before {
+                content: attr(data-label) " : ";
+                @apply font-semibold text-fg-secondary;
+            }
+        }
+    }
+}
+
+.myca-ship-steps {
+    @apply mb-5;
+
+    & ol {
+        @apply md:grid-cols-4;
+    }
+}
+
+.myca-ship-infos {
+    @apply mb-5;
+}
+
+.myca-ship-links ul {
+    @apply lg:grid-cols-4 xl:grid-cols-4;
+}
+
+/* Contact : bannière, formulaire en carte, colonne « Avant de nous écrire » */
+.myca-contact-hero {
+    @apply mt-4;
+
+    & .myca-rx-hero-text {
+        --myca-rx-hero-icon: url("../svg/mail.svg");
+    }
+}
+
+.myca-contact-layout {
+    @apply mb-10 grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_360px];
+}
+
+.myca-contact-form {
+    @apply rounded-xl border border-line bg-surface p-5 shadow-card md:p-8;
+
+    & fieldset > legend {
+        float: left;
+        inline-size: 100%;
+    }
+
+    & fieldset > div {
+        clear: both;
+    }
+}
+
+.myca-contact-title {
+    @apply flex items-center gap-3 font-display text-2xl leading-8 font-semibold text-navy-900 md:text-[28px] md:leading-9;
+
+    &::before {
+        content: "";
+        @apply h-7 w-1 shrink-0 rounded-full bg-brand-red;
+    }
+}
+
+.myca-contact-intro {
+    @apply mt-1 mb-5 text-sm leading-5 text-fg-secondary;
+}
+
+.myca-contact-actions {
+    @apply mt-6 flex flex-col items-start gap-3 border-t border-line pt-5 sm:flex-row sm:items-center sm:justify-between;
+
+    & p {
+        @apply text-xs leading-4 text-fg-secondary;
+    }
+
+    & a {
+        @apply underline underline-offset-2;
+    }
+}
+
+.myca-contact-aside {
+    @apply flex flex-col gap-4 lg:sticky lg:top-4;
+}
+
+.myca-contact-aside-card {
+    @apply rounded-xl border border-line bg-surface p-5 shadow-card;
+
+    & h2 {
+        @apply font-display text-xl leading-7 font-semibold text-navy-900;
+    }
+
+    & > p {
+        @apply mt-1 mb-3 text-sm leading-5 text-fg-secondary;
+    }
+
+    & ul {
+        @apply flex flex-col gap-2;
+    }
+
+    & a {
+        @apply flex items-center gap-3 rounded-lg border border-line p-3 transition-colors hover:border-brand-red hover:bg-red-50;
+    }
+
+    & strong {
+        @apply block text-[15px] leading-5 font-semibold text-navy-900;
+    }
+
+    & a span span {
+        @apply block text-xs leading-4 text-fg-secondary;
+    }
+}
+
+.myca-contact-aside-icon {
+    @apply flex size-10 shrink-0 items-center justify-center rounded-lg bg-gold-100 text-gold-700;
+}
+
+.myca-contact-partner {
+    @apply relative flex items-center gap-3 overflow-hidden rounded-xl bg-navy-900 p-5 text-sm leading-5 text-white/85;
+
+    &::after {
+        content: "";
+        @apply absolute inset-x-0 bottom-0 h-1 bg-[linear-gradient(90deg,var(--color-flag-blue)_33.3%,#fff_33.3%_66.6%,var(--color-brand-red)_66.6%)];
+    }
+
+    & strong {
+        @apply block text-white;
+    }
+
+    & a {
+        @apply font-semibold text-gold-400 underline underline-offset-2;
+    }
+}
+
+/* Notre histoire : récit avec photo et citation, parcours pays → capsule → Signature, collections, engagements */
+.myca-hs-story {
+    @apply my-6 grid items-center gap-6 md:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] lg:gap-10;
+}
+
+.myca-hs-kicker {
+    @apply mb-2 text-xs leading-4 font-bold tracking-[0.18em] text-brand-red uppercase;
+}
+
+.myca-hs-story-text {
+    & h2 {
+        @apply font-display text-[30px] leading-tight font-semibold text-navy-900 md:text-[38px];
+    }
+
+    & > p:not(.myca-hs-kicker) {
+        @apply mt-3 text-base leading-7 text-fg;
+    }
+
+    & blockquote {
+        @apply mt-6 border-s-4 border-gold-500 ps-5 font-display text-xl leading-8 font-medium text-navy-900 italic md:text-2xl;
+    }
+}
+
+.myca-hs-story-media {
+    @apply relative;
+
+    &::before {
+        content: "";
+        @apply absolute -inset-y-3 start-6 -end-3 -z-10 rounded-xl bg-gold-100;
+    }
+
+    & img {
+        @apply h-80 w-full rounded-xl object-cover object-top shadow-card md:h-[440px];
+    }
+}
+
+.myca-hs-path {
+    @apply mb-6 rounded-xl bg-navy-900 p-6 text-white md:p-8;
+
+    & > h2 {
+        @apply font-display text-2xl leading-8 font-semibold md:text-[28px] md:leading-9;
+    }
+
+    & .myca-hs-lead {
+        @apply mt-2 max-w-[720px] text-base leading-6 text-white/80;
+    }
+
+    & ol {
+        @apply mt-6 grid gap-5 md:grid-cols-3;
+    }
+
+    & li {
+        @apply relative rounded-lg border border-white/15 bg-white/5 p-5;
+    }
+
+    & li > span {
+        @apply mb-3 flex size-10 items-center justify-center rounded-full bg-gold-400 font-display text-lg font-semibold text-navy-900;
+    }
+
+    & h3 {
+        @apply text-lg leading-6 font-semibold;
+    }
+
+    & li p {
+        @apply mt-1 text-sm leading-5 text-white/75;
+    }
+}
+
+.myca-hs-collections {
+    @apply mb-6;
+}
+
+.myca-hs-values {
+    @apply mb-8;
+
+    & ul {
+        @apply md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-3;
+    }
+}
+
+/* Suivi de commande sans compte : reprend la mise en page de la connexion (myca-login-*) */
+.myca-track-icon::before {
+    mask-image: url("../svg/box.svg");
+}
+
+.myca-track-help::before {
+    mask-image: url("../svg/help.svg");
+}
+
+.myca-track-hint {
+    @apply mt-1 text-xs leading-4 text-fg-secondary;
+}
+
+.myca-track-switch {
+    @apply grid grid-cols-2 gap-1 rounded-lg bg-surface-subtle p-1;
+
+    & button {
+        @apply inline-flex min-h-10 items-center justify-center gap-2 rounded-md text-sm font-semibold text-fg-secondary transition-colors
+            focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent;
+    }
+
+    & button[aria-checked="true"] {
+        @apply bg-surface text-navy-900 shadow-card;
+    }
+}
+
+.myca-track-truck::before {
+    mask-image: url("../svg/truck.svg");
+}

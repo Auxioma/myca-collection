@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<!--
+    Mobile façon application : la page occupe tout l'écran (zones de sécurité gérées en CSS par
+    env(safe-area-inset-*)) et la barre du navigateur prend la couleur de l'en-tête MYCA.
+-->
+<page xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:noNamespaceSchemaLocation="urn:magento:framework:View/Layout/etc/page_configuration.xsd">
+    <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+        <meta name="theme-color" content="#0a1428"/>
+        <meta name="mobile-web-app-capable" content="yes"/>
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+    </head>
+</page>

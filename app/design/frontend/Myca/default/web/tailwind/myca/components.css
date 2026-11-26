@@ -3,13 +3,13 @@
 @layer components {
     /* Styles de texte */
     .myca-hero {
-        @apply font-display text-[28px] leading-9 font-bold italic md:text-4xl md:leading-11;
+        @apply font-display text-[28px] leading-9 font-semibold md:text-4xl md:leading-11;
     }
     .myca-section {
-        @apply font-display text-xl leading-7 font-bold italic md:text-2xl md:leading-[30px];
+        @apply font-display text-xl leading-7 font-semibold md:text-2xl md:leading-[30px];
     }
     .myca-section-title {
-        @apply font-display text-2xl leading-[30px] font-bold italic text-fg md:text-[32px] md:leading-[37px];
+        @apply font-display text-2xl leading-[30px] font-semibold text-fg md:text-[32px] md:leading-[37px];
     }
     .myca-h1 {
         @apply text-[22px] leading-7 font-bold md:text-[26px] md:leading-8;
@@ -120,5 +120,113 @@
     /* Carte (surface blanche bordée) */
     .myca-card {
         @apply rounded-lg border border-line bg-surface;
+    }
+}
+
+/* Recherche de l'en-tête avec autocomplétion (Magento_Theme::html/header/search-form.phtml) */
+.myca-search {
+    @apply relative mx-auto w-full max-w-[1200px] px-4 py-3 text-fg md:px-6;
+}
+
+.myca-search-form {
+    @apply relative flex items-center rounded-full border-2 border-line-strong bg-surface ps-4 transition-colors focus-within:border-brand-red;
+
+    & input {
+        @apply min-h-12 min-w-0 grow border-0 bg-transparent px-3 text-base text-fg outline-none placeholder:text-fg-muted focus:ring-0;
+
+        &::-webkit-search-cancel-button {
+            display: none;
+        }
+    }
+}
+
+.myca-search-icon {
+    @apply shrink-0 text-fg-secondary;
+}
+
+.myca-search-clear {
+    @apply me-1 flex size-9 shrink-0 items-center justify-center rounded-full text-fg-secondary hover:bg-surface-subtle hover:text-fg;
+}
+
+.myca-search-spinner {
+    @apply me-2 size-4 shrink-0 animate-spin rounded-full border-2 border-line border-t-brand-red;
+}
+
+.myca-search-submit {
+    @apply m-1 inline-flex min-h-10 shrink-0 items-center gap-2 rounded-full bg-brand-red px-4 text-sm font-semibold text-white hover:brightness-90 sm:px-6
+        focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent;
+}
+
+.myca-search-panel {
+    @apply absolute inset-x-4 top-full z-40 -mt-1 max-h-[70vh] overflow-y-auto rounded-xl border border-line bg-surface p-4 shadow-[0_12px_32px_rgb(15_27_53/0.16)] md:inset-x-6 md:p-5;
+
+    & mark {
+        @apply bg-transparent font-bold text-brand-red;
+    }
+}
+
+.myca-search-heading {
+    @apply mb-2 text-xs leading-4 font-bold tracking-[0.12em] text-fg-secondary uppercase;
+}
+
+.myca-search-idle {
+    @apply flex flex-col gap-4;
+}
+
+.myca-search-chip {
+    @apply inline-flex min-h-9 items-center gap-1.5 rounded-full border border-line bg-surface-subtle px-3.5 text-sm font-medium text-navy-900
+        hover:border-brand-red hover:text-brand-red;
+
+    &.is-active {
+        @apply border-brand-red bg-red-50 text-brand-red;
+    }
+}
+
+.myca-search-results {
+    @apply grid gap-5 md:grid-cols-[minmax(0,1fr)_minmax(0,1.6fr)];
+
+    & > .myca-search-empty,
+    & > .myca-search-all {
+        @apply md:col-span-2;
+    }
+}
+
+.myca-search-side {
+    @apply flex flex-col gap-4 md:border-e md:border-line md:pe-5;
+}
+
+.myca-search-line {
+    @apply flex min-h-10 w-full items-center gap-2.5 rounded-md px-2 text-start text-[15px] leading-5 text-fg hover:bg-surface-subtle;
+
+    &.is-active {
+        @apply bg-red-50;
+    }
+}
+
+.myca-search-products ul {
+    @apply flex flex-col gap-1;
+}
+
+.myca-search-product {
+    @apply flex items-center gap-3 rounded-lg p-2 hover:bg-surface-subtle;
+
+    & img {
+        @apply size-14 shrink-0 rounded-md border border-line bg-white object-contain;
+    }
+
+    &.is-active {
+        @apply bg-red-50;
+    }
+}
+
+.myca-search-empty {
+    @apply rounded-lg bg-surface-subtle p-4 text-sm leading-5 text-fg-secondary;
+}
+
+.myca-search-all {
+    @apply flex min-h-11 w-full items-center justify-center gap-2 rounded-lg border-t border-line pt-3 text-sm font-semibold text-accent-text hover:underline;
+
+    &.is-active {
+        @apply bg-red-50;
     }
 }

@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<!-- Suivi de commande sans compte : en-tête MYCA (titre porté par l'en-tête), formulaire et colonne d'aide. -->
+<page xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:noNamespaceSchemaLocation="urn:magento:framework:View/Layout/etc/page_configuration.xsd">
+    <head>
+        <title>Suivi de commande</title>
+    </head>
+    <body>
+        <referenceBlock name="page.main.title" remove="true"/>
+        <referenceContainer name="content">
+            <block name="myca.track.header" template="Magento_Customer::login-header.phtml" before="-">
+                <arguments>
+                    <argument name="title" xsi:type="string" translate="true">Suivi de commande</argument>
+                    <argument name="text" xsi:type="string" translate="true">Retrouvez une commande passée sans compte : suivi, retour, factures.</argument>
+                </arguments>
+            </block>
+        </referenceContainer>
+    </body>
+</page>

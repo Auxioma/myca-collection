@@ -2,9 +2,23 @@
 <page xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" layout="1column"
       xsi:noNamespaceSchemaLocation="urn:magento:framework:View/Layout/etc/page_configuration.xsd">
     <body>
-        <referenceBlock name="page.main.title">
-            <action method="setPageTitle">
-                <argument name="title" xsi:type="string" translate="true">Plan du site</argument>
+        <!-- Le titre « Plan du site » est porté par la bannière (h1) -->
+        <referenceBlock name="page.main.title" remove="true"/>
+        <referenceBlock name="breadcrumbs">
+            <action method="addCrumb">
+                <argument name="crumbName" xsi:type="string">home</argument>
+                <argument name="crumbInfo" xsi:type="array">
+                    <item name="title" xsi:type="string" translate="true">Accueil</item>
+                    <item name="label" xsi:type="string" translate="true">Accueil</item>
+                    <item name="link" xsi:type="url" path="/"/>
+                </argument>
+            </action>
+            <action method="addCrumb">
+                <argument name="crumbName" xsi:type="string">sitemap</argument>
+                <argument name="crumbInfo" xsi:type="array">
+                    <item name="title" xsi:type="string" translate="true">Plan du site</item>
+                    <item name="label" xsi:type="string" translate="true">Plan du site</item>
+                </argument>
             </action>
         </referenceBlock>
         <referenceContainer name="content">

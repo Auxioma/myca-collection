@@ -1,0 +1,74 @@
+<?php
+/**
+ * Barre de navigation inférieure mobile et tablette (< 1024 px), façon application : Accueil, Catégories (ouvre le
+ * menu latéral), Recherche (ouvre la recherche de l'en-tête), Favoris (compteur) et Mon compte. L'onglet de la page
+ * en cours est mis en évidence. Le panier reste accessible dans l'en-tête, avec son compteur.
+ */
+
+declare(strict_types=1);
+
+use Hyva\Theme\Model\ViewModelRegistry;
+use Hyva\Theme\ViewModel\HyvaCsp;
+use Hyva\Theme\ViewModel\SvgIcons;
+use Magento\Framework\Escaper;
+use Magento\Framework\View\Element\Template;
+
+/** @var Template $block */
+/** @var Escaper $escaper */
+/** @var ViewModelRegistry $viewModels */
+/** @var HyvaCsp $hyvaCsp */
+
+$icons = $viewModels->require(SvgIcons::class);
+$path = trim((string) parse_url((string) $block->getRequest()->getRequestUri(), PHP_URL_PATH), '/');
+$isHome = $path === '' || $block->getRequest()->getFullActionName() === 'cms_index_index';
+$isWishlist = str_starts_with($path, 'wishlist');
+$isAccount = !$isWishlist && (str_starts_with($path, 'customer') || str_starts_with($path, 'sales/order')
+    || str_starts_with($path, 'retours') || str_starts_with($path, 'passeport/mes'));
+?>
+<script>
+    function initMycaBottomNav() {
+        return {
+            wishlistCount: 0,
+            receive(data) {
+                const counter = data.wishlist?.counter;
+                this.wishlistCount = counter ? parseInt(String(counter), 10) || 0 : 0;
+            },
+            openMenu() {
+                window.dispatchEvent(new CustomEvent('myca-open-menu'));
+            },
+            openSearch() {
+                document.querySelector('[x-ref="searchButton"]')?.click();
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+        };
+    }
+
+    window.addEventListener('alpine:init', () => Alpine.data('initMycaBottomNav', initMycaBottomNav), { once: true });
+</script>
+<?php $hyvaCsp->registerInlineScript() ?>
+<nav class="myca-bottom-nav" x-data="initMycaBottomNav" @private-content-loaded.window="receive($event.detail.data)"
+     aria-label="<?= $escaper->escapeHtmlAttr(__('Navigation principale')) ?>">
+    <a href="<?= $escaper->escapeUrl($block->getBaseUrl()) ?>" <?= $isHome ? 'aria-current="page"' : '' ?>>
+        <?= $icons->renderHtml('home', '', 22, 22, ['aria-hidden' => 'true']) ?>
+        <span><?= $escaper->escapeHtml(__('Accueil')) ?></span>
+    </a>
+    <button type="button" @click="openMenu()" aria-haspopup="dialog">
+        <?= $icons->renderHtml('layers', '', 22, 22, ['aria-hidden' => 'true']) ?>
+        <span><?= $escaper->escapeHtml(__('Catégories')) ?></span>
+    </button>
+    <button type="button" @click="openSearch()">
+        <?= $icons->renderHtml('search', '', 22, 22, ['aria-hidden' => 'true']) ?>
+        <span><?= $escaper->escapeHtml(__('Recherche')) ?></span>
+    </button>
+    <a href="<?= $escaper->escapeUrl($block->getUrl('wishlist')) ?>" <?= $isWishlist ? 'aria-current="page"' : '' ?>>
+        <span class="relative">
+            <?= $icons->renderHtml('heart', '', 22, 22, ['aria-hidden' => 'true']) ?>
+            <span class="myca-bottom-nav-badge" x-show="wishlistCount > 0" x-text="wishlistCount" x-cloak aria-hidden="true"></span>
+        </span>
+        <span><?= $escaper->escapeHtml(__('Favoris')) ?></span>
+    </a>
+    <a href="<?= $escaper->escapeUrl($block->getUrl('customer/account')) ?>" <?= $isAccount ? 'aria-current="page"' : '' ?>>
+        <?= $icons->renderHtml('user', '', 22, 22, ['aria-hidden' => 'true']) ?>
+        <span><?= $escaper->escapeHtml(__('Compte')) ?></span>
+    </a>
+</nav>

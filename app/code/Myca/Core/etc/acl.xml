@@ -4,6 +4,9 @@
     <acl>
         <resources>
             <resource id="Magento_Backend::admin">
+                <resource id="Magento_Backend::system">
+                    <resource id="Myca_Core::audit" title="MYCA – Journal d'audit (consultation)" translate="title" sortOrder="5"/>
+                </resource>
                 <resource id="Magento_Backend::stores">
                     <resource id="Magento_Backend::stores_settings">
                         <resource id="Magento_Config::config">

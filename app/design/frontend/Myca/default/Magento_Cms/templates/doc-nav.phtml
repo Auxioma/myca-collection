@@ -1,0 +1,50 @@
+<?php
+/**
+ * Textes juridiques à sommaire (CGV, CGU, cookies, confidentialité) : met en évidence, dans le sommaire, l'article en cours de lecture.
+ * Les liens restent de simples ancres : sans script, le sommaire fonctionne.
+ */
+
+declare(strict_types=1);
+
+use Hyva\Theme\ViewModel\HyvaCsp;
+
+/** @var HyvaCsp $hyvaCsp */
+?>
+<script>
+    (() => {
+        const init = () => {
+            const links = Array.from(document.querySelectorAll('[data-doc-link]'));
+            const sections = links.map((link) => document.querySelector(link.getAttribute('href'))).filter(Boolean);
+            if (!sections.length) {
+                return;
+            }
+            const activate = (id) => links.forEach((link) => {
+                const current = link.getAttribute('href') === '#' + id;
+                link.classList.toggle('is-active', current);
+                current ? link.setAttribute('aria-current', 'true') : link.removeAttribute('aria-current');
+            });
+            // Article en cours : le dernier dont le haut a passé une ligne à 120 px sous le haut de l'écran
+            let frame = 0;
+            const update = () => {
+                frame = 0;
+                const line = Math.min(120, window.innerHeight / 3);
+                let current = sections[0];
+                sections.forEach((section) => {
+                    if (section.getBoundingClientRect().top <= line) {
+                        current = section;
+                    }
+                });
+                // En bas de page, le dernier article ne peut pas atteindre la ligne : il devient l'article en cours
+                const atBottom = window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 4;
+                const last = sections[sections.length - 1];
+                activate(atBottom && last.getBoundingClientRect().top < window.innerHeight ? last.id : current.id);
+            };
+            window.addEventListener('scroll', () => {
+                frame = frame || requestAnimationFrame(update);
+            }, {passive: true});
+            update();
+        };
+        document.readyState === 'loading' ? document.addEventListener('DOMContentLoaded', init) : init();
+    })();
+</script>
+<?php $hyvaCsp->registerInlineScript() ?>

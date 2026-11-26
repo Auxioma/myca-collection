@@ -18,4 +18,29 @@
             <column name="consent_id"/>
         </index>
     </table>
+    <!-- Journal d'audit : ajout seul (aucune modification depuis l'application), purgé au-delà de la durée de conservation. -->
+    <table name="myca_audit_log" resource="default" engine="innodb" comment="MYCA - Journal d'audit des opérations sensibles">
+        <column xsi:type="bigint" name="log_id" unsigned="true" nullable="false" identity="true"/>
+        <column xsi:type="timestamp" name="created_at" nullable="false" default="CURRENT_TIMESTAMP"/>
+        <column xsi:type="varchar" name="actor_type" length="16" nullable="false" comment="admin, customer, system"/>
+        <column xsi:type="int" name="actor_id" unsigned="true" nullable="true"/>
+        <column xsi:type="varchar" name="actor_name" length="255" nullable="true"/>
+        <column xsi:type="varchar" name="ip" length="45" nullable="true"/>
+        <column xsi:type="varchar" name="action" length="64" nullable="false"/>
+        <column xsi:type="varchar" name="entity_type" length="64" nullable="false"/>
+        <column xsi:type="varchar" name="entity_id" length="128" nullable="true"/>
+        <column xsi:type="text" name="old_values" nullable="true" comment="JSON"/>
+        <column xsi:type="text" name="new_values" nullable="true" comment="JSON"/>
+        <column xsi:type="varchar" name="comment" length="512" nullable="true"/>
+        <constraint xsi:type="primary" referenceId="PRIMARY">
+            <column name="log_id"/>
+        </constraint>
+        <index referenceId="MYCA_AUDIT_LOG_CREATED_AT" indexType="btree">
+            <column name="created_at"/>
+        </index>
+        <index referenceId="MYCA_AUDIT_LOG_ENTITY" indexType="btree">
+            <column name="entity_type"/>
+            <column name="entity_id"/>
+        </index>
+    </table>
 </schema>

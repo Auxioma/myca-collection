@@ -1,7 +1,9 @@
 <?php
 /**
  * Menu principal desktop (Figma « Navigation principale ») : liens blancs 13 px, écart 28 px.
- * Logique Alpine identique au parent Hyvä.
+ * « Collections » ouvre un méga-menu pleine largeur : capsules en cartes illustrées et accès par type de produit
+ * (images de catégorie gérées dans Catalogue > Catégories). Les autres entrées gardent la liste déroulante.
+ * Logique Alpine du parent Hyvä, avec un court délai de fermeture pour atteindre le panneau à la souris.
  */
 
 use Hyva\Theme\Model\ViewModelRegistry;
@@ -10,6 +12,8 @@ use Hyva\Theme\ViewModel\SvgIcons;
 use Hyva\Theme\ViewModel\Navigation;
 use Magento\Framework\View\Element\Template;
 use Magento\Framework\Escaper;
+use Myca\Catalog\Setup\Patch\Data\AddCategoryAttributes;
+use Myca\Catalog\ViewModel\CategoryCards;
 
 /** @var Template $block */
 /** @var Escaper $escaper */
@@ -28,11 +32,18 @@ $uniqueId = '_' . uniqid();
 $menuItems = $viewModelNavigation->getNavigation(4);
 $block->setData('cache_tags', $viewModelNavigation->getIdentities());
 
+/** @var CategoryCards $categoryCards */
+$categoryCards = $viewModels->require(CategoryCards::class);
+$collectionsRoot = $categoryCards->getByUrlKeys(['collections'])[0] ?? null;
+$megaCollections = $collectionsRoot ? $categoryCards->getCollectionCards($collectionsRoot) : [];
+$megaTypes = $categoryCards->getByUrlKeys(['polos', 'tee-shirts', 'sweats', 'casquettes']);
+$isMegaItem = static fn (array $item): bool => $collectionsRoot !== null && $megaCollections !== []
+    && rtrim((string) $item['url'], '/') === rtrim((string) $collectionsRoot->getUrl(), '/');
+
 ?>
 <div x-data="initMenuDesktop" class="z-20 navigation hidden lg:flex">
     <div class="hidden lg:block">
         <nav
-            class="relative"
             aria-label="<?= $escaper->escapeHtmlAttr(__('Main menu')) ?>"
         >
             <ul class="flex flex-wrap items-center gap-x-7">
@@ -42,8 +53,9 @@ $block->setData('cache_tags', $viewModelNavigation->getIdentities());
                     </a>
                 </li>
                 <?php foreach ($menuItems as $index => $menuItem): ?>
+                    <?php $isMega = $isMegaItem($menuItem); ?>
                     <li
-                        class="relative level-0 border-b-2 border-transparent hover:border-accent data-[active]:border-accent"
+                        class="<?= $isMega ? 'static' : 'relative' ?> level-0 border-b-2 border-transparent hover:border-accent data-[active]:border-accent"
                         x-data="initMenuDesktopItem"
                         x-bind="eventListeners"
                         @click.outside="close"
@@ -80,7 +92,67 @@ $block->setData('cache_tags', $viewModelNavigation->getIdentities());
                                 </button>
                             <?php endif; ?>
                         </span>
-                        <?php if (!empty($menuItem['childData'])): ?>
+                        <?php if ($isMega): ?>
+                            <div
+                                id="<?= $escaper->escapeHtml($index) ?>"
+                                class="absolute inset-x-0 top-full z-10 border-t border-line bg-surface text-fg shadow-[0_18px_40px_-12px_rgb(15_27_53/0.25)]"
+                                x-show="open"
+                                x-transition.opacity.duration.150ms
+                                x-cloak
+                            >
+                                <div class="mx-auto max-w-[1320px] px-10 pt-6 pb-9">
+                                    <div class="mb-6 flex items-center justify-between">
+                                        <a href="<?= $escaper->escapeUrl($menuItem['url']) ?>" class="text-[15px] leading-5 font-semibold underline decoration-1 underline-offset-4 hover:text-accent-text">
+                                            <?= $escaper->escapeHtml(__('Voir toutes les collections')) ?>
+                                        </a>
+                                        <button type="button" class="inline-flex items-center gap-2 rounded-md bg-surface-subtle px-3 py-2 text-sm leading-5 font-semibold hover:bg-line focus-visible:outline-2 focus-visible:outline-accent" @click="close">
+                                            <?= $escaper->escapeHtml(__('Fermer')) ?>
+                                            <?= $icons->renderHtml('x', '', 18, 18, ['aria-hidden' => 'true']) ?>
+                                        </button>
+                                    </div>
+                                    <div class="grid grid-cols-[200px_1fr] gap-8 xl:grid-cols-[240px_1fr] xl:gap-12">
+                                        <div>
+                                            <p class="mb-3 text-[15px] leading-5 font-semibold"><?= $escaper->escapeHtml(__('Par produit')) ?></p>
+                                            <ul class="flex flex-col gap-1">
+                                                <?php foreach ($megaTypes as $type): ?>
+                                                    <li>
+                                                        <a href="<?= $escaper->escapeUrl($type->getUrl()) ?>" class="group/type flex items-center gap-3 rounded-lg p-1.5 hover:bg-surface-subtle">
+                                                            <span class="flex size-14 shrink-0 items-center justify-center overflow-hidden rounded-md bg-surface-subtle">
+                                                                <?php if ($type->getImage()): ?>
+                                                                    <img src="<?= $escaper->escapeUrl($type->getImageUrl()) ?>" alt="" class="size-full object-contain mix-blend-multiply" loading="lazy" width="56" height="56">
+                                                                <?php endif ?>
+                                                            </span>
+                                                            <span class="text-sm leading-5 font-medium group-hover/type:underline"><?= $escaper->escapeHtml($type->getName()) ?></span>
+                                                        </a>
+                                                    </li>
+                                                <?php endforeach ?>
+                                            </ul>
+                                        </div>
+                                        <div>
+                                            <p class="mb-3 text-[15px] leading-5 font-semibold"><?= $escaper->escapeHtml(__('Nos collections')) ?></p>
+                                            <ul class="grid grid-cols-6 gap-3 xl:gap-4">
+                                                <?php foreach ($megaCollections as $collection): ?>
+                                                    <?php $tagline = trim(strip_tags((string) $collection->getData(AddCategoryAttributes::TAGLINE))); ?>
+                                                    <li>
+                                                        <a href="<?= $escaper->escapeUrl($collection->getUrl()) ?>" class="group/card flex flex-col gap-2 focus-visible:outline-none">
+                                                            <span class="block aspect-[4/5] overflow-hidden rounded-lg bg-surface-subtle ring-accent group-focus-visible/card:ring-2">
+                                                                <?php if ($collection->getImage()): ?>
+                                                                    <img src="<?= $escaper->escapeUrl($collection->getImageUrl()) ?>" alt="" class="size-full object-cover transition-transform duration-300 group-hover/card:scale-105 motion-reduce:transition-none" loading="lazy" width="200" height="250">
+                                                                <?php endif ?>
+                                                            </span>
+                                                            <span class="text-sm leading-5 font-semibold group-hover/card:underline"><?= $escaper->escapeHtml($collection->getName()) ?></span>
+                                                            <?php if ($tagline !== ''): ?>
+                                                                <span class="hidden text-xs leading-4 text-fg-muted xl:line-clamp-2"><?= $escaper->escapeHtml($tagline) ?></span>
+                                                            <?php endif ?>
+                                                        </a>
+                                                    </li>
+                                                <?php endforeach ?>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        <?php elseif (!empty($menuItem['childData'])): ?>
                             <ul
                                 id="<?= $escaper->escapeHtml($index) ?>"
                                 class="z-10 absolute top-full left-1/2 -translate-x-1/2 min-w-48 mt-2 py-2 rounded-md border border-line bg-surface shadow-card"
@@ -127,21 +199,25 @@ $block->setData('cache_tags', $viewModelNavigation->getIdentities());
     function initMenuDesktopItem() {
         return {
             open: false,
+            closeTimer: null,
             canHover(func) {
                 return window.matchMedia('(hover: hover) and (pointer: fine)').matches;
             },
             canHoverOpen() {
                 if (!this.canHover()) return;
+                clearTimeout(this.closeTimer);
                 this.open = true;
             },
             canHoverClose() {
                 if (!this.canHover()) return;
-                this.open = false;
+                clearTimeout(this.closeTimer);
+                this.closeTimer = setTimeout(() => { this.open = false; }, 180);
             },
             toggle() {
                 this.open = !this.open;
             },
             close() {
+                clearTimeout(this.closeTimer);
                 this.open = false;
             },
             eventListeners: {

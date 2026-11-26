@@ -1,0 +1,16 @@
+<?php
+/**
+ * Préchargement des polices du premier écran (voir web/tailwind/myca/fonts.css).
+ */
+
+declare(strict_types=1);
+
+use Magento\Framework\Escaper;
+use Magento\Framework\View\Element\Template;
+
+/** @var Template $block */
+/** @var Escaper $escaper */
+
+foreach (['fonts/fraunces-latin-opsz-normal.woff2', 'fonts/inter-latin-wght-normal.woff2'] as $font): ?>
+<link rel="preload" href="<?= $escaper->escapeUrl($block->getViewFileUrl($font)) ?>" as="font" type="font/woff2" crossorigin>
+<?php endforeach;

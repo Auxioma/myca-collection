@@ -4,6 +4,8 @@
     <module name="Myca_Catalog">
         <sequence>
             <module name="Magento_Catalog"/>
+            <module name="Magento_CatalogSearch"/>
+            <module name="Magento_Search"/>
             <module name="Magento_Swatches"/>
             <module name="Magento_ConfigurableProduct"/>
             <module name="Magento_InventorySalesApi"/>

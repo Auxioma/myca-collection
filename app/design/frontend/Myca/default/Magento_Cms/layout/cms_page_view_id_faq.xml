@@ -1,8 +1,10 @@
 <?xml version="1.0"?>
+<!-- M46 — FAQ : le titre est porté par la bannière du contenu ; le script gère rubriques et recherche. -->
 <page xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
       xsi:noNamespaceSchemaLocation="urn:magento:framework:View/Layout/etc/page_configuration.xsd">
     <body>
-        <referenceContainer name="content.top">
+        <referenceBlock name="page.main.title" remove="true"/>
+        <referenceContainer name="before.body.end">
             <block name="myca.faq.search" template="Magento_Cms::faq-search.phtml"/>
         </referenceContainer>
     </body>

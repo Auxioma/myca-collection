@@ -27,28 +27,41 @@ $icons = $viewModels->require(SvgIcons::class);
 $product = $productViewModel->getProduct();
 $collection = (string) $product->getAttributeText('myca_collection');
 $tagline = (string) $product->getData('myca_tagline');
+// Macaron « MYCA Signature » : seulement pour les produits de la ligne Signature
+$isSignature = (bool) $product->getCategoryCollection()->addAttributeToFilter('url_key', 'myca-signature')->getSize();
 
 $tiles = [
     ['truck', __('Point relais offert'), __('dès 100 € TTC*')],
-    ['refresh', __('Rétractation'), __('14 jours')],
+    ['box', __('Rétractation'), __('14 jours')],
     ['shield-check', __('Paiement'), __('sécurisé')],
     ['crown', __('Qualité'), __('premium')],
 ];
 ?>
 <div class="product-info-main flex flex-col items-start gap-3.5">
-    <?php if ($collection !== ''): ?>
-        <p class="myca-badge myca-badge-danger"><?= $escaper->escapeHtml(__('Collection %1', $collection)) ?></p>
-    <?php endif ?>
+    <div class="flex w-full items-start justify-between gap-4">
+        <div class="flex min-w-0 flex-col items-start gap-3">
+            <?php if ($collection !== ''): ?>
+                <p class="rounded-md bg-brand-red px-3 py-1 text-sm leading-5 font-semibold text-white"><?= $escaper->escapeHtml(__('Collection %1', $collection)) ?></p>
+            <?php endif ?>
 
-    <h1 class="font-display text-[32px] leading-10 font-bold italic text-fg md:text-4xl md:leading-11">
-        <?= $escaper->escapeHtml($product->getName()) ?>
-    </h1>
+            <h1 class="font-display text-[32px] leading-10 font-semibold text-navy-900 md:text-[40px] md:leading-12">
+                <?= $escaper->escapeHtml($product->getName()) ?>
+            </h1>
 
-    <?php if ($tagline !== ''): ?>
-        <p class="myca-body-m text-fg-secondary"><?= $escaper->escapeHtml($tagline) ?></p>
-    <?php endif ?>
+            <?php if ($tagline !== ''): ?>
+                <p class="text-base leading-6 text-fg-secondary md:text-lg"><?= $escaper->escapeHtml($tagline) ?></p>
+            <?php endif ?>
+        </div>
+        <?php if ($isSignature): ?>
+            <p class="myca-pdp-signature" aria-label="<?= $escaper->escapeHtmlAttr(__('Ligne MYCA Signature')) ?>">
+                <?= $icons->renderHtml('crown', 'text-gold-500', 26, 26, ['aria-hidden' => 'true']) ?>
+                <span class="font-logo text-lg leading-none text-navy-900">MYCA<sup class="text-[8px]">®</sup></span>
+                <span class="font-display text-lg leading-none font-semibold text-gold-700 italic"><?= $escaper->escapeHtml(__('Signature')) ?></span>
+            </p>
+        <?php endif ?>
+    </div>
 
-    <div class="text-fg [--price-font-size:26px] [--price-font-weight:700]" role="group" aria-label="<?= $escaper->escapeHtmlAttr(__('Prix')) ?>">
+    <div class="text-navy-900 [--price-font-size:34px] [--price-font-weight:700]" role="group" aria-label="<?= $escaper->escapeHtmlAttr(__('Prix')) ?>">
         <?= $block->getChildHtml('product.info.price') ?>
     </div>
 
@@ -68,7 +81,7 @@ $tiles = [
     <?= $block->getChildHtml('alert.urls') ?>
 
     <?php if ($product->isSaleable()): ?>
-        <div class="fixed inset-x-0 bottom-0 z-20 flex w-full gap-2.5 border-t border-line bg-surface p-3 md:static md:border-0 md:p-0">
+        <div class="myca-pdp-buy myca-above-nav fixed inset-x-0 bottom-0 z-20 flex w-full gap-3 border-t border-line bg-surface p-3 md:static md:border-0 md:p-0">
             <div class="flex-1"><?= $block->getChildHtml('product.info.addtocart') ?></div>
             <?= $block->getChildHtml('product.info.addtowishlist') ?>
         </div>
@@ -77,12 +90,12 @@ $tiles = [
         <?php endif ?>
     <?php endif ?>
 
-    <ul class="grid w-full grid-cols-2 gap-3 sm:grid-cols-4" aria-label="<?= $escaper->escapeHtmlAttr(__('Nos engagements')) ?>">
+    <ul class="myca-pdp-perks" aria-label="<?= $escaper->escapeHtmlAttr(__('Nos engagements')) ?>">
         <?php foreach ($tiles as [$icon, $title, $text]): ?>
-            <li class="myca-card flex flex-col items-center gap-1.5 px-2.5 py-3.5 text-center">
-                <?= $icons->renderHtml($icon, 'text-accent-text', 26, 26, ['aria-hidden' => 'true']) ?>
-                <span class="myca-body-s-strong text-fg"><?= $escaper->escapeHtml($title) ?></span>
-                <span class="myca-caption text-fg-muted"><?= $escaper->escapeHtml($text) ?></span>
+            <li>
+                <?= $icons->renderHtml($icon, 'text-gold-700', 30, 30, ['aria-hidden' => 'true']) ?>
+                <span class="text-sm leading-5 font-semibold text-navy-900"><?= $escaper->escapeHtml($title) ?></span>
+                <span class="text-xs leading-4 text-fg-secondary"><?= $escaper->escapeHtml($text) ?></span>
             </li>
         <?php endforeach ?>
     </ul>

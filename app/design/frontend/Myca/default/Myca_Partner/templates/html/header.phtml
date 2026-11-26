@@ -26,7 +26,7 @@ $logoUrl = $space->getLogoUrl();
     <div class="flex items-center gap-3 px-2 py-2 md:gap-5 md:px-6 md:py-3">
         <?= $block->getChildHtml('logo') ?>
         <span class="hidden h-7 w-px bg-white md:block" aria-hidden="true"></span>
-        <p class="hidden font-display text-[22px] leading-7 font-bold whitespace-nowrap 2xl:block"><?= $escaper->escapeHtml(__('Espace Partenaire B2B')) ?></p>
+        <p class="hidden font-display text-[22px] leading-7 font-semibold whitespace-nowrap 2xl:block"><?= $escaper->escapeHtml(__('Espace Partenaire B2B')) ?></p>
 
         <form
             action="<?= $escaper->escapeUrl($block->getUrl('catalogsearch/result')) ?>"

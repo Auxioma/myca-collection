@@ -23,6 +23,10 @@
 @import "./myca/components.css";
 @import "./myca/layout.css";
 @import "./myca/page-builder.css";
+@import "./myca/returns-page.css";
+@import "./myca/passport.css";
+@import "./myca/product-page.css";
+@import "./myca/mobile.css";
 
 /* Couleurs utilisées par les gabarits Hyvä hérités, rattachées à l'identité MYCA. */
 @theme inline {

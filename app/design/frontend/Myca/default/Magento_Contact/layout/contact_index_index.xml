@@ -1,0 +1,12 @@
+<?xml version="1.0"?>
+<!-- Contact : titre porté par la bannière du formulaire ; l'adresse du destinataire n'est pas affichée. -->
+<page xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:noNamespaceSchemaLocation="urn:magento:framework:View/Layout/etc/page_configuration.xsd">
+    <head>
+        <title>Nous contacter</title>
+    </head>
+    <body>
+        <referenceBlock name="page.main.title" remove="true"/>
+        <referenceBlock name="contactDetails" remove="true"/>
+    </body>
+</page>

@@ -1,13 +1,15 @@
 <?php
 /**
- * Menu mobile (tiroir). Seules les couleurs changent par rapport au parent Hyvä :
- * bouton burger blanc sur la barre sombre, en-tête du tiroir sur fond « shell » pour le logo blanc.
+ * Menu mobile (tiroir latéral, 88 % de la largeur, fond assombri) : rubriques du catalogue avec sous-menus,
+ * puis raccourcis (compte, suivi, aide, contact). Il s'ouvre aussi depuis l'onglet « Catégories » de la barre
+ * inférieure (événement myca-open-menu).
  */
 
 use Hyva\Theme\Model\ViewModelRegistry;
 use Hyva\Theme\ViewModel\HyvaCsp;
 use Hyva\Theme\ViewModel\LucideIcons;
 use Hyva\Theme\ViewModel\Navigation;
+use Hyva\Theme\ViewModel\SvgIcons;
 use Magento\Framework\View\Element\Template;
 use Magento\Framework\Escaper;
 
@@ -28,20 +30,29 @@ $uniqueId = '_' . uniqid();
 $menuItems = $viewModelNavigation->getNavigation(4);
 $block->setData('cache_tags', $viewModelNavigation->getIdentities());
 
-$itemClasses = (string) $block->getItemClasses() ?: "flex items-center gap-2 py-3 px-6 border-b border-slate-200 outline-offset-0";
+$itemClasses = (string) $block->getItemClasses()
+    ?: 'flex min-h-13 items-center gap-2 px-5 py-3 border-b border-line text-base font-semibold text-navy-900 outline-offset-0';
+$icons = $viewModels->require(SvgIcons::class);
+$shortcuts = [
+    ['user', __('Mon compte'), 'customer/account'],
+    ['box', __('Suivi de commande'), 'sales/guest/form'],
+    ['refresh', __('Retours & échanges'), 'retours-echanges'],
+    ['headset', __('Aide & services'), 'aide'],
+    ['mail', __('Nous contacter'), 'contact'],
+];
 ?>
 <div x-data="initMobileMenu" x-bind="eventListeners" class="lg:hidden">
     <button
         type="button"
         class="inline-flex size-11 items-center justify-center rounded-md text-white hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-white"
-        aria-label="<?= $escaper->escapeHtmlAttr(__('Open menu')) ?>"
+        aria-label="<?= $escaper->escapeHtmlAttr(__('Ouvrir le menu')) ?>"
         @click="open"
     >
         <?= $lucideIcons->menuHtml('', 24, 24, ["aria-hidden" => "true"]) ?>
     </button>
     <dialog
-        aria-label="<?= $escaper->escapeHtmlAttr(__('Main menu')) ?>"
-        class="size-full max-h-full ms-0 p-0 open:flex flex-col transition ease-out duration-300 motion-reduce:duration-0 rounded-s-none"
+        aria-label="<?= $escaper->escapeHtmlAttr(__('Menu principal')) ?>"
+        class="myca-drawer h-full max-h-full w-[88vw] max-w-sm ms-0 p-0 open:flex flex-col transition ease-out duration-300 motion-reduce:duration-0 rounded-s-none"
         x-show="isOpen"
         x-htmldialog="close"
         closeby="any"
@@ -50,21 +61,24 @@ $itemClasses = (string) $block->getItemClasses() ?: "flex items-center gap-2 py-
         x-transition:leave-start="translate-x-0"
         x-transition:leave-end="-translate-x-full"
     >
-        <div class="bg-shell text-white">
+        <div class="myca-drawer-head bg-shell text-white">
             <div class="flex justify-between items-center gap-2 py-2 ps-4 pe-2">
-                <div><?= $block->getChildHtml('logo') ?></div>
+                <a href="<?= $escaper->escapeUrl($block->getBaseUrl()) ?>" class="flex flex-col leading-none" aria-label="<?= $escaper->escapeHtmlAttr(__('MYCA, retour à l’accueil')) ?>">
+                    <span class="font-logo text-2xl">MYCA<sup class="text-[10px]">®</sup></span>
+                    <span class="mt-1 text-[8px] font-semibold tracking-[0.3em] text-white/70 uppercase"><?= $escaper->escapeHtml(__('L’élégance sportive')) ?></span>
+                </a>
                 <button
                     type="button"
                     @click="close"
                     class="inline-flex size-11 items-center justify-center rounded-md text-white hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-white"
-                    aria-label="<?= $escaper->escapeHtmlAttr(__('Close menu')) ?>"
+                    aria-label="<?= $escaper->escapeHtmlAttr(__('Fermer le menu')) ?>"
                 >
                     <?= $lucideIcons->xHtml('', 24, 24, ["aria-hidden" => "true"]) ?>
                 </button>
             </div>
         </div>
         <div class="grow relative overflow-y-auto overflow-x-clip py-0.5" :style="lockWrapperScroll">
-            <nav aria-label="<?= $escaper->escapeHtmlAttr(__('Mobile Main Menu')) ?>">
+            <nav aria-label="<?= $escaper->escapeHtmlAttr(__('Catégories')) ?>">
                 <ul>
                     <?php foreach ($menuItems as $menuItem): ?>
                         <?php if (!empty($menuItem['childData'])): ?>
@@ -80,9 +94,7 @@ $itemClasses = (string) $block->getItemClasses() ?: "flex items-center gap-2 py-
                                     @click="open"
                                 >
                                     <span><?= $escaper->escapeHtml($menuItem['name']) ?></span>
-                                    <span class="btn p-1.5 border border-slate-300 bg-transparent text-current">
-                                        <?= $lucideIcons->chevronRightHtml('', 20, 20, ['aria-hidden' => 'true']) ?>
-                                    </span>
+                                    <?= $lucideIcons->chevronRightHtml('shrink-0 text-fg-muted', 20, 20, ['aria-hidden' => 'true']) ?>
                                 </button>
                                 <ul
                                     id="<?= $escaper->escapeHtml($menuItem['id']) ?>-mobile-menu-panel"
@@ -108,7 +120,7 @@ $itemClasses = (string) $block->getItemClasses() ?: "flex items-center gap-2 py-
                                             href="<?= $escaper->escapeUrl($menuItem['url']) ?>"
                                             class="<?= $escaper->escapeHtmlAttr($itemClasses) ?>"
                                         >
-                                            <span class="ms-7"><?= $escaper->escapeHtml(__('See all %1', $menuItem['name'])) ?></span>
+                                            <span class="ms-7"><?= $escaper->escapeHtml(__('Tout voir : %1', $menuItem['name'])) ?></span>
                                         </a>
                                     </li>
                                     <?php foreach ($menuItem['childData'] as $subMenuItem): ?>
@@ -136,7 +148,24 @@ $itemClasses = (string) $block->getItemClasses() ?: "flex items-center gap-2 py-
                     <?php endforeach; ?>
                 </ul>
             </nav>
+            <div class="myca-drawer-shortcuts">
+                <p><?= $escaper->escapeHtml(__('Mon espace')) ?></p>
+                <ul>
+                    <?php foreach ($shortcuts as [$icon, $label, $shortcutPath]): ?>
+                        <li>
+                            <a href="<?= $escaper->escapeUrl($block->getUrl('', ['_direct' => $shortcutPath])) ?>">
+                                <?= $icons->renderHtml($icon, 'shrink-0 text-gold-700', 20, 20, ['aria-hidden' => 'true']) ?>
+                                <?= $escaper->escapeHtml($label) ?>
+                            </a>
+                        </li>
+                    <?php endforeach ?>
+                </ul>
+            </div>
         </div>
+        <p class="myca-drawer-foot">
+            <?= $icons->renderHtml('truck', 'shrink-0', 18, 18, ['aria-hidden' => 'true']) ?>
+            <?= $escaper->escapeHtml(__('Point relais offert dès 100 € TTC d’achats éligibles')) ?>
+        </p>
     </dialog>
 </div>
 <script>
@@ -165,6 +194,9 @@ $itemClasses = (string) $block->getItemClasses() ?: "flex items-center gap-2 py-
                 this.isSubMenuOpen = !!this.$root.querySelector('[data-open]');
             },
             eventListeners: {
+                ['@myca-open-menu.window']() {
+                    this.open();
+                },
                 ['@pageshow.window'](event) {
                     if (event.persisted) {
                         this.close();

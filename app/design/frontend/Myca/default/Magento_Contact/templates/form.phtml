@@ -1,0 +1,179 @@
+<?php
+/**
+ * Page Contact MYCA : bannière, formulaire (sujet et n° de commande facultatifs, ajoutés en tête du message envoyé)
+ * et colonne d'aide (FAQ, suivi, retours). Reprend le gabarit Hyvä : reCAPTCHA, champs et envoi inchangés.
+ */
+
+declare(strict_types=1);
+
+use Hyva\Theme\Model\ViewModelRegistry;
+use Hyva\Theme\ViewModel\ReCaptcha;
+use Hyva\Theme\ViewModel\SvgIcons;
+use Magento\Contact\Block\ContactForm;
+use Magento\Contact\Helper\Data as ContactHelper;
+use Magento\Framework\Escaper;
+
+// phpcs:disable Magento2.Templates.ThisInTemplate.FoundThis
+// phpcs:disable Magento2.Templates.ThisInTemplate.FoundHelper
+
+/** @var ContactForm $block */
+/** @var Escaper $escaper */
+/** @var ViewModelRegistry $viewModels */
+
+$formId = 'contact';
+/** @var ContactHelper $contactHelper */
+$contactHelper = $this->helper(ContactHelper::class);
+$icons = $viewModels->require(SvgIcons::class);
+// Ne pas remplacer par $viewModels->require(ReCaptcha::class) : dépendance au module Magento_ReCaptchaContact
+$recaptcha = $block->getData('viewModelRecaptcha');
+$subjects = [
+    __('Ma commande'),
+    __('Livraison'),
+    __('Retour ou échange'),
+    __('Produit, taille ou entretien'),
+    __('Passeport du vêtement'),
+    __('Mon compte'),
+    __('Boutique partenaire'),
+    __('Autre demande'),
+];
+$help = [
+    ['help', __('Questions fréquentes'), __('Les réponses aux questions courantes'), 'faq'],
+    ['box', __('Suivre ma commande'), __('Avec ou sans compte'), 'sales/guest/form'],
+    ['refresh', __('Retours & échanges'), __('Faire une demande en ligne'), 'retours-echanges'],
+    ['truck', __('Livraison'), __('Modes, délais et destinations'), 'livraison'],
+];
+?>
+<div class="myca-rx-hero myca-contact-hero">
+    <figure><img src="<?= $escaper->escapeUrl($block->getBaseUrl() . 'media/wysiwyg/myca/accueil-banniere.webp') ?>" alt="" width="1140" height="520"></figure>
+    <div class="myca-rx-hero-text">
+        <h1><?= $escaper->escapeHtml(__('Nous contacter')) ?></h1>
+        <p><?= $escaper->escapeHtml(__('Une question sur une commande, un produit ou un retour ? L’équipe MYCA vous répond.')) ?></p>
+    </div>
+</div>
+
+<div class="myca-contact-layout">
+    <form class="myca-contact-form"
+          action="<?= $escaper->escapeUrl($block->getFormAction()) ?>"
+          id="<?= $escaper->escapeHtmlAttr($formId) ?>"
+          method="post"
+          x-data="initContactForm()"
+          @submit.prevent="submitForm()"
+    >
+        <fieldset>
+            <legend class="myca-contact-title"><?= $escaper->escapeHtml(__('Écrivez-nous')) ?></legend>
+            <p class="myca-contact-intro"><?= $escaper->escapeHtml(__('Les champs marqués d’un * sont obligatoires.')) ?></p>
+            <div class="grid gap-4 sm:grid-cols-2">
+                <div class="field">
+                    <label for="myca-contact-subject" class="myca-field-label"><?= $escaper->escapeHtml(__('Sujet')) ?></label>
+                    <select id="myca-contact-subject" class="myca-field w-full" x-ref="subject">
+                        <option value=""><?= $escaper->escapeHtml(__('Choisir un sujet…')) ?></option>
+                        <?php foreach ($subjects as $subject): ?>
+                            <option value="<?= $escaper->escapeHtmlAttr($subject) ?>"><?= $escaper->escapeHtml($subject) ?></option>
+                        <?php endforeach ?>
+                    </select>
+                </div>
+                <div class="field">
+                    <label for="myca-contact-order" class="myca-field-label"><?= $escaper->escapeHtml(__('N° de commande (si concerné)')) ?></label>
+                    <input id="myca-contact-order" type="text" class="myca-field w-full" x-ref="order" maxlength="40"
+                           placeholder="<?= $escaper->escapeHtmlAttr(__('Ex. : 000000123')) ?>" autocomplete="off">
+                </div>
+                <div class="field name required">
+                    <label for="name" class="myca-field-label"><?= $escaper->escapeHtml(__('Nom')) ?></label>
+                    <input type="text" id="name" name="name" required autocomplete="name" class="myca-field w-full"
+                           value="<?= $escaper->escapeHtmlAttr($contactHelper->getPostValue('name') ?: $contactHelper->getUserName()) ?>">
+                </div>
+                <div class="field email required">
+                    <label for="email" class="myca-field-label"><?= $escaper->escapeHtml(__('Adresse e-mail')) ?></label>
+                    <input type="email" id="email" name="email" required autocomplete="email" class="myca-field w-full"
+                           value="<?= $escaper->escapeHtmlAttr($contactHelper->getPostValue('email') ?: $contactHelper->getUserEmail()) ?>">
+                </div>
+                <div class="field telephone">
+                    <label for="telephone" class="myca-field-label"><?= $escaper->escapeHtml(__('Téléphone')) ?></label>
+                    <input type="tel" id="telephone" name="telephone" autocomplete="tel" class="myca-field w-full"
+                           value="<?= $escaper->escapeHtmlAttr($contactHelper->getPostValue('telephone')) ?>">
+                </div>
+                <div class="field comment required sm:col-span-2">
+                    <label for="comment" class="myca-field-label"><?= $escaper->escapeHtml(__('Votre message')) ?></label>
+                    <textarea name="comment" id="comment" required class="myca-field w-full" rows="6" autocomplete="off"
+                              placeholder="<?= $escaper->escapeHtmlAttr(__('Décrivez votre demande : modèle, taille, couleur…')) ?>"
+                    ><?= $escaper->escapeHtml($contactHelper->getPostValue('comment')) ?></textarea>
+                </div>
+            </div>
+            <?= $block->getChildHtml('form.additional.info') ?>
+            <?= $recaptcha ? $recaptcha->getInputHtml(ReCaptcha::RECAPTCHA_FORM_ID_CONTACT) : '' ?>
+        </fieldset>
+        <?= $block->getBlockHtml('formkey') ?>
+        <div class="myca-contact-actions">
+            <button type="submit" class="myca-btn myca-btn-primary min-h-12 px-8 text-base">
+                <?= $icons->renderHtml('send', '', 18, 18, ['aria-hidden' => 'true']) ?><?= $escaper->escapeHtml(__('Envoyer mon message')) ?>
+            </button>
+            <p>
+                <?= $escaper->escapeHtml(__('Vos données servent uniquement à traiter votre demande.')) ?>
+                <a href="<?= $escaper->escapeUrl($block->getUrl('confidentialite')) ?>"><?= $escaper->escapeHtml(__('Politique de confidentialité')) ?></a>
+            </p>
+        </div>
+        <div>
+            <?= $block->getChildHtml('form.additional.after') ?>
+            <?= $recaptcha ? $recaptcha->getLegalNoticeHtml(ReCaptcha::RECAPTCHA_FORM_ID_CONTACT) : '' ?>
+        </div>
+    </form>
+    <script>
+        function initContactForm() {
+            return {
+                errors: 0,
+                hasCaptchaToken: 0,
+                submitForm() {
+                    // Ne pas renommer $form : la variable est attendue par le code reCAPTCHA
+                    const $form = document.querySelector('#<?= $escaper->escapeJs($formId) ?>');
+                    <?= $recaptcha ? $recaptcha->getValidationJsHtml(ReCaptcha::RECAPTCHA_FORM_ID_CONTACT) : '' ?>
+
+                    if (this.errors === 0) {
+                        // Sujet et n° de commande ajoutés en tête du message (Magento n'envoie que ce champ)
+                        const subject = this.$refs.subject.value.trim();
+                        const order = this.$refs.order.value.trim();
+                        const comment = $form.querySelector('#comment');
+                        const lines = [];
+                        if (subject) {
+                            lines.push('<?= $escaper->escapeJs(__('Sujet')) ?> : ' + subject);
+                        }
+                        if (order) {
+                            lines.push('<?= $escaper->escapeJs(__('Commande')) ?> : ' + order);
+                        }
+                        if (lines.length && !comment.value.startsWith(lines[0])) {
+                            comment.value = lines.join('\n') + '\n\n' + comment.value;
+                        }
+                        $form.submit();
+                    }
+                }
+            }
+        }
+    </script>
+
+    <aside class="myca-contact-aside">
+        <div class="myca-contact-aside-card">
+            <h2><?= $escaper->escapeHtml(__('Avant de nous écrire')) ?></h2>
+            <p><?= $escaper->escapeHtml(__('Votre réponse est peut-être déjà ici :')) ?></p>
+            <ul>
+                <?php foreach ($help as [$icon, $title, $text, $path]): ?>
+                    <li>
+                        <a href="<?= $escaper->escapeUrl($block->getUrl('', ['_direct' => $path])) ?>">
+                            <span class="myca-contact-aside-icon"><?= $icons->renderHtml($icon, '', 20, 20, ['aria-hidden' => 'true']) ?></span>
+                            <span class="min-w-0 grow">
+                                <strong><?= $escaper->escapeHtml($title) ?></strong>
+                                <span><?= $escaper->escapeHtml($text) ?></span>
+                            </span>
+                            <?= $icons->renderHtml('chevron-right', 'shrink-0 text-fg-muted', 16, 16, ['aria-hidden' => 'true']) ?>
+                        </a>
+                    </li>
+                <?php endforeach ?>
+            </ul>
+        </div>
+        <div class="myca-contact-partner">
+            <?= $icons->renderHtml('store', 'shrink-0 text-gold-400', 24, 24, ['aria-hidden' => 'true']) ?>
+            <p>
+                <strong><?= $escaper->escapeHtml(__('Vous êtes une boutique ?')) ?></strong>
+                <a href="<?= $escaper->escapeUrl($block->getUrl('devenir-partenaire')) ?>"><?= $escaper->escapeHtml(__('Devenir partenaire MYCA')) ?></a>
+            </p>
+        </div>
+    </aside>
+</div>

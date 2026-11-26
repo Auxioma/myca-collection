@@ -26,6 +26,7 @@ $cards = [
     ['box', __('Achat de stock'), 'check', [__('Tarif grossiste selon volumes'), __('Minimum de commande par modèle (à valider)'), __('Livraison à votre boutique'), __('Retours via votre boutique')]],
     ['store', __('Votre espace partenaire'), null, [['chart', __('Tableau de bord, commandes, marges estimées')], ['file', __('Factures MYCA et avoirs')], ['users', __('Comptes équipe avec rôles')], ['headset', __('Support partenaire dédié')]]],
 ];
+// Champs du formulaire, regroupés en étapes (même contenu et mêmes noms de champs qu'avant)
 $text = [
     'company_name' => [__('Raison sociale'), true, 'organization', 'text'],
     'siret' => [__('SIRET'), true, 'off', 'text'],
@@ -39,6 +40,17 @@ $text = [
     'postcode' => [__('Code postal'), false, 'postal-code', 'text'],
     'city' => [__('Ville'), false, 'address-level2', 'text'],
 ];
+$groups = [
+    [__('Votre entreprise'), ['company_name', 'siret', 'vat_id', 'country_id']],
+    [__('Votre contact'), ['contact_name', 'email', 'phone']],
+    [__('Votre boutique'), ['website', 'street', 'postcode', 'city']],
+];
+$steps = [
+    ['file', __('Candidature'), __('Vous remplissez le formulaire en quelques minutes.')],
+    ['shield-check', __('Vérification'), __('MYCA vérifie vos identifiants et votre activité.')],
+    ['key', __('Activation'), __('Votre espace partenaire est ouvert, avec vos tarifs.')],
+    ['store', __('Vente'), __('Vous commandez et vendez MYCA dans votre boutique.')],
+];
 ?>
 <div class="mx-auto flex w-full max-w-[1200px] flex-col gap-4 py-4">
     <nav class="myca-breadcrumb" aria-label="<?= $escaper->escapeHtmlAttr(__('Fil d’Ariane')) ?>">
@@ -49,30 +61,36 @@ $text = [
         <span class="text-fg" aria-current="page"><?= $escaper->escapeHtml(__('Devenir partenaire')) ?></span>
     </nav>
 
-    <section class="relative grid overflow-hidden rounded-xl bg-hero text-white md:min-h-[400px] md:grid-cols-[560fr_640fr]">
+    <section class="relative grid grid-cols-[minmax(0,1fr)] overflow-hidden rounded-xl bg-hero text-white md:min-h-[400px] md:grid-cols-[560fr_640fr]">
         <div class="relative z-10 flex flex-col justify-center gap-4 p-6 md:p-14">
             <p class="myca-overline text-gold-400"><?= $escaper->escapeHtml(__('ESPACE PROFESSIONNEL')) ?></p>
-            <h1 class="font-display text-[34px] leading-[40px] font-bold italic md:text-[46px] md:leading-[52px]"><?= $escaper->escapeHtml(__('Vendez MYCA dans votre boutique')) ?></h1>
+            <h1 class="font-display text-[34px] leading-[40px] font-semibold md:text-[46px] md:leading-[52px]"><?= $escaper->escapeHtml(__('Vendez MYCA dans votre boutique')) ?></h1>
             <p class="myca-body-m max-w-[500px]"><?= $escaper->escapeHtml(__('Deux modèles au choix : dropshipping sans stock ou achat de stock au tarif professionnel. MYCA prépare et expédie.')) ?></p>
-            <a href="#candidature" class="myca-btn myca-btn-primary self-start">
-                <?= $icons->renderHtml('arrow-right', '', 16, 16, ['aria-hidden' => 'true']) ?><?= $escaper->escapeHtml(__('Déposer ma candidature')) ?>
-            </a>
+            <div class="flex flex-wrap items-center gap-4">
+                <a href="#candidature" class="myca-btn myca-btn-primary min-h-12 px-6 text-base">
+                    <?= $icons->renderHtml('arrow-right', '', 18, 18, ['aria-hidden' => 'true']) ?><?= $escaper->escapeHtml(__('Déposer ma candidature')) ?>
+                </a>
+                <a href="<?= $escaper->escapeUrl($block->getUrl('customer/account/login')) ?>" class="text-sm font-semibold text-white/85 underline underline-offset-2 hover:text-white"><?= $escaper->escapeHtml(__('Déjà partenaire ? Se connecter')) ?></a>
+            </div>
+            <span class="mt-2 h-1.5 w-28 bg-[linear-gradient(90deg,var(--color-flag-blue)_33.3%,#fff_33.3%_66.6%,var(--color-brand-red)_66.6%)]" aria-hidden="true"></span>
         </div>
-        <div class="relative hidden md:block" aria-hidden="true">
+        <div class="myca-bp-hero-media relative hidden md:block" aria-hidden="true">
             <img src="<?= $escaper->escapeUrl($block->getViewFileUrl('images/devenir-partenaire.webp')) ?>" alt="" class="absolute inset-0 size-full object-cover" width="640" height="400">
-            <span class="absolute inset-y-0 left-0 w-[260px] bg-gradient-to-r from-hero to-transparent"></span>
         </div>
     </section>
 
     <div class="grid gap-4 md:grid-cols-3">
-        <?php foreach ($cards as [$icon, $title, $bullet, $items]): ?>
-            <section class="myca-card p-4 shadow-card">
-                <h2 class="myca-card-title"><?= $icons->renderHtml($icon, 'text-gold-700', 18, 18, ['aria-hidden' => 'true']) ?><?= $escaper->escapeHtml($title) ?></h2>
-                <ul class="flex flex-col divide-y divide-line">
+        <?php foreach ($cards as $index => [$icon, $title, $bullet, $items]): ?>
+            <section class="myca-bp-card <?= $index === 2 ? 'myca-bp-card-dark' : '' ?>">
+                <h2>
+                    <span class="myca-bp-card-icon"><?= $icons->renderHtml($icon, '', 24, 24, ['aria-hidden' => 'true']) ?></span>
+                    <?= $escaper->escapeHtml($title) ?>
+                </h2>
+                <ul>
                     <?php foreach ($items as $item): ?>
                         <?php [$itemIcon, $label] = is_array($item) ? $item : [$bullet, $item]; ?>
-                        <li class="flex items-center gap-3 py-2 myca-body-s text-fg">
-                            <?= $icons->renderHtml((string) $itemIcon, $bullet ? 'shrink-0 text-success' : 'shrink-0 text-gold-700', 16, 16, ['aria-hidden' => 'true']) ?>
+                        <li>
+                            <?= $icons->renderHtml((string) $itemIcon, 'shrink-0', 18, 18, ['aria-hidden' => 'true']) ?>
                             <?= $escaper->escapeHtml($label) ?>
                         </li>
                     <?php endforeach ?>
@@ -81,35 +99,62 @@ $text = [
         <?php endforeach ?>
     </div>
 
-    <section id="candidature" class="myca-card scroll-mt-4 p-4 shadow-card" aria-labelledby="myca-application-title">
-        <h2 id="myca-application-title" class="myca-card-title"><?= $icons->renderHtml('file', 'text-gold-700', 18, 18, ['aria-hidden' => 'true']) ?><?= $escaper->escapeHtml(__('Formulaire de candidature')) ?></h2>
+    <section class="myca-bp-steps" aria-labelledby="myca-bp-steps-title">
+        <h2 id="myca-bp-steps-title"><?= $escaper->escapeHtml(__('Comment devenir partenaire ?')) ?></h2>
+        <ol>
+            <?php foreach ($steps as $index => [$icon, $title, $textStep]): ?>
+                <li>
+                    <span class="myca-bp-step-icon"><?= $icons->renderHtml($icon, '', 22, 22, ['aria-hidden' => 'true']) ?></span>
+                    <span>
+                        <strong><?= (int) $index + 1 ?>. <?= $escaper->escapeHtml($title) ?></strong>
+                        <span><?= $escaper->escapeHtml($textStep) ?></span>
+                    </span>
+                </li>
+            <?php endforeach ?>
+        </ol>
+    </section>
+
+    <div id="candidature" class="grid scroll-mt-4 grid-cols-[minmax(0,1fr)] items-start gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
+    <section class="myca-bp-form" aria-labelledby="myca-application-title">
+        <h2 id="myca-application-title" class="myca-bp-form-title"><?= $escaper->escapeHtml(__('Formulaire de candidature')) ?></h2>
+        <p class="mb-4 text-sm leading-5 text-fg-secondary"><?= $escaper->escapeHtml(__('Les champs marqués d’un * sont obligatoires.')) ?></p>
         <form method="post" action="<?= $escaper->escapeUrl($block->getUrl('candidature-partenaire/candidature/envoyer')) ?>" class="flex flex-col gap-3">
             <?= $block->getBlockHtml('formkey') ?>
             <div class="hidden" aria-hidden="true">
                 <label for="myca-company-website"><?= $escaper->escapeHtml(__('Ne pas remplir')) ?></label>
                 <input id="myca-company-website" type="text" name="company_website" tabindex="-1" autocomplete="off">
             </div>
-            <div class="grid gap-x-3 gap-y-3 md:grid-cols-2">
-                <?php foreach ($text as $field => [$label, $required, $autocomplete, $type]): ?>
-                    <div>
-                        <label for="myca-app-<?= $escaper->escapeHtmlAttr($field) ?>" class="myca-field-label">
-                            <?= $escaper->escapeHtml($label) ?><?= $required ? ' *' : '' ?>
-                        </label>
-                        <?php if ($type === 'select'): ?>
-                            <select id="myca-app-<?= $escaper->escapeHtmlAttr($field) ?>" name="application[<?= $escaper->escapeHtmlAttr($field) ?>]" class="myca-field" required autocomplete="<?= $escaper->escapeHtmlAttr($autocomplete) ?>">
-                                <?php foreach ($form->getCountries() as $code => $name): ?>
-                                    <option value="<?= $escaper->escapeHtmlAttr($code) ?>" <?= $code === $value('country_id', 'FR') ? 'selected' : '' ?>><?= $escaper->escapeHtml($name) ?></option>
-                                <?php endforeach ?>
-                            </select>
-                        <?php else: ?>
-                            <input id="myca-app-<?= $escaper->escapeHtmlAttr($field) ?>" type="<?= $escaper->escapeHtmlAttr($type) ?>" name="application[<?= $escaper->escapeHtmlAttr($field) ?>]"
-                                   value="<?= $escaper->escapeHtmlAttr($value($field)) ?>" class="myca-field" autocomplete="<?= $escaper->escapeHtmlAttr($autocomplete) ?>"
-                                   <?= $required ? 'required' : '' ?> maxlength="255"
-                                   <?= $field === 'siret' ? 'inputmode="numeric" placeholder="123 456 789 00045"' : '' ?>
-                                   <?= $field === 'vat_id' ? 'placeholder="FR12 123456789"' : '' ?>>
-                        <?php endif ?>
+            <?php foreach ($groups as $groupIndex => [$groupTitle, $fields]): ?>
+                <fieldset class="myca-bp-group">
+                    <legend><span><?= (int) $groupIndex + 1 ?></span><?= $escaper->escapeHtml($groupTitle) ?></legend>
+                    <div class="grid gap-3 md:grid-cols-2">
+                        <?php foreach ($fields as $field): ?>
+                            <?php [$label, $required, $autocomplete, $type] = $text[$field]; ?>
+                            <div class="<?= $field === 'website' || $field === 'street' ? 'md:col-span-2' : '' ?>">
+                                <label for="myca-app-<?= $escaper->escapeHtmlAttr($field) ?>" class="myca-field-label">
+                                    <?= $escaper->escapeHtml($label) ?><?= $required ? ' *' : '' ?>
+                                </label>
+                                <?php if ($type === 'select'): ?>
+                                    <select id="myca-app-<?= $escaper->escapeHtmlAttr($field) ?>" name="application[<?= $escaper->escapeHtmlAttr($field) ?>]" class="myca-field" required autocomplete="<?= $escaper->escapeHtmlAttr($autocomplete) ?>">
+                                        <?php foreach ($form->getCountries() as $code => $name): ?>
+                                            <option value="<?= $escaper->escapeHtmlAttr($code) ?>" <?= $code === $value('country_id', 'FR') ? 'selected' : '' ?>><?= $escaper->escapeHtml($name) ?></option>
+                                        <?php endforeach ?>
+                                    </select>
+                                <?php else: ?>
+                                    <input id="myca-app-<?= $escaper->escapeHtmlAttr($field) ?>" type="<?= $escaper->escapeHtmlAttr($type) ?>" name="application[<?= $escaper->escapeHtmlAttr($field) ?>]"
+                                           value="<?= $escaper->escapeHtmlAttr($value($field)) ?>" class="myca-field" autocomplete="<?= $escaper->escapeHtmlAttr($autocomplete) ?>"
+                                           <?= $required ? 'required' : '' ?> maxlength="255"
+                                           <?= $field === 'siret' ? 'inputmode="numeric" placeholder="123 456 789 00045"' : '' ?>
+                                           <?= $field === 'vat_id' ? 'placeholder="FR12 123456789"' : '' ?>>
+                                <?php endif ?>
+                            </div>
+                        <?php endforeach ?>
                     </div>
-                <?php endforeach ?>
+                </fieldset>
+            <?php endforeach ?>
+            <fieldset class="myca-bp-group">
+                <legend><span>4</span><?= $escaper->escapeHtml(__('Votre projet')) ?></legend>
+            <div class="grid gap-3 md:grid-cols-2">
                 <div>
                     <label for="myca-app-sales-mode" class="myca-field-label"><?= $escaper->escapeHtml(__('Mode souhaité')) ?> *</label>
                     <select id="myca-app-sales-mode" name="application[sales_mode]" class="myca-field" required>
@@ -129,9 +174,10 @@ $text = [
                 </div>
                 <div class="md:col-span-2">
                     <label for="myca-app-message" class="myca-field-label"><?= $escaper->escapeHtml(__('Présentez votre boutique (facultatif)')) ?></label>
-                    <textarea id="myca-app-message" name="application[message]" rows="3" maxlength="2000" class="myca-field"><?= $escaper->escapeHtml($value('message')) ?></textarea>
+                    <textarea id="myca-app-message" name="application[message]" rows="4" maxlength="2000" class="myca-field"><?= $escaper->escapeHtml($value('message')) ?></textarea>
                 </div>
             </div>
+            </fieldset>
             <label class="flex items-start gap-2 myca-body-s text-fg">
                 <input type="checkbox" name="application[terms]" value="1" required class="mt-0.5 size-4 rounded-sm accent-accent">
                 <?php $termsUrl = $form->getTermsUrl(); ?>
@@ -148,10 +194,27 @@ $text = [
                 <input type="checkbox" name="application[contact_consent]" value="1" required class="mt-0.5 size-4 rounded-sm accent-accent">
                 <span><?= $escaper->escapeHtml(__('J’accepte d’être recontacté par l’équipe MYCA')) ?> *</span>
             </label>
-            <button type="submit" class="myca-btn myca-btn-primary self-start">
+            <button type="submit" class="myca-btn myca-btn-primary mt-1 min-h-12 self-stretch px-8 text-base sm:self-start">
                 <?= $icons->renderHtml('send', '', 16, 16, ['aria-hidden' => 'true']) ?><?= $escaper->escapeHtml(__('Envoyer ma candidature')) ?>
             </button>
             <p class="myca-caption text-fg-secondary"><?= $escaper->escapeHtml(__('Chaque candidature est vérifiée (identifiants, activité) avant activation du compte par l’administration MYCA.')) ?></p>
         </form>
     </section>
+    <aside class="myca-bp-aside">
+        <div class="myca-bp-aside-card">
+            <h2><?= $escaper->escapeHtml(__('Après votre envoi')) ?></h2>
+            <ul>
+                <li><?= $escaper->escapeHtml(__('Vous recevez un e-mail de confirmation.')) ?></li>
+                <li><?= $escaper->escapeHtml(__('MYCA vérifie votre SIRET et votre activité.')) ?></li>
+                <li><?= $escaper->escapeHtml(__('Vous êtes recontacté pour l’ouverture de votre compte.')) ?></li>
+            </ul>
+        </div>
+        <div class="myca-bp-aside-help">
+            <p class="font-display text-lg leading-6 font-semibold text-navy-900"><?= $escaper->escapeHtml(__('Une question ?')) ?></p>
+            <p><?= $escaper->escapeHtml(__('L’équipe MYCA répond aux boutiques avant leur candidature.')) ?></p>
+            <a href="<?= $escaper->escapeUrl($block->getUrl('contact')) ?>" class="myca-btn myca-btn-secondary w-full"><?= $icons->renderHtml('mail', '', 16, 16, ['aria-hidden' => 'true']) ?><?= $escaper->escapeHtml(__('Nous contacter')) ?></a>
+            <a href="<?= $escaper->escapeUrl($block->getUrl('faq') . '#b2b') ?>" class="text-sm font-semibold text-accent-text underline underline-offset-2"><?= $escaper->escapeHtml(__('FAQ professionnels')) ?></a>
+        </div>
+    </aside>
+    </div>
 </div>

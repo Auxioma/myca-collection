@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="urn:magento:framework:App/etc/routes.xsd">
+    <router id="standard">
+        <!-- Autocomplétion de la recherche : /recherche-apercu/suggest?q=… (JSON) -->
+        <route id="mycasearch" frontName="recherche-apercu">
+            <module name="Myca_Catalog"/>
+        </route>
+    </router>
+</config>

@@ -74,32 +74,46 @@ class Passport implements ArgumentInterface
     }
 
     /**
+     * Fiche produit, ouverte sur un onglet donné (« materials » : Matières & entretien).
+     */
+    public function getProductTabUrl(Product $product, string $tab): string
+    {
+        return $product->getProductUrl() . '#myca-tab-' . $tab;
+    }
+
+    public function hasMaterials(?Product $product): bool
+    {
+        return $product !== null && trim((string) $product->getData('myca_materials')) !== '';
+    }
+
+    /**
      * Lignes du passeport : libellé, valeur publiable (null si en cours de validation) et statut de la donnée.
      *
      * @param array<string, mixed> $lot
      * @param array<string, mixed> $passport
-     * @return array<int, array{label: string, value: ?string, status: string}>
+     * @return array<int, array{key: string, label: string, value: ?string, status: string}>
      */
     public function getRows(array $lot, array $passport, ?Product $product): array
     {
         $statuses = $this->passportManagement->getStatuses($lot);
         $rows = [[
+            'key' => 'model',
             'label' => (string) __('Modèle'),
             'value' => $product === null ? null : (string) $product->getName(),
             'status' => LotFields::CERTIFIED,
         ]];
         if (!empty($passport['variant_label'])) {
-            $rows[] = ['label' => (string) __('Article'), 'value' => (string) $passport['variant_label'], 'status' => LotFields::CERTIFIED];
+            $rows[] = ['key' => 'variant', 'label' => (string) __('Article'), 'value' => (string) $passport['variant_label'], 'status' => LotFields::CERTIFIED];
         }
         foreach ($this->lotFields->getFields() as $field => $label) {
             $value = $this->lotFields->getPublicValue($statuses, $field, $lot[$field] === null ? null : (string) $lot[$field]);
             if ($field === 'manufactured_on' && $value !== null) {
                 $value = (string) __('Lot %1 · %2', $lot['lot_code'], substr($value, 5, 2) . '/' . substr($value, 0, 4));
             }
-            $rows[] = ['label' => $label, 'value' => $value, 'status' => $this->lotFields->getStatus($statuses, $field)];
+            $rows[] = ['key' => $field, 'label' => $label, 'value' => $value, 'status' => $this->lotFields->getStatus($statuses, $field)];
         }
         if (!empty($passport['serial_number'])) {
-            $rows[] = ['label' => (string) __('N° de série'), 'value' => (string) $passport['serial_number'], 'status' => LotFields::CERTIFIED];
+            $rows[] = ['key' => 'serial', 'label' => (string) __('N° de série'), 'value' => (string) $passport['serial_number'], 'status' => LotFields::CERTIFIED];
         }
 
         return $rows;

@@ -1,0 +1,121 @@
+/*
+ * Page publique du passeport du vêtement (Myca_Passport::passport.phtml) : fil d'Ariane, bandeau de collection,
+ * carte passeport, certificat (cadre doré, ruban, sceau) et bandeau des atouts.
+ */
+
+.myca-pp-crumbs ol {
+    @apply flex flex-wrap items-center gap-x-2 gap-y-1 text-sm leading-5 text-fg-secondary;
+
+    & li {
+        @apply flex items-center gap-2;
+    }
+
+    & li + li::before {
+        content: "";
+        @apply size-3.5 bg-fg-muted;
+        mask: url("../svg/chevron-right.svg") center / contain no-repeat;
+    }
+
+    & a {
+        @apply inline-flex items-center gap-1.5 hover:text-fg hover:underline;
+    }
+
+    & [aria-current] {
+        @apply text-fg;
+    }
+}
+
+/* Bandeau de collection : marine, liseré rouge en diagonale */
+.myca-pp-banner {
+    @apply relative hidden h-[148px] flex-col items-center justify-center gap-2 overflow-hidden rounded-xl bg-navy-900 text-white md:flex;
+
+    &::before {
+        content: "";
+        @apply absolute inset-y-0 left-6 w-2 -skew-x-[18deg] bg-brand-red;
+    }
+
+    &::after {
+        content: "";
+        @apply absolute inset-x-0 bottom-0 h-1.5 bg-[linear-gradient(90deg,var(--color-flag-blue)_33.3%,#fff_33.3%_66.6%,var(--color-brand-red)_66.6%)];
+    }
+}
+
+.myca-pp-passport {
+    @apply overflow-hidden rounded-xl border border-line-strong bg-surface shadow-card;
+}
+
+.myca-pp-rows {
+    @apply flex flex-col divide-y divide-line text-sm leading-5;
+
+    & > div {
+        @apply grid grid-cols-[minmax(0,128px)_minmax(0,1fr)] gap-x-4 py-2 sm:grid-cols-[minmax(0,175px)_minmax(0,1fr)];
+    }
+
+    & dt {
+        @apply flex items-center gap-2.5 font-semibold text-navy-900;
+    }
+
+    & dd {
+        @apply flex flex-col;
+
+        &::before {
+            content: ":";
+            @apply absolute -ms-3 text-fg-secondary;
+        }
+    }
+
+    & dd {
+        @apply relative;
+    }
+}
+
+/* Certificat : papier crème, double filet doré */
+.myca-pp-certificate {
+    @apply relative flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-gold-500 p-6 text-center sm:p-8;
+    background: radial-gradient(circle at 50% 30%, #fffdf7, #f8f0dc);
+    outline: 1px solid var(--color-gold-500);
+    outline-offset: -10px;
+}
+
+.myca-pp-certificate-title {
+    @apply font-display text-[26px] leading-tight font-semibold tracking-wide text-navy-900 uppercase sm:text-[30px];
+}
+
+/* Ruban doré aux extrémités découpées */
+.myca-pp-ribbon {
+    @apply my-2 px-12 py-2 text-lg leading-6 font-semibold text-navy-900;
+    background: linear-gradient(180deg, #f3d27a, #d4a537);
+    clip-path: polygon(0 0, 100% 0, calc(100% - 14px) 50%, 100% 100%, 0 100%, 14px 50%);
+}
+
+/* Sceau « MYCA Original » */
+.myca-pp-seal {
+    @apply relative flex size-24 shrink-0 flex-col items-center justify-center rounded-full font-logo text-navy-900 sm:size-28;
+    background: radial-gradient(circle at 35% 30%, #fbe7a6, #d4a537 60%, #a87a1c);
+    box-shadow: 0 0 0 3px #f3d27a, 0 0 0 5px #a87a1c, 0 4px 10px rgb(0 0 0 / 0.15);
+
+    & span:first-child {
+        @apply text-lg leading-5 font-bold;
+    }
+
+    & span:last-child {
+        @apply text-[10px] font-semibold tracking-[0.15em] uppercase;
+    }
+
+    & sup {
+        @apply text-[8px];
+    }
+}
+
+/* Atouts : bandeau horizontal à séparateurs */
+.myca-pp-tiles {
+    @apply grid grid-cols-2 gap-y-4 rounded-xl border border-line bg-surface p-4 shadow-card sm:grid-cols-3 lg:grid-cols-5 lg:py-5;
+
+    & li {
+        @apply flex items-center justify-center gap-3 px-3;
+    }
+
+    & li + li {
+        @apply lg:border-s lg:border-line;
+    }
+}

@@ -8,6 +8,9 @@
             </identity>
         </myca_core>
         <myca_site>
+            <audit>
+                <retention_days>1095</retention_days>
+            </audit>
             <cookies>
                 <policy_version>1</policy_version>
                 <lifetime_days>180</lifetime_days>

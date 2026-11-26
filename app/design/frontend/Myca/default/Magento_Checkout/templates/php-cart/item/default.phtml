@@ -67,14 +67,14 @@ $optionText = implode(' · ', array_map(
         <?php endif ?>
     <?php endforeach ?>
 >
-    <div class="product-item-photo flex size-20 shrink-0 items-center justify-center overflow-hidden md:h-20 md:w-[84px]">
+    <div class="product-item-photo flex size-16 shrink-0 items-center justify-center overflow-hidden sm:size-20 md:h-20 md:w-[84px]">
         <?= $block->getImage($block->getProductForThumbnail(), 'cart_page_product_thumbnail')
             ->setTemplate('Magento_Catalog::product/image.phtml')
             ->toHtml() ?>
     </div>
 
-    <div class="flex grow flex-col gap-3 md:flex-row md:items-center md:gap-4">
-        <div class="product-item-details flex grow flex-col gap-0.5 pe-11 md:pe-0">
+    <div class="flex min-w-0 grow flex-col gap-3 md:flex-row md:items-center md:gap-4">
+        <div class="product-item-details flex min-w-0 grow flex-col gap-0.5 pe-11 md:pe-0">
             <h3 class="product-item-name myca-body-s-strong text-fg">
                 <?php if ($block->hasProductUrl()): ?>
                     <a href="<?= $escaper->escapeUrl($block->getProductUrl()) ?>" class="hover:underline"><?= $escaper->escapeHtml($block->getProductName()) ?></a>
@@ -101,7 +101,7 @@ $optionText = implode(' · ', array_map(
             <?php endif ?>
         </div>
 
-        <div class="flex items-center justify-between gap-4 md:justify-end">
+        <div class="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 md:flex-nowrap md:justify-end">
             <div
                 class="flex h-11 items-center rounded-md border border-line-strong md:h-9"
                 x-data="{ qty: <?= (float) $qty ?> }"

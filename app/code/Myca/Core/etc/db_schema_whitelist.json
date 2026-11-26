@@ -16,5 +16,28 @@
         "constraint": {
             "PRIMARY": true
         }
+    },
+    "myca_audit_log": {
+        "column": {
+            "log_id": true,
+            "created_at": true,
+            "actor_type": true,
+            "actor_id": true,
+            "actor_name": true,
+            "ip": true,
+            "action": true,
+            "entity_type": true,
+            "entity_id": true,
+            "old_values": true,
+            "new_values": true,
+            "comment": true
+        },
+        "index": {
+            "MYCA_AUDIT_LOG_CREATED_AT": true,
+            "MYCA_AUDIT_LOG_ENTITY_TYPE_ENTITY_ID": true
+        },
+        "constraint": {
+            "PRIMARY": true
+        }
     }
 }

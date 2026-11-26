@@ -38,7 +38,7 @@ $currentIndex = (int) array_search($current, array_keys($steps), true);
                     <span class="block h-[3px] rounded-[2px] <?= $isDone || $isCurrent ? 'bg-accent' : 'bg-gray-300' ?>"></span>
                 </li>
             <?php endif ?>
-            <li class="flex w-16 shrink-0 flex-col items-center gap-1 md:w-[110px]" <?= $isCurrent ? 'aria-current="step"' : '' ?>>
+            <li class="flex w-14 shrink-0 flex-col items-center gap-1 min-[360px]:w-16 md:w-[110px]" <?= $isCurrent ? 'aria-current="step"' : '' ?>>
                 <span class="flex size-8 items-center justify-center rounded-pill
                     <?= $isCurrent || $isDone ? 'bg-accent text-on-accent' : 'border border-line-strong bg-surface-subtle text-fg' ?>">
                     <?= $icons->renderHtml($icon, '', 16, 16, ['aria-hidden' => 'true']) ?>

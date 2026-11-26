@@ -34,7 +34,7 @@ $count = (int) $block->getResultCount();
 $countLabel = $count > 1 ? __('%1 produits', $count) : __('%1 produit', $count);
 ?>
 <header class="mt-4 flex flex-col gap-2">
-    <h1 class="font-display text-[28px] leading-9 font-bold italic text-fg md:text-4xl md:leading-11">
+    <h1 class="font-display text-[28px] leading-9 font-semibold text-fg md:text-4xl md:leading-11">
         <?= $escaper->escapeHtml(__('Résultats pour « %1 »', $queryText)) ?>
     </h1>
     <p class="myca-body-s text-fg-secondary">

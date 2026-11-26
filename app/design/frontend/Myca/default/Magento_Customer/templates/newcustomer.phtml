@@ -1,0 +1,49 @@
+<?php
+/**
+ * Connexion — colonne « Nouveau client » : avantages du compte MYCA, création de compte et accès boutique partenaire.
+ */
+
+declare(strict_types=1);
+
+use Magento\Customer\Block\Form\Login\Info;
+use Magento\Framework\Escaper;
+
+/** @var Info $block */
+/** @var Escaper $escaper */
+
+$benefits = [
+    ['box', __('Suivez vos commandes et vos retours')],
+    ['qr', __('Retrouvez vos passeports du vêtement')],
+    ['heart', __('Gardez vos favoris d’une visite à l’autre')],
+    ['zap', __('Commandez plus vite, adresses enregistrées')],
+];
+?>
+<div class="myca-login-side">
+    <?php if ($block->getRegistration()->isAllowed()): ?>
+        <div class="myca-login-new">
+            <h2 class="myca-login-title">
+                <span class="myca-login-icon myca-login-icon-new" aria-hidden="true"></span>
+                <span>
+                    <span class="block"><?= $escaper->escapeHtml(__('Nouveau client ?')) ?></span>
+                    <span class="block font-sans text-sm font-normal text-white/75"><?= $escaper->escapeHtml(__('Créez votre compte MYCA en une minute.')) ?></span>
+                </span>
+            </h2>
+            <ul class="myca-login-benefits">
+                <?php foreach ($benefits as [$icon, $label]): ?>
+                    <li class="myca-pb-icon-<?= $escaper->escapeHtmlAttr($icon) ?>"><?= $escaper->escapeHtml($label) ?></li>
+                <?php endforeach ?>
+            </ul>
+            <a href="<?= $escaper->escapeUrl($block->getCreateAccountUrl()) ?>" class="myca-btn min-h-12 w-full bg-white text-base text-navy-900 hover:bg-gold-100">
+                <?= $escaper->escapeHtml(__('Créer mon compte')) ?>
+            </a>
+        </div>
+    <?php endif ?>
+    <div class="myca-login-partner">
+        <span class="myca-login-icon myca-login-icon-store" aria-hidden="true"></span>
+        <p>
+            <strong><?= $escaper->escapeHtml(__('Vous êtes une boutique partenaire ?')) ?></strong>
+            <?= $escaper->escapeHtml(__('Connectez-vous ici avec votre compte partenaire.')) ?>
+            <a href="<?= $escaper->escapeUrl($block->getUrl('devenir-partenaire')) ?>"><?= $escaper->escapeHtml(__('Devenir partenaire')) ?></a>
+        </p>
+    </div>
+</div>

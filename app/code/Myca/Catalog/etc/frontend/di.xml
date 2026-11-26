@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="urn:magento:framework:ObjectManager/etc/config.xsd">
+    <!-- Aperçu de recherche : collection plein texte du moteur de recherche (OpenSearch) -->
+    <type name="Myca\Catalog\Model\SearchPreview">
+        <arguments>
+            <argument name="fulltextCollectionFactory" xsi:type="object">Magento\CatalogSearch\Model\ResourceModel\Fulltext\SearchCollectionFactory</argument>
+        </arguments>
+    </type>
+</config>

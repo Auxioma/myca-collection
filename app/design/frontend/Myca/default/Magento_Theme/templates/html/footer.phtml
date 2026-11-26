@@ -1,6 +1,7 @@
 <?php
 /**
- * Pied de page du site public (Figma « Pied de page/Site public »).
+ * Pied de page du site public : marque (logo, présentation, réseaux), rubriques séparées par des filets,
+ * réseaux sociaux, inscription à la newsletter ; liens légaux centrés, copyright et retour en haut de page.
  * Desktop : colonnes ; mobile : rubriques en accordéon.
  */
 
@@ -36,7 +37,7 @@ $columns = [
         [__('Passeport du vêtement'), 'passeport-du-vetement'],
     ]],
     ['title' => __('Aide & Services'), 'links' => [
-        [__('Centre d’aide'), 'aide'],
+        [__('Aide & services'), 'aide'],
         [__('Contact / Service client'), 'contact'],
         [__('Livraison'), 'livraison'],
         [__('Retours & échanges'), 'retours-echanges'],
@@ -49,43 +50,66 @@ $columns = [
 $socials = [
     'facebook' => __('Facebook'),
     'instagram' => __('Instagram'),
-    'tiktok' => __('TikTok'),
     'youtube' => __('YouTube'),
     'linkedin' => __('LinkedIn'),
+    'tiktok' => __('TikTok'),
 ];
 
 $legalLinks = [
-    [__('CGV'), 'cgv'],
-    [__('CGU'), 'cgu'],
-    [__('Confidentialité'), 'confidentialite'],
-    [__('Cookies'), 'cookies'],
     [__('Mentions légales'), 'mentions-legales'],
+    [__('Conditions générales de vente'), 'cgv'],
+    [__('CGU'), 'cgu'],
+    [__('Politique de confidentialité'), 'confidentialite'],
+    [__('Cookies'), 'cookies'],
     [__('Plan du site'), 'plan-du-site'],
 ];
 
-$paymentMethods = $privacy->getPaymentMethods();
+$socialList = static function () use ($socials, $privacy, $icons, $escaper): string {
+    $html = '';
+    foreach ($socials as $icon => $label) {
+        $url = $privacy->getSocialUrl($icon);
+        $svg = $icons->renderHtml($icon, '', 22, 22, ['aria-hidden' => 'true']);
+        $html .= $url
+            ? '<li><a href="' . $escaper->escapeUrl($url) . '" target="_blank" rel="noopener" '
+                . 'class="inline-flex size-11 items-center justify-center rounded-full hover:bg-white/10 md:size-9" aria-label="'
+                . $escaper->escapeHtmlAttr(__('%1 (nouvel onglet)', $label)) . '">' . $svg . '</a></li>'
+            : '<li><span class="inline-flex size-11 items-center justify-center opacity-60 md:size-9" role="img" aria-label="'
+                . $escaper->escapeHtmlAttr($label) . '">' . $svg . '</span></li>';
+    }
+
+    return $html;
+};
+$divider = 'xl:border-s xl:border-white/25 xl:ps-6 2xl:ps-8';
 ?>
 <footer class="bg-shell text-white">
-    <div class="mx-auto flex max-w-[1600px] flex-col gap-6 px-4 py-7 md:flex-row md:flex-wrap md:gap-x-16 md:gap-y-8 md:px-10 2xl:px-[120px]">
-        <div class="flex flex-col items-center gap-2.5 self-center md:self-start">
-            <?= $block->getChildHtml('myca.footer.logo') ?>
-            <div class="flex" aria-hidden="true">
-                <span class="h-2.5 w-10 bg-flag-blue"></span>
-                <span class="h-2.5 w-10 bg-white"></span>
-                <span class="h-2.5 w-10 bg-brand-red"></span>
+    <div class="mx-auto grid max-w-[1600px] gap-6 px-4 pt-9 pb-8 md:grid-cols-3 md:gap-x-8 md:px-10 xl:grid-cols-[minmax(180px,1fr)_repeat(3,auto)_minmax(220px,300px)] 2xl:grid-cols-[minmax(200px,1fr)_repeat(4,auto)_minmax(240px,300px)] xl:gap-x-6 xl:pt-11 2xl:gap-x-8 2xl:px-12">
+        <div class="flex flex-col items-center gap-4 text-center md:col-span-3 md:items-start md:text-start xl:col-span-1">
+            <div class="flex flex-col items-center gap-2.5 md:items-start">
+                <?= $block->getChildHtml('myca.footer.logo') ?>
+                <div class="flex" aria-hidden="true">
+                    <span class="h-1.5 w-10 bg-flag-blue"></span>
+                    <span class="h-1.5 w-10 bg-white"></span>
+                    <span class="h-1.5 w-10 bg-brand-red"></span>
+                </div>
             </div>
+            <p class="max-w-[260px] text-sm leading-5 text-white/85">
+                <?= $escaper->escapeHtml(__('MYCA, une marque française au service du style et de la performance.')) ?>
+            </p>
+            <ul class="-ms-2 flex gap-1" aria-label="<?= $escaper->escapeHtmlAttr(__('MYCA sur les réseaux sociaux')) ?>">
+                <?= /* @noEscape */ $socialList() ?>
+            </ul>
         </div>
 
         <?php foreach ($columns as ['title' => $title, 'links' => $links]): ?>
             <nav
-                class="border-b border-white/20 md:border-0"
+                class="border-b border-white/20 md:border-b-0 <?= /* @noEscape */ $divider ?>"
                 x-data="{ open: false }"
                 aria-label="<?= $escaper->escapeHtmlAttr($title) ?>"
             >
                 <h2>
                     <button
                         type="button"
-                        class="flex min-h-11 w-full items-center justify-between text-[13px] leading-[18px] font-semibold md:pointer-events-none md:min-h-0"
+                        class="flex min-h-11 w-full items-center justify-between text-[15px] leading-5 font-semibold md:pointer-events-none md:min-h-0"
                         @click="open = !open"
                         :aria-expanded="open"
                     >
@@ -96,12 +120,12 @@ $paymentMethods = $privacy->getPaymentMethods();
                         ]) ?>
                     </button>
                 </h2>
-                <ul class="hidden flex-col gap-1 pb-3 md:mt-1 md:flex md:pb-0" :class="open && 'flex!'">
+                <ul class="hidden flex-col gap-1 pb-3 md:mt-3 md:flex md:gap-2 md:pb-0" :class="open && 'flex!'">
                     <?php foreach ($links as [$label, $path]): ?>
                         <li>
                             <a
                                 href="<?= $escaper->escapeUrl($block->getUrl('', ['_direct' => $path])) ?>"
-                                class="block py-1.5 text-xs leading-4 hover:underline md:py-0"
+                                class="block py-1.5 text-sm leading-5 text-white/90 hover:text-white hover:underline md:py-0 xl:whitespace-nowrap"
                             ><?= $escaper->escapeHtml($label) ?></a>
                         </li>
                     <?php endforeach ?>
@@ -109,58 +133,72 @@ $paymentMethods = $privacy->getPaymentMethods();
             </nav>
         <?php endforeach ?>
 
-        <div class="flex flex-col gap-2.5">
-            <h2 class="text-[13px] leading-[18px] font-semibold"><?= $escaper->escapeHtml(__('Suivez MYCA')) ?></h2>
-            <ul class="flex gap-1 md:gap-3">
-                <?php foreach ($socials as $icon => $label): ?>
-                    <li>
-                        <?php $socialUrl = $privacy->getSocialUrl($icon); ?>
-                        <?php if ($socialUrl): ?>
-                            <a href="<?= $escaper->escapeUrl($socialUrl) ?>" target="_blank" rel="noopener" class="inline-flex size-11 items-center justify-center hover:opacity-80 md:size-5" aria-label="<?= $escaper->escapeHtmlAttr(__('%1 (nouvel onglet)', $label)) ?>">
-                                <?= $icons->renderHtml($icon, '', 20, 20, ['aria-hidden' => 'true']) ?>
-                            </a>
-                        <?php else: ?>
-                            <span class="inline-flex size-11 items-center justify-center opacity-60 md:size-5" role="img" aria-label="<?= $escaper->escapeHtmlAttr($label) ?>">
-                                <?= $icons->renderHtml($icon, '', 20, 20, ['aria-hidden' => 'true']) ?>
-                            </span>
-                        <?php endif ?>
-                    </li>
-                <?php endforeach ?>
+        <div class="hidden flex-col gap-3 2xl:flex <?= /* @noEscape */ $divider ?>">
+            <h2 class="text-[15px] leading-5 font-semibold"><?= $escaper->escapeHtml(__('Suivez MYCA')) ?></h2>
+            <ul class="-ms-2 flex gap-0.5" aria-label="<?= $escaper->escapeHtmlAttr(__('Suivez MYCA')) ?>">
+                <?= /* @noEscape */ $socialList() ?>
             </ul>
+        </div>
+
+        <div class="flex flex-col gap-3 md:col-span-3 xl:col-span-1 <?= /* @noEscape */ $divider ?>">
+            <h2 class="text-[15px] leading-5 font-semibold" id="myca-footer-newsletter"><?= $escaper->escapeHtml(__('Newsletter')) ?></h2>
+            <p class="text-sm leading-5 text-white/85"><?= $escaper->escapeHtml(__('Restez connecté à l’univers MYCA')) ?></p>
+            <form
+                class="flex gap-2 md:max-w-sm xl:max-w-none"
+                action="<?= $escaper->escapeUrl($block->getUrl('newsletter/subscriber/new')) ?>"
+                method="post"
+                aria-labelledby="myca-footer-newsletter"
+            >
+                <label class="min-w-0 flex-1">
+                    <span class="sr-only"><?= $escaper->escapeHtml(__('Votre adresse e-mail')) ?></span>
+                    <input
+                        type="email"
+                        name="email"
+                        required
+                        autocomplete="email"
+                        class="block h-11 w-full min-w-0 rounded-md border-0 bg-white px-3 text-base text-fg placeholder:text-fg-muted focus:outline-2 focus:outline-offset-2 focus:outline-white md:h-10 md:text-sm xl:w-44 2xl:w-52"
+                        placeholder="<?= $escaper->escapeHtmlAttr(__('Votre e-mail')) ?>"
+                        aria-describedby="myca-footer-newsletter-consent"
+                    >
+                </label>
+                <?= $block->getBlockHtml('formkey') ?>
+                <button type="submit" class="inline-flex size-11 shrink-0 items-center justify-center rounded-md bg-accent text-on-accent hover:brightness-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white md:size-10" aria-label="<?= $escaper->escapeHtmlAttr(__('S’inscrire à la newsletter')) ?>">
+                    <?= $icons->renderHtml('send', '', 18, 18, ['aria-hidden' => 'true']) ?>
+                </button>
+            </form>
+            <p id="myca-footer-newsletter-consent" class="max-w-[260px] text-[11px] leading-4 text-white/60">
+                <?= $escaper->escapeHtml(__('Consentement révocable à tout moment.')) ?>
+                <a href="<?= $escaper->escapeUrl($block->getUrl('', ['_direct' => 'confidentialite'])) ?>" class="underline hover:text-white"><?= $escaper->escapeHtml(__('Confidentialité')) ?></a>
+            </p>
         </div>
     </div>
 
-    <div class="border-t border-white">
-        <div class="mx-auto flex max-w-[1600px] flex-col gap-4 px-4 py-3.5 md:px-10 xl:flex-row xl:items-center xl:gap-6 2xl:px-[120px]">
-            <ul class="flex flex-wrap items-center gap-x-4 gap-y-1 text-[13px] leading-[18px]">
+    <div class="mx-auto max-w-[1600px] px-4 md:px-10 2xl:px-12">
+        <div class="flex flex-col items-center gap-3 border-t border-white/25 py-5 xl:grid xl:grid-cols-[1fr_auto_1fr] xl:gap-6">
+            <span class="hidden xl:block" aria-hidden="true"></span>
+            <ul class="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-[13px] leading-[18px]">
                 <?php foreach ($legalLinks as $index => [$label, $path]): ?>
                     <?php if ($index > 0): ?>
-                        <li class="text-xs leading-4" aria-hidden="true">|</li>
+                        <li class="text-white/40" aria-hidden="true">|</li>
                     <?php endif ?>
                     <li>
                         <a
                             href="<?= $escaper->escapeUrl($block->getUrl('', ['_direct' => $path])) ?>"
-                            class="block py-2 hover:underline xl:py-0"
+                            class="block py-2 hover:underline lg:py-0"
                         ><?= $escaper->escapeHtml($label) ?></a>
                     </li>
                 <?php endforeach ?>
-                <li class="text-xs leading-4" aria-hidden="true">|</li>
-                <li><button type="button" data-myca-consent-open class="block py-2 hover:underline xl:py-0"><?= $escaper->escapeHtml(__('Gérer les cookies')) ?></button></li>
+                <li class="text-white/40" aria-hidden="true">|</li>
+                <li><button type="button" data-myca-consent-open class="block py-2 hover:underline lg:py-0"><?= $escaper->escapeHtml(__('Gérer les cookies')) ?></button></li>
             </ul>
-
-            <?php if ($paymentMethods !== []): ?>
-            <ul class="flex flex-wrap gap-2 xl:ms-auto" aria-label="<?= $escaper->escapeHtmlAttr(__('Moyens de paiement acceptés')) ?>">
-                <?php foreach ($paymentMethods as $method): ?>
-                    <li class="rounded-sm bg-white px-2.5 py-1 text-xs leading-4 font-semibold text-navy-900">
-                        <?= $escaper->escapeHtml($method) ?>
-                    </li>
-                <?php endforeach ?>
-            </ul>
-            <?php endif ?>
-
-            <p class="text-xs leading-4">
-                <?= $escaper->escapeHtml(__('© %1 MYCA – Tous droits réservés.', date('Y'))) ?>
-            </p>
+            <div class="flex items-center gap-5 xl:justify-self-end">
+                <p class="text-xs leading-4 whitespace-nowrap text-white/85">
+                    <?= $escaper->escapeHtml(__('© %1 MYCA. Tous droits réservés.', date('Y'))) ?>
+                </p>
+                <a href="#html-body" class="inline-flex size-11 shrink-0 items-center justify-center rounded-full bg-white text-navy-900 shadow-card hover:bg-white/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white" aria-label="<?= $escaper->escapeHtmlAttr(__('Revenir en haut de la page')) ?>">
+                    <?= $icons->renderHtml('arrow-up', '', 18, 18, ['aria-hidden' => 'true']) ?>
+                </a>
+            </div>
         </div>
     </div>
 </footer>
