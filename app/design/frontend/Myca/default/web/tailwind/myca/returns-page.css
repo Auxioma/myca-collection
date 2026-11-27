@@ -1918,3 +1918,49 @@
 .myca-track-truck::before {
     mask-image: url("../svg/truck.svg");
 }
+
+/* Mot de passe oublié : carte de connexion centrée, étapes, lien de retour, aide */
+.myca-forgot {
+    @apply mx-auto mb-10 flex w-full max-w-[520px] flex-col gap-4;
+
+    & .myca-login-card .field.required .myca-field-label::after {
+        content: none;
+    }
+}
+
+.myca-forgot-icon::before {
+    mask-image: url("../svg/key.svg");
+}
+
+.myca-forgot-steps {
+    @apply grid grid-cols-3 gap-2 rounded-lg bg-surface-subtle p-2;
+
+    & li {
+        @apply flex flex-col items-center gap-1 text-center text-xs leading-4 font-semibold text-fg-secondary;
+    }
+
+    & li > span {
+        @apply flex size-8 items-center justify-center rounded-full bg-surface text-fg-muted shadow-card;
+    }
+
+    & li.is-current {
+        @apply text-navy-900;
+
+        & > span {
+            @apply bg-brand-red text-white;
+        }
+    }
+}
+
+.myca-forgot-back {
+    @apply inline-flex items-center justify-center gap-1.5 self-center rounded-sm text-sm font-semibold text-fg-secondary hover:text-fg hover:underline
+        focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent;
+}
+
+.myca-forgot-help {
+    @apply flex gap-2 rounded-xl border border-line bg-surface-subtle p-4 text-sm leading-5 text-fg-secondary;
+
+    & a {
+        @apply font-semibold text-accent-text underline underline-offset-2;
+    }
+}
